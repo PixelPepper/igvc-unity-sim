@@ -1,0 +1,16 @@
+<!-- Continuous horizon following. Never clear sensor costs; retry once after waiting. -->
+<root BTCPP_format="4" main_tree_to_execute="MainTree">
+  <BehaviorTree ID="MainTree">
+    <RecoveryNode number_of_retries="1" name="LocalThroughPoses">
+      <PipelineSequence name="PlanThroughAndFollow">
+        <!-- Check proximity every BT tick, not only at the 1 Hz planning rate. -->
+        <RemovePassedGoals input_goals="{goals}" output_goals="{goals}" radius="0.35" global_frame="odom" robot_base_frame="base_footprint"/>
+        <RateController hz="1.0">
+          <ComputePathThroughPoses goals="{goals}" path="{path}" planner_id="GridBased" error_code_id="{compute_path_error_code}"/>
+        </RateController>
+        <FollowPath path="{path}" controller_id="FollowPath" goal_checker_id="goal_checker" error_code_id="{follow_path_error_code}"/>
+      </PipelineSequence>
+      <Wait wait_duration="2.0"/>
+    </RecoveryNode>
+  </BehaviorTree>
+</root>

@@ -1,0 +1,35 @@
+{
+  "origin": {
+    "latitude": 42.0,
+    "longitude": -83.0,
+    "altitude": 0.0,
+    "world_frame": "odom",
+    "axes": "x_east_y_north_z_up",
+    "model": "synthetic_ideal_from_odometry",
+    "noise_stddev_m": 0.0
+  },
+  "note": "Editable geometric demo; requires live lane and obstacle qualification.",
+  "waypoints": [
+    {
+      "name": "forward_2m",
+      "latitude": 41.99999999999746,
+      "longitude": -82.99997586020983,
+      "altitude": 3.129243850708008e-07,
+      "yaw": 0.0
+    },
+    {
+      "name": "forward_4m",
+      "latitude": 41.99999999998985,
+      "longitude": -82.99995172041967,
+      "altitude": 1.2516975402832031e-06,
+      "yaw": 0.0
+    },
+    {
+      "name": "forward_6m",
+      "latitude": 41.999999999977156,
+      "longitude": -82.9999275806295,
+      "altitude": 2.8172507882118225e-06,
+      "yaw": 0.0
+    }
+  ]
+}

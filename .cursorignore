@@ -1,0 +1,16 @@
+# Keep generated/binary material out of automatic agent context.
+artifacts/
+unity/IGVCSim/Library/
+unity/IGVCSim/Temp/
+unity/IGVCSim/Logs/
+unity/IGVCSim/Obj/
+tools/agents/node_modules/
+*.SLDPRT
+*.SLDASM
+*.stl
+*.STL
+*.fbx
+*.dll
+*.exe
+*.dpapi
+.env*

@@ -1,0 +1,49 @@
+{
+  "purpose": "Visual aperture overlays to avoid opaque enclosure glass hiding cameras; not lens simulation",
+  "source": "https://oak-files.fra1.cdn.digitaloceanspaces.com/OAK-D-Pro/DM9098Pro_enclosure.stp",
+  "source_sha256": "9440c72a8e5abdb9737ff7add4ad45f3571cfb69c0341570c093dbcaeb5137f4",
+  "cad_aperture_centers_body_m": [
+    [
+      0.011550449848175048,
+      -0.03750005,
+      0.00476378
+    ],
+    [
+      0.011550449848175048,
+      -5.000000000165983e-08,
+      0.00476378
+    ],
+    [
+      0.011550449848175048,
+      0.03749995,
+      0.00476378
+    ]
+  ],
+  "cad_aperture_outer_radius_m": 0.0045,
+  "appearance_inner_ring_radius_m": 0.0036,
+  "appearance_glass_radius_m": 0.00355,
+  "forward_offsets_m": {
+    "rings": 0.0002,
+    "glass": 0.00025
+  },
+  "segments": 32,
+  "suggested_materials": {
+    "rings": "grey metallic",
+    "glass": "dark blue"
+  },
+  "limitations": "Positions and outer radius derive from official CAD aperture cylinders. Inner radii/colors are visual choices. No optical calibration, IR projectors or lens physics represented.",
+  "files": [
+    {
+      "file": "oak_d_pro_lens_rings.stl",
+      "triangles": 192,
+      "sha256": "377b3c89b7c75e70ec372011eb001a75e1cf16e18c676e7a647a9f8ba31ec5b8",
+      "normals": "+X"
+    },
+    {
+      "file": "oak_d_pro_lens_glass.stl",
+      "triangles": 96,
+      "sha256": "9c898ee708906ad274847ae536c054ff917ef19534a6333ffa6e4fcaed286611",
+      "normals": "+X"
+    }
+  ]
+}

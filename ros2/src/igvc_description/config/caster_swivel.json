@@ -1,0 +1,6 @@
+{
+  "alignment_distance_m": 0.12,
+  "maximum_rate_rad_s": 4.0,
+  "stationary_speed_m_s": 0.005,
+  "calibration": "Provisional motion-aligned caster yaw response. Uses nominal CAD swivel pivots, not measured caster trail, friction, contact forces or shimmy. Existing suspension support samples remain yaw-only."
+}

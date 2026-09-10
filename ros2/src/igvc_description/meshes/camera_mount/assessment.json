@@ -1,0 +1,137 @@
+{
+  "source": "C:\\Users\\brand\\Downloads\\OneDrive_2026-03-04\\R3-a (Spring 2025)\\R3-a URDF\\meshes\\base_link.STL",
+  "source_sha256": "3a7c662013c6e5e353bfdac63061c9a07752b279c617f8a9a4d30a5a6c27779a",
+  "connectivity": "Exact shared vertex coordinates; no tolerance weld or geometric cut",
+  "components_total": 471,
+  "components_reaching_top": [
+    {
+      "label": 283782,
+      "triangles": 1760,
+      "min": [
+        0.2914673388004303,
+        -0.0481330007314682,
+        0.7864304184913635
+      ],
+      "max": [
+        0.3539428412914276,
+        0.0481330007314682,
+        0.8156231045722961
+      ]
+    },
+    {
+      "label": 289321,
+      "triangles": 564,
+      "min": [
+        0.32981836795806885,
+        -0.014999999664723873,
+        0.2800000011920929
+      ],
+      "max": [
+        0.35981836915016174,
+        0.014999999664723873,
+        0.8199999928474426
+      ]
+    }
+  ],
+  "separation_status": "clean_closed_component",
+  "moving_component": {
+    "label": 283782,
+    "triangles": 1760,
+    "min": [
+      0.2914673388004303,
+      -0.0481330007314682,
+      0.7864304184913635
+    ],
+    "max": [
+      0.3539428412914276,
+      0.0481330007314682,
+      0.8156231045722961
+    ]
+  },
+  "moving_mesh_closed_edge_count": 2640,
+  "stationary_base": {
+    "path": "meshes\\camera_mount\\base_static_source_basis.stl",
+    "triangles": 597804,
+    "bytes": 29890284,
+    "sha256": "2853fa77a59e99a73110dd28572d851924d8913481376c5c242cb130888e2df2"
+  },
+  "moving_bracket": {
+    "path": "meshes\\camera_mount\\moving_bracket_pivot_level.stl",
+    "triangles": 1760,
+    "bytes": 88084,
+    "sha256": "0722963c6bbbc88528dccd164581c53c18f3b0a6cc002d25a2149dafd893ddaf"
+  },
+  "static_coordinate_contract": "Original source XYZ; retain canonical base visual rpy=(0,0,pi). Only moving component removed; original source untouched.",
+  "moving_coordinate_contract": "Canonical physical-forward XYZ, pivot-relative, level orientation; visual origin identity. Vertex=(R_y(-4.0945186569deg))*(diag(-1,-1,1)*source-pivot). Proper rotations preserve winding.",
+  "joint_origin_canonical": [
+    -0.34396836,
+    0.0,
+    0.8
+  ],
+  "joint_axis_canonical": [
+    0,
+    1,
+    0
+  ],
+  "level_correction_ros_y_degrees": -4.094518656883155,
+  "arm_bounds_local": [
+    [
+      -0.010000004433095455,
+      -0.0481330007314682,
+      -0.010000013746321201
+    ],
+    [
+      0.051350001245737076,
+      0.0481330007314682,
+      0.018955979496240616
+    ]
+  ],
+  "float32_roundtrip_max_error_m": 1.8559309089560827e-09,
+  "current_cad_pose_joint_angle_degrees": 4.094518656883155,
+  "limitations": "Visual extraction only. No inertial split or collision changes. Collision proxy may still cover old arm region. Zero joint pose levels extracted arm; original CAD pose recovered at +4.0945186569 degrees. Static base remains large and needs separate visual simplification.",
+  "stationary_base_simplified": {
+    "name": "base_static_source_basis.stl",
+    "source_sha256": "2853fa77a59e99a73110dd28572d851924d8913481376c5c242cb130888e2df2",
+    "output_sha256": "38e9d2599af5c0a71b158bca5c944bece4a6fdc9b9016736bf2056de6bced4fd",
+    "source_triangles": 597804,
+    "target_triangles": 101237,
+    "output_triangles": 101227,
+    "removed_source_degenerate": 0,
+    "removed_output_degenerate": 10,
+    "source_bounds_m": [
+      [
+        -0.3393816351890564,
+        -0.37782299518585205,
+        -0.1314934641122818
+      ],
+      [
+        0.5798183679580688,
+        0.37782299518585205,
+        0.8199999928474426
+      ]
+    ],
+    "output_bounds_m": [
+      [
+        -0.3393816351890564,
+        -0.37782785296440125,
+        -0.13262224197387695
+      ],
+      [
+        0.5798183679580688,
+        0.37782299518585205,
+        0.8199999928474426
+      ]
+    ],
+    "max_bound_deviation_m": 0.0011287778615951538,
+    "finite_nondegenerate": true,
+    "valid_unit_normals": true,
+    "path": "meshes\\camera_mount\\base_static_source_basis_simplified.stl",
+    "algorithm": "fast_simplification quadric reduction, agg=7",
+    "versions": {
+      "numpy": "2.3.5",
+      "fast_simplification": "0.1.12"
+    },
+    "coordinate_contract": "Original source basis; retain existing base visual Z=pi rotation.",
+    "limitation": "Bounds/finite/normals checks do not establish silhouette, topology, Hausdorff distance or sensor fidelity."
+  }
+}

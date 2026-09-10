@@ -1,0 +1,202 @@
+{
+  "status": "passed",
+  "algorithm": "fast quadric simplification",
+  "aggressiveness": 7,
+  "versions": {
+    "python": "3.12.14",
+    "numpy": "2.2.6",
+    "fast-simplification": "0.1.12"
+  },
+  "platform": "Windows-11-10.0.26200-SP0",
+  "budget": 150000,
+  "max_bound_deviation_m": 0.005,
+  "limitations": "Axis-aligned extrema checks do not establish silhouette, Hausdorff distance, topology, watertightness or sensor fidelity. Geometry assumes source units are metres. Normals match local winding; outward orientation is not established.",
+  "meshes": [
+    {
+      "name": "base_link.stl",
+      "source_sha256": "3a7c662013c6e5e353bfdac63061c9a07752b279c617f8a9a4d30a5a6c27779a",
+      "output_sha256": "32cdcc04c8ad6d0d65728b87cef448ec8c62cb4383057eb5d5bcfcfb0b7ce7e3",
+      "source_triangles": 599564,
+      "target_triangles": 101247,
+      "output_triangles": 101237,
+      "removed_source_degenerate": 0,
+      "removed_output_degenerate": 10,
+      "source_bounds_m": [
+        [
+          -0.3393816351890564,
+          -0.37782299518585205,
+          -0.1314934641122818
+        ],
+        [
+          0.5798183679580688,
+          0.37782299518585205,
+          0.8199999928474426
+        ]
+      ],
+      "output_bounds_m": [
+        [
+          -0.3393816351890564,
+          -0.37782785296440125,
+          -0.13262224197387695
+        ],
+        [
+          0.5798183679580688,
+          0.37782299518585205,
+          0.8199999928474426
+        ]
+      ],
+      "max_bound_deviation_m": 0.0011287778615951538,
+      "finite_nondegenerate": true,
+      "valid_unit_normals": true
+    },
+    {
+      "name": "left_caster.stl",
+      "source_sha256": "590dd275888095950218506330de5d31739298255ef65faaadd9100ce1ad9667",
+      "output_sha256": "9d5175845b3132ed97ba6bdca979194410492c6d2be8abb11b5e2fd741a0aed4",
+      "source_triangles": 114806,
+      "target_triangles": 19387,
+      "output_triangles": 19386,
+      "removed_source_degenerate": 0,
+      "removed_output_degenerate": 0,
+      "source_bounds_m": [
+        [
+          -0.05714999884366989,
+          -0.058928001672029495,
+          -0.25065311789512634
+        ],
+        [
+          0.14605000615119934,
+          0.06172199919819832,
+          0.006350007373839617
+        ]
+      ],
+      "output_bounds_m": [
+        [
+          -0.057327162474393845,
+          -0.05898238345980644,
+          -0.25155341625213623
+        ],
+        [
+          0.1468021124601364,
+          0.06159919500350952,
+          0.007540062069892883
+        ]
+      ],
+      "max_bound_deviation_m": 0.0011900546960532665,
+      "finite_nondegenerate": true,
+      "valid_unit_normals": true
+    },
+    {
+      "name": "right_caster.stl",
+      "source_sha256": "9351793d034d3cbc70f12b955a0014c1c46848d596c5a75baca9f0ec1e971d17",
+      "output_sha256": "f1f4c5c41c28cf6c94cebfc79e5f43eaafee898dcec072cc532b9f354219e118",
+      "source_triangles": 114806,
+      "target_triangles": 19387,
+      "output_triangles": 19386,
+      "removed_source_degenerate": 0,
+      "removed_output_degenerate": 0,
+      "source_bounds_m": [
+        [
+          -0.05714999884366989,
+          -0.058928001672029495,
+          -0.25065311789512634
+        ],
+        [
+          0.14605000615119934,
+          0.06172199919819832,
+          0.006350007373839617
+        ]
+      ],
+      "output_bounds_m": [
+        [
+          -0.057327162474393845,
+          -0.05898238345980644,
+          -0.25155341625213623
+        ],
+        [
+          0.1468021124601364,
+          0.06159919500350952,
+          0.007540062069892883
+        ]
+      ],
+      "max_bound_deviation_m": 0.0011900546960532665,
+      "finite_nondegenerate": true,
+      "valid_unit_normals": true
+    },
+    {
+      "name": "wheel_left.stl",
+      "source_sha256": "5a6d6750a18f8d7a5fa596cb4eb5e1633a4ad2eb4acdb05b7f3593c19b1ae698",
+      "output_sha256": "c18cc99c9122a8b326e50fec6513404e3050aaeefe68b881851ffe85e103bd1d",
+      "source_triangles": 29544,
+      "target_triangles": 4989,
+      "output_triangles": 4989,
+      "removed_source_degenerate": 0,
+      "removed_output_degenerate": 0,
+      "source_bounds_m": [
+        [
+          -0.2295220047235489,
+          -0.07555320113897324,
+          -0.229405477643013
+        ],
+        [
+          0.2295220047235489,
+          0.07174315303564072,
+          0.229405477643013
+        ]
+      ],
+      "output_bounds_m": [
+        [
+          -0.23122544586658478,
+          -0.07642442733049393,
+          -0.23014560341835022
+        ],
+        [
+          0.23012904822826385,
+          0.07269823551177979,
+          0.23014560341835022
+        ]
+      ],
+      "max_bound_deviation_m": 0.0017034411430358887,
+      "finite_nondegenerate": true,
+      "valid_unit_normals": true
+    },
+    {
+      "name": "wheel_right.stl",
+      "source_sha256": "964eaa9f51aa52842d71cb9290c9c2564d2a5cb3d4f8a566c16743595f028db1",
+      "output_sha256": "6e605542943398a742342f2d0aaee7d7a3d75fee9db46fca0624caa64d32eb80",
+      "source_triangles": 29544,
+      "target_triangles": 4989,
+      "output_triangles": 4988,
+      "removed_source_degenerate": 0,
+      "removed_output_degenerate": 0,
+      "source_bounds_m": [
+        [
+          -0.2295220047235489,
+          -0.07174315303564072,
+          -0.229405477643013
+        ],
+        [
+          0.2295220047235489,
+          0.07555320113897324,
+          0.229405477643013
+        ]
+      ],
+      "output_bounds_m": [
+        [
+          -0.23012904822826385,
+          -0.07273327559232712,
+          -0.23014560341835022
+        ],
+        [
+          0.23122544586658478,
+          0.07672592252492905,
+          0.23014560341835022
+        ]
+      ],
+      "max_bound_deviation_m": 0.0017034411430358887,
+      "finite_nondegenerate": true,
+      "valid_unit_normals": true
+    }
+  ],
+  "total_triangles": 149986
+}

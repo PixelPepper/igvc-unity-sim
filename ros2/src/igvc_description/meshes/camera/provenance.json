@@ -1,0 +1,82 @@
+{
+  "status": "passed",
+  "source_url": "https://oak-files.fra1.cdn.digitaloceanspaces.com/OAK-D-Pro/DM9098Pro_enclosure.stp",
+  "source_sha256": "9440c72a8e5abdb9737ff7add4ad45f3571cfb69c0341570c093dbcaeb5137f4",
+  "official_index": "https://github.com/luxonis/oak-hardware/blob/master/DM9098_OAK-D-Pro/3D_Models/README.md",
+  "product": "https://docs.luxonis.com/hardware/products/OAK-D%20Pro",
+  "source_model": "2022-06-03 CREO 010-00008-02_ASM enclosure",
+  "cadquery_ocp_version": "8.0.1.0.0",
+  "method": "CAD tessellation only, no decimation",
+  "linear_deflection_mm": 0.25,
+  "angular_deflection_rad": 0.7,
+  "raw_triangles": 56352,
+  "triangles": 56352,
+  "removed_degenerate": 0,
+  "output_sha256": "f0001fc2f85d5e90d7ec822b57635a98687e4c5be41546968a30f34feaa6ffe5",
+  "source_bounds_mm": [
+    [
+      -4.0,
+      -26.5,
+      -13.0
+    ],
+    [
+      93.0,
+      3.0,
+      10.100899696350098
+    ]
+  ],
+  "source_body_center_mm": [
+    44.5,
+    -11.75,
+    -1.4495501518249512
+  ],
+  "source_to_output_rotation": [
+    [
+      0.0,
+      0.0,
+      1.0
+    ],
+    [
+      1.0,
+      0.0,
+      0.0
+    ],
+    [
+      0.0,
+      1.0,
+      0.0
+    ]
+  ],
+  "output_axes": "+X forward, +Y left, +Z up",
+  "bounds_m": [
+    [
+      -0.011550449848175048,
+      -0.0485,
+      -0.014750000000000001
+    ],
+    [
+      0.011550449848175048,
+      0.0485,
+      0.014750000000000001
+    ]
+  ],
+  "rgb_front_surface_datum_m": [
+    0.011550449848175048,
+    -5.000000000165983e-08,
+    0.00476378
+  ],
+  "rgb_datum_basis": "Center of central CAD aperture projected onto frontmost enclosure/glass plane; not calibrated optical center",
+  "bottom_tripod_boss_datum_m": [
+    -0.005550449848175049,
+    -0.03705,
+    -0.014750000000000001
+  ],
+  "tripod_datum_basis": "CAD cylindrical bore radius2.55mm at native(7.45,-26.5,-7), axis-Y; thread standard not inferred",
+  "finite_nondegenerate": true,
+  "normals_match_winding": true,
+  "limitations": [
+    "Exact device revision/focus variant match requires hardware confirmation.",
+    "Enclosure CAD includes openings and windows, not calibrated optical frames or active camera simulation.",
+    "STL loses CAD colors/materials; no topology/outer-normal guarantee from numeric checks alone."
+  ]
+}

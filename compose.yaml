@@ -1,0 +1,20 @@
+name: igvc-sim
+services:
+  ros:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: igvc-sim:jazzy
+    init: true
+    shm_size: 512m
+    ports:
+      - "127.0.0.1:10000:10000"
+    environment:
+      ROS_DOMAIN_ID: "42"
+      DISPLAY: "${DISPLAY:-:0}"
+      QT_X11_NO_MITSHM: "1"
+      LIBGL_ALWAYS_SOFTWARE: "1"
+    volumes:
+      - ./artifacts:/opt/igvc/artifacts
+      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+    stop_grace_period: 20s

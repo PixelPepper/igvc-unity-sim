@@ -1,0 +1,53 @@
+# SoonerRobotics 2025/2026 autonomy references
+
+Reviewed 2026-09-09. This is a read-only source review, not a build, runtime test or competition-performance assessment. No setup scripts were executed and no upstream code or assets were imported.
+
+## Repository relationships
+
+| Repository and inspected commit | Confirmed architecture | Value to this project |
+|---|---|---|
+| `autonav_software_2025` — `f4f81334e46d2425f2225f7e29e29e8776366d15` | README explicitly specifies ROS 2 Jazzy / Ubuntu 24.04; ROS packages, custom robot messages, simulation launch and vendored ROS TCP endpoint | Closest reference for our ROS setup and perception-to-planning flow |
+| `igvc_software_2026` — `e87fba3f506df572b93363455b55a40bec2c6962` | README describes a move from ROS to a multithreaded C# application; FlatBuffers, hardware subsystems and simulator client | Useful patterns for replacing hardware with simulated inputs, bounded processing, presets and telemetry |
+| `scr_simulator` — `0298b11c4f469404d08b37ad98431cdab6e02818` | Unity 6 custom TCP/FlatBuffers server, reviewed separately | Newer simulator counterpart to the 2026 C# client |
+| `scrabby` — `bc4d65704168a442240129ed574cb205a0f802d4` | Unity 6000.0.36f1; inspected RosConnector uses WebSocket JSON advertise/subscribe/publish operations | Additional historical reference, but not a proven matching Unity client for the 2025 TCP endpoint |
+
+Sources: [2025 README](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/README.md), [2026 README](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/README.md), [Scrabby connector](https://github.com/SoonerRobotics/scrabby/blob/bc4d65704168a442240129ed574cb205a0f802d4/Assets/Scrabby/Scripts/Networking/RosConnector.cs).
+
+Do not mix branches/years assuming compatibility. Although the 2025 simulation launch comments mention Scrabby, that launch starts a ROS TCP endpoint while the inspected Scrabby connector speaks WebSocket JSON. Locate matching historical versions or explicitly implement an adapter before trying to run that combination.
+
+The 2026 `SimulatorSubsystem` connects to configured host/port (default port 4001), reconnects after disconnect, routes CAN messages into its EventBus and forwards other simulator messages to subsystem consumers. This resolves the location of the newer simulator's companion application. It is a custom C# client, not a ROS bridge. Simulation is a compile-time `UseSimulation = false` default in the inspected configuration; a runtime preset alone should not be assumed to enable it. [Client](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/igvc_csharp/src/Subsystems/Simulator/SimulatorSubsystem.cs), [configuration](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/igvc_csharp/src/Configuration.cs).
+
+## Useful components and adaptation decisions
+
+| Priority | Reference | Our adaptation | Required evidence |
+|---|---|---|---|
+| High | 2025 separate simulation/hardware launch files | One shared autonomy bringup with explicit `sim`, `replay` and later `hardware` input profiles; only input/actuation adapters change | Each profile publishes the same topic/frame/encoding contract and excludes competing publishers |
+| High | 2025 `zemlin_vision` image → local occupancy pipeline; 2026 modular vision filters | A simple OpenCV baseline for lane/ground segmentation, with masks and projected-boundary debug output | Evaluate on shadows, faded lines, glare, ramps and representative OAK recordings; measure lane error and false boundaries |
+| High | 2026 simulator injection through shared consumers | Unity and recorded data feed the same ROS perception nodes | Process the same recorded sensor inputs without Unity and reproduce outputs within declared tolerances |
+| High | 2025 commander/presets and 2026 configuration/state separation | ROS parameter YAML snapshots, lifecycle/readiness checks, explicit manual/autonomous/stop modes | No dependency on a team GUI; stale inputs prevent autonomous activation; reset clears session state |
+| Medium | 2025 logging/debug topics; 2026 fake camera/GPS readers and Chronos logging | Standard rosbag2 replay plus a run manifest, image overlays, planner status and message-age diagnostics | Original timestamps, calibration and config travel with each recording; replay cannot command physical hardware |
+| Medium | Custom A*, pure pursuit and feeler alternatives | Algorithm references and optional later comparison baselines | Keep Nav2 as the default; compare only after the required stack works, using identical input scenarios |
+| Low | Swerve/SparkMax/CAN, VectorNav and ZED hardware code | Document differences; implement adapters for our differential drive, OAK-D Pro and RPLIDAR A1 | Real dimensions, units, speed limits, sensor extrinsics and message contracts measured for R3-a |
+
+The launch actually used by the 2025 simulation selects `zemlin_vision`, `zemlin_filters`, `zemlin_navigation`, commander, display and logging. Other directories, including `autonav_vision` and feeler experiments, are alternatives rather than proof that all pipelines run together. Several autonomy nodes are commented out in the inspected competition launch. [Simulation launch](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/autonav_launch/launch/simulation.xml), [competition launch](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/autonav_launch/launch/competition.xml).
+
+## Perception integration design
+
+Implement a baseline pipeline in `igvc_perception`: calibrated OAK RGB → configurable filtering/segmentation → boundary mask → projection using CameraInfo and TF → metric, stamped boundary observations → a dedicated Nav2 lane-cost layer. Keep lidar/depth physical-obstacle inputs separate. A lane boundary should not be treated as a physical obstacle return and cleared by a lidar ray passing over paint. Give lane observations explicit age, confidence, update and clearing policies.
+
+Flat-ground inverse perspective mapping is an initial assumption, not a terrain model. On ramps, compensate with body attitude and ground/depth geometry or mark projection unreliable. Recompute calibration for our OAK mounting rather than copying their pixel coordinates. Use lossless masks for computation and compressed images only for optional visualization. Retain source acquisition stamps and frame IDs throughout.
+
+This is a proposed adaptation, not a claim that their code implements our Nav2 layer. Their 2025 transformer uses blur/HSV masks, a perspective warp and OccupancyGrid output; 2026 similarly uses blur, HSV, top-down and inflation filters. [2025 transformer](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/zemlin_vision/src/transformations.py), [2026 vision](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/igvc_csharp/src/Subsystems/Vision/VisionSubsystem.cs).
+
+## Why adaptation still needs validation
+
+- The inspected 2025 transformer constructs 80×80 data but declares a 200×100 OccupancyGrid; its expanded-grid node also declares dimensions different from its 80×80 buffer. Headers and occupancy value conventions need correction before use by standard consumers. These are static source findings, not reproduced runtime failures. Our tests must assert `data length = width × height`, valid occupancy values, identity origin rotation where appropriate, metric resolution and valid frame/time. [Transformer](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/zemlin_vision/src/transformations.py), [expansion](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/zemlin_vision/src/expandify.cpp).
+- Custom Position, MotorInput, GPSFeedback and other messages do not directly satisfy Nav2's TF, Odometry, Twist and sensor contracts. A robot-relative planner convention must be made explicit rather than carried into `map`/`odom` implicitly. [Path resolver](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/zemlin_navigation/src/path_resolver.py).
+- Jazzy is explicitly documented for 2025, but no end-to-end Unity/Nav2 tests were run in this review. The inspected CI workflow builds a Docker image; that alone is not navigation or sensor-correctness evidence. Their endpoint publisher still uses queue depth without explicit per-topic QoS. [CI](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/.github/workflows/compile_run.yml), [endpoint publisher](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/autonav_ws/src/ros_tcp_endpoint_ros2/ros_tcp_endpoint/publisher.py).
+- Recorded-data helpers exist in 2026, but fake camera/GPS subsystems are disabled by default. Their presence is evidence for a useful development pattern, not synchronized replay fidelity. Use rosbag2 timestamps and tests in our implementation. [Fake camera](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/igvc_csharp/src/Subsystems/Simulator/FakeCameraSubsystem.cs), [fake GPS](https://github.com/SoonerRobotics/igvc_software_2026/blob/e87fba3f506df572b93363455b55a40bec2c6962/igvc_csharp/src/Subsystems/Simulator/FakeGpsSubsystem.cs).
+
+## Reuse and execution boundary
+
+The 2025 repository includes a top-level MIT license; preserve its notice for applicable reused code and retain separately licensed dependencies' notices. No top-level license was found in the inspected 2026 tree. Evaluate direct reuse per component instead of applying the 2025 license to another repository. No reuse permission question is needed to continue this planning or independent implementation. [2025 license](https://github.com/SoonerRobotics/autonav_software_2025/blob/f4f81334e46d2425f2225f7e29e29e8776366d15/LICENSE).
+
+Their installation scripts are hardware/team-specific, including external device dependencies and system setup. Do not run them as our bootstrap. Use our own explicit Jazzy package dependencies and isolate optional hardware SDKs from simulator builds. This review does not change our Unity + Jazzy + RViz2 + Nav2 objective or authorize starting implementation.

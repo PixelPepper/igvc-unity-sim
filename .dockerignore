@@ -1,0 +1,12 @@
+**
+!docker/
+!docker/**
+!ros2/
+!ros2/src/
+!ros2/src/**
+!ros2/config/
+!ros2/config/**
+!tools/
+!tools/*.py
+**/__pycache__/
+**/*.pyc

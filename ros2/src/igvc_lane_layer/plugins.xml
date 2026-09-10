@@ -1,0 +1,5 @@
+<library path="lane_layer">
+  <class name="igvc_lane_layer::LaneLayer" type="igvc_lane_layer::LaneLayer" base_class_type="nav2_costmap_2d::Layer">
+    <description>Camera-only marking with bounded observation lifetime and no lidar clearing.</description>
+  </class>
+</library>

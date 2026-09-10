@@ -1,0 +1,249 @@
+{
+  "schema_version": 1,
+  "source_urdf": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/urdf/R3-a URDF.urdf",
+  "source_urdf_sha256": "ad53e7c2ab160734e573b35649b0f16c0c28df284d53764d72f82bfc28e2574a",
+  "robot_name": "r3_a",
+  "package_name": "igvc_description",
+  "preserved": [
+    "physical geometry",
+    "mass",
+    "inertia tensor under basis transformation",
+    "joint types and physical placement"
+  ],
+  "frame_normalization": {
+    "rotation": "Rz(pi) in every link coordinate basis",
+    "physical_forward": "large drive wheels front (+X), casters rear (-X), user confirmed",
+    "name_mapping": {
+      "wheel_left": "wheel_right",
+      "wheel_right": "wheel_left",
+      "left_caster": "right_caster",
+      "right_caster": "left_caster",
+      "leftWheel": "rightWheel",
+      "rightWheel": "leftWheel",
+      "leftCaster": "rightCaster",
+      "rightCaster": "leftCaster"
+    },
+    "mesh_policy": "unchanged bytes; visual origins premultiplied by Rz(pi)",
+    "joint_policy": "transforms conjugated by Rz(pi); axes rotated",
+    "inertia_policy": "I_new = S I_source S^T; ixz and iyz negate",
+    "base_to_drive_axle_x_m": 0.25591,
+    "footprint_to_base_x_m": -0.25591
+  },
+  "limitations": [
+    "All dimensions, masses and inertias are uncalibrated export values; positive definiteness does not establish physical validity. STL has no intrinsic units; reported bounds assume metres before mesh scale and link transforms.",
+    "Provisional bounding boxes overapproximate geometry; wheel boxes are unsuitable for validated driving contacts.",
+    "Source asset reuse/license provenance is supplied by the user; redistribution rights are not inferred."
+  ],
+  "meshes": [
+    {
+      "source": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/meshes/base_link.STL",
+      "source_reference": "package://R3-a URDF/meshes/base_link.STL",
+      "output": "meshes/visual/base_link.stl",
+      "sha256": "3a7c662013c6e5e353bfdac63061c9a07752b279c617f8a9a4d30a5a6c27779a",
+      "triangles": 599564,
+      "bounds_m_assuming_urdf_units": {
+        "min": [
+          -0.3393816351890564,
+          -0.37782299518585205,
+          -0.1314934641122818
+        ],
+        "max": [
+          0.5798183679580688,
+          0.37782299518585205,
+          0.8199999928474426
+        ]
+      }
+    },
+    {
+      "source": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/meshes/left_caster.STL",
+      "source_reference": "package://R3-a URDF/meshes/left_caster.STL",
+      "output": "meshes/visual/left_caster.stl",
+      "sha256": "590dd275888095950218506330de5d31739298255ef65faaadd9100ce1ad9667",
+      "triangles": 114806,
+      "bounds_m_assuming_urdf_units": {
+        "min": [
+          -0.05714999884366989,
+          -0.058928001672029495,
+          -0.25065311789512634
+        ],
+        "max": [
+          0.14605000615119934,
+          0.06172199919819832,
+          0.006350007373839617
+        ]
+      }
+    },
+    {
+      "source": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/meshes/right_caster.STL",
+      "source_reference": "package://R3-a URDF/meshes/right_caster.STL",
+      "output": "meshes/visual/right_caster.stl",
+      "sha256": "9351793d034d3cbc70f12b955a0014c1c46848d596c5a75baca9f0ec1e971d17",
+      "triangles": 114806,
+      "bounds_m_assuming_urdf_units": {
+        "min": [
+          -0.05714999884366989,
+          -0.058928001672029495,
+          -0.25065311789512634
+        ],
+        "max": [
+          0.14605000615119934,
+          0.06172199919819832,
+          0.006350007373839617
+        ]
+      }
+    },
+    {
+      "source": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/meshes/wheel_left.STL",
+      "source_reference": "package://R3-a URDF/meshes/wheel_left.STL",
+      "output": "meshes/visual/wheel_left.stl",
+      "sha256": "5a6d6750a18f8d7a5fa596cb4eb5e1633a4ad2eb4acdb05b7f3593c19b1ae698",
+      "triangles": 29544,
+      "bounds_m_assuming_urdf_units": {
+        "min": [
+          -0.2295220047235489,
+          -0.07555320113897324,
+          -0.229405477643013
+        ],
+        "max": [
+          0.2295220047235489,
+          0.07174315303564072,
+          0.229405477643013
+        ]
+      }
+    },
+    {
+      "source": "/mnt/c/Users/brand/Downloads/OneDrive_2026-03-04/R3-a (Spring 2025)/R3-a URDF/meshes/wheel_right.STL",
+      "source_reference": "package://R3-a URDF/meshes/wheel_right.STL",
+      "output": "meshes/visual/wheel_right.stl",
+      "sha256": "964eaa9f51aa52842d71cb9290c9c2564d2a5cb3d4f8a566c16743595f028db1",
+      "triangles": 29544,
+      "bounds_m_assuming_urdf_units": {
+        "min": [
+          -0.2295220047235489,
+          -0.07174315303564072,
+          -0.229405477643013
+        ],
+        "max": [
+          0.2295220047235489,
+          0.07555320113897324,
+          0.229405477643013
+        ]
+      }
+    }
+  ],
+  "collisions": [
+    {
+      "link": "base_link",
+      "source_mesh": "package://R3-a URDF/meshes/base_link.STL",
+      "type": "provisional_visual_aabb",
+      "center_link_m": [
+        -0.12021836638450623,
+        -0.0,
+        0.3442532643675804
+      ],
+      "rpy": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.9192000031471252,
+        0.7556459903717041,
+        0.9514934569597244
+      ]
+    },
+    {
+      "link": "wheel_left",
+      "source_mesh": "package://R3-a URDF/meshes/wheel_right.STL",
+      "type": "provisional_visual_aabb",
+      "center_link_m": [
+        -0.0,
+        -0.0019050240516662598,
+        0.0
+      ],
+      "rpy": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.4590440094470978,
+        0.14729635417461395,
+        0.458810955286026
+      ]
+    },
+    {
+      "link": "wheel_right",
+      "source_mesh": "package://R3-a URDF/meshes/wheel_left.STL",
+      "type": "provisional_visual_aabb",
+      "center_link_m": [
+        -0.0,
+        0.0019050240516662598,
+        0.0
+      ],
+      "rpy": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.4590440094470978,
+        0.14729635417461395,
+        0.458810955286026
+      ]
+    },
+    {
+      "link": "left_caster",
+      "source_mesh": "package://R3-a URDF/meshes/right_caster.STL",
+      "type": "provisional_visual_aabb",
+      "center_link_m": [
+        -0.044450003653764725,
+        -0.0013969987630844116,
+        -0.12215155526064336
+      ],
+      "rpy": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.20320000499486923,
+        0.12065000087022781,
+        0.25700312526896596
+      ]
+    },
+    {
+      "link": "right_caster",
+      "source_mesh": "package://R3-a URDF/meshes/left_caster.STL",
+      "type": "provisional_visual_aabb",
+      "center_link_m": [
+        -0.044450003653764725,
+        -0.0013969987630844116,
+        -0.12215155526064336
+      ],
+      "rpy": [
+        0.0,
+        0.0,
+        0.0
+      ],
+      "size_m": [
+        0.20320000499486923,
+        0.12065000087022781,
+        0.25700312526896596
+      ]
+    }
+  ],
+  "lidar_mount": {
+    "configuration": "config/lidar_mount.json",
+    "configuration_sha256": "fa2c3c135fa982135b53499971db452f3f0e50a9c1d60e418c4e810232b9c3bf",
+    "mesh_sha256": "be20315df6e701b2ad9005b5c357d796887e6ee7d7aa64af3c959a77bd45bd8a",
+    "calibration": "Seat and XY fitted from CAD mounting holes/bosses. Scan height 44.6 mm from IGES laser-instance placement; provisional optical plane and azimuth, not hardware calibration."
+  },
+  "camera_mount": {
+    "configuration": "config/camera_mount.json",
+    "configuration_sha256": "7913cab01a4b9ceb0bbce15142029b62777f27f6025a2254285e2d4890824c28",
+    "mesh_sha256": "f0001fc2f85d5e90d7ec822b57635a98687e4c5be41546968a30f34feaa6ffe5",
+    "calibration": "CAD pin and bracket extracted; camera rear envelope centered on attachment surface. Optical frame uses RGB front-glass datum, not calibrated optical center. Zero is level. Simulation limits and 1 rad/s slew are not physical actuator specifications."
+  },
+  "canonical_sha256": "48ec8710ecbda668826bf9b9c9dbfb1ef6c2c3d42f475c45af92eff44a8c7f32"
+}

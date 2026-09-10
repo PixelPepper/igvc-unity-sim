@@ -1,0 +1,213 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="r3_a" xmlns:xacro="http://www.ros.org/wiki/xacro">
+  <!--Canonical normalized export. Collision boxes are provisional outer bounds, not validated wheel/contact geometry. No sensor mounts or base_footprint added.-->
+  <link name="base_link">
+    <inertial>
+      <origin xyz="0.037416177594850997 -0.0012743090117183201 0.047060864214616999" rpy="0 0 0" />
+      <mass value="81.1401446778104" />
+      <inertia ixx="0.728632085236677" ixy="1.32350753774596E-05" ixz="-0.022485961790775701" iyy="1.14289496966306" iyz="-7.48148338659214e-05" izz="1.53133782528754" />
+    </inertial>
+    <visual>
+      <origin xyz="-0 -0 0" rpy="0 0 3.1415926535897931" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/camera_mount/base_static_source_basis.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision name="provisional_bounds_0">
+      <origin xyz="-0.12021836638450623 -0 0.34425326436758041" rpy="0 0 0" />
+      <geometry>
+        <box size="0.91920000314712524 0.7556459903717041 0.95149345695972443" />
+      </geometry>
+    </collision>
+  </link>
+  <link name="wheel_left">
+    <inertial>
+      <origin xyz="1.7979609136242699e-05 -0.0035769797595725 -1.79796950559377e-05" rpy="0 0 0" />
+      <mass value="6.00743296352879" />
+      <inertia ixx="0.113142005853355" ixy="-3.62584231888751E-08" ixz="8.1856476746248695e-07" iyy="0.205661598440745" iyz="3.6267072903960198e-08" izz="0.113144233755394" />
+    </inertial>
+    <visual>
+      <origin xyz="-0 -0 0" rpy="0 0 3.1415926535897931" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/visual/wheel_right.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="provisional_bounds_0">
+      <origin xyz="-0 -0.0019050240516662598 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.45904400944709778 0.14729635417461395 0.458810955286026" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="leftWheel" type="continuous">
+    <origin xyz="0.25591000000000003 0.40526000000000001 -0.074450000000000002" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="wheel_left" />
+    <axis xyz="-0 1 0" />
+    <limit effort="10" velocity="10" />
+    <dynamics damping="0.5" friction="0.5" />
+  </joint>
+  <link name="wheel_right">
+    <inertial>
+      <origin xyz="-1.7979609126361799e-05 0.0035769797595726102 -1.7979695055792e-05" rpy="0 0 0" />
+      <mass value="6.00743296352881" />
+      <inertia ixx="0.113142005853356" ixy="-3.62584231895956E-08" ixz="-8.1856476739378803e-07" iyy="0.205661598440746" iyz="-3.6267072944762298e-08" izz="0.113144233755395" />
+    </inertial>
+    <visual>
+      <origin xyz="-0 -0 0" rpy="0 0 3.1415926535897931" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/visual/wheel_left.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision name="provisional_bounds_0">
+      <origin xyz="-0 0.0019050240516662598 0" rpy="0 0 0" />
+      <geometry>
+        <box size="0.45904400944709778 0.14729635417461395 0.458810955286026" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="rightWheel" type="continuous">
+    <origin xyz="0.25591000000000003 -0.40525 -0.074450000000000002" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="wheel_right" />
+    <axis xyz="-0 -1 0" />
+    <limit effort="10" velocity="10" />
+    <dynamics damping="0.5" friction="0.5" />
+  </joint>
+  <link name="left_caster">
+    <inertial>
+      <origin xyz="-0.039652255620055601 -5.81009720836689e-05 -0.13418182511891799" rpy="0 0 0" />
+      <mass value="1.85010410933945" />
+      <inertia ixx="0.00574331776783894" ixy="2.86835844426741E-08" ixz="-0.000128265973193796" iyy="0.00961425292360563" iyz="8.6762142845401104e-08" izz="0.00547082250538176" />
+    </inertial>
+    <visual>
+      <origin xyz="-0 -0 0" rpy="0 0 3.1415926535897931" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/visual/right_caster.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision name="provisional_bounds_0">
+      <origin xyz="-0.044450003653764725 -0.0013969987630844116 -0.12215155526064336" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20320000499486923 0.12065000087022781 0.25700312526896596" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="leftCaster" type="continuous">
+    <origin xyz="-0.52775000000000005 0.24612000000000001 -0.03635" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="left_caster" />
+    <axis xyz="-0 -0 1" />
+    <limit effort="10" velocity="10" />
+    <dynamics damping="0.1" friction="0.1" />
+  </joint>
+  <link name="right_caster">
+    <inertial>
+      <origin xyz="-0.039652255620043299 -5.8100972084779197e-05 -0.13418182511888299" rpy="0 0 0" />
+      <mass value="1.85010410933997" />
+      <inertia ixx="0.00574331776784025" ixy="2.86835844965072E-08" ixz="-0.00012826597319479501" iyy="0.00961425292360711" iyz="8.6762142935348604e-08" izz="0.00547082250538194" />
+    </inertial>
+    <visual>
+      <origin xyz="-0 -0 0" rpy="0 0 3.1415926535897931" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/visual/left_caster.stl" />
+      </geometry>
+      <material name="">
+        <color rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision name="provisional_bounds_0">
+      <origin xyz="-0.044450003653764725 -0.0013969987630844116 -0.12215155526064336" rpy="0 0 0" />
+      <geometry>
+        <box size="0.20320000499486923 0.12065000087022781 0.25700312526896596" />
+      </geometry>
+    </collision>
+  </link>
+  <joint name="rightCaster" type="continuous">
+    <origin xyz="-0.52775000000000005 -0.24612000000000001 -0.03635" rpy="0 0 0" />
+    <parent link="base_link" />
+    <child link="right_caster" />
+    <axis xyz="-0 -0 1" />
+    <limit effort="10" velocity="10" />
+    <dynamics damping="0.1" friction="0.1" />
+  </joint>
+  <link name="lidar_link">
+    <visual>
+      <origin xyz="0 0 -0.044600000000000001" rpy="0 0 0" />
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/lidar/rplidar_a1.stl" />
+      </geometry>
+      <material name="lidar_dark">
+        <color rgba="0.055 0.065 0.07 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="lidar_mount" type="fixed">
+    <parent link="base_link" />
+    <child link="lidar_link" />
+    <origin xyz="0.27002280000000001 0 0.33960000000000001" rpy="0 0 0" />
+  </joint>
+  <link name="camera_mount_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/camera_mount/moving_bracket_pivot_level.stl" />
+      </geometry>
+    </visual>
+  </link>
+  <joint name="camera_pitch_joint" type="revolute">
+    <parent link="base_link" />
+    <child link="camera_mount_link" />
+    <origin xyz="-0.34396835999999997 0 0.80000000000000004" rpy="0 0 0" />
+    <axis xyz="0 1 0" />
+    <limit lower="-0.5235987755982988" upper="0.5235987755982988" velocity="1" effort="1" />
+  </joint>
+  <link name="camera_link">
+    <visual>
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/camera/oak_d_pro.stl" />
+      </geometry>
+      <material name="camera_dark">
+        <color rgba="0.05 0.05 0.05 1" />
+      </material>
+    </visual>
+    <visual name="lens_rings">
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/camera/oak_d_pro_lens_rings.stl" />
+      </geometry>
+      <material name="lens_rings">
+        <color rgba="0.3 0.35 0.4 1" />
+      </material>
+    </visual>
+    <visual name="lens_glass">
+      <geometry>
+        <mesh filename="package://igvc_description/meshes/camera/oak_d_pro_lens_glass.stl" />
+      </geometry>
+      <material name="lens_glass">
+        <color rgba="0.03 0.08 0.14 1" />
+      </material>
+    </visual>
+  </link>
+  <joint name="camera_body_fixed" type="fixed">
+    <parent link="camera_mount_link" />
+    <child link="camera_link" />
+    <origin xyz="0.062900429999999993 0 0.0044780200000000001" rpy="0 0 0" />
+  </joint>
+  <link name="camera_color_optical_frame" />
+  <joint name="camera_optical_fixed" type="fixed">
+    <parent link="camera_link" />
+    <child link="camera_color_optical_frame" />
+    <origin xyz="0.01155045 0 0.0047637799999999996" rpy="-1.5707963267948966 0 -1.5707963267948966" />
+  </joint>
+</robot>

@@ -1,0 +1,7 @@
+{
+  "instructions": "Review command/reset logic for defects violating this contract: simulation runs at 1x; pose reset preserves clock and pause/stop latches; unpause, stop-clear and reset MUST require a NEW teleop message. Original acquisition stamps must survive repeats so delayed commands cannot be refreshed. Pre-clock commands may be ignored. Rejecting a stale/malformed message does not cancel another valid command; watchdog stops accepted commands after 0.5 seconds maximum. Cite concrete trigger, impact, file/line and minimal correction only for supported violations. No code changes. If none, answer in one sentence.",
+  "paths": [
+    "unity/IGVCSim/Assets/IGVC/Runtime/ProbeMotion.cs",
+    "ros2/src/igvc_sim_bridge/igvc_sim_bridge/probe_adapter.py"
+  ]
+}

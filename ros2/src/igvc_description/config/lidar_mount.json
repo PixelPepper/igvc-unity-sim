@@ -1,0 +1,14 @@
+{
+  "sensor": "RPLIDAR A1",
+  "parent_frame": "base_link",
+  "frame": "lidar_link",
+  "mesh": "meshes/lidar/rplidar_a1.stl",
+  "seat_xyz_m": [0.2700228, 0.0, 0.295],
+  "scan_height_above_feet_m": 0.0446,
+  "scan_xyz_m": [0.2700228, 0.0, 0.3396],
+  "visual_xyz_m": [0.0, 0.0, -0.0446],
+  "visual_rpy_rad": [0.0, 0.0, 0.0],
+  "motor_end": "negative X, toward rear",
+  "calibration": "Seat and XY fitted from CAD mounting holes/bosses. Scan height 44.6 mm from IGES laser-instance placement; provisional optical plane and azimuth, not hardware calibration.",
+  "evidence": "docs/LIDAR_MOUNT.md; meshes/lidar/provenance.json; artifacts/checks/lidar-mount-analysis.json"
+}

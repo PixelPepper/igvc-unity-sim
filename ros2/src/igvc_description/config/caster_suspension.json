@@ -1,0 +1,11 @@
+{
+  "effective_rear_mass_kg": 30.0,
+  "spring_n_per_m_each": 12000.0,
+  "damper_ns_per_m_each": 700.0,
+  "vertical_travel_m": 0.04,
+  "joint_limit_m": 0.045,
+  "front_half_track_m": 0.405255,
+  "rear_half_track_m": 0.24612,
+  "rear_distance_m": 0.85,
+  "calibration": "Provisional reduced-order bench values; no measured spring, damper, static sag, load distribution or caster contact calibration. Zero travel is the nominal CAD pose."
+}

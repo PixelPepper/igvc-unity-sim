@@ -1,0 +1,33 @@
+# Local artifacts and credentials
+/artifacts/
+# User-requested local reference import; upstream reuse terms unresolved.
+/unity/IGVCSim/Assets/IGVC/External/
+/unity/IGVCSim/Assets/IGVC/External.meta
+.env
+.env.*
+!.env.example
+*.dpapi
+/.cursor/
+
+# Unity generated output (preserve Assets .meta files and project settings)
+/unity/IGVCSim/[Ll]ibrary/
+/unity/IGVCSim/[Tt]emp/
+/unity/IGVCSim/[Oo]bj/
+/unity/IGVCSim/[Ll]ogs/
+/unity/IGVCSim/[Uu]ser[Ss]ettings/
+/unity/IGVCSim/[Bb]uild/
+/unity/IGVCSim/[Bb]uilds/
+/unity/IGVCSim/.vs/
+/unity/IGVCSim/*.csproj
+/unity/IGVCSim/*.sln
+# Regenerated from canonical ROS description by RobotInspectionBuild.
+/unity/IGVCSim/Assets/IGVC/GeneratedRobot/
+/unity/IGVCSim/Assets/IGVC/GeneratedRobot.meta
+
+# ROS/Python generated output
+/ros2/build/
+/ros2/install/
+/ros2/log/
+__pycache__/
+*.pyc
+.venv/

@@ -1,0 +1,218 @@
+{
+  "status": "passed",
+  "archive": "C:\\Users\\brand\\Downloads\\rp-lidar-a1-inventor-reassembly-1.snapshot.8.zip",
+  "archive_sha256": "48e84837dec52d20170cfae4982306f508df64e8cdb323f3bc4a4df2c6479b6c",
+  "sources": [
+    {
+      "path": "RP-lidar-A1\\stand_15x2.ipt",
+      "sha256": "e99bad6fa1094999245ffa6cc23ee35c76198d9ddd9ebcf9ddc1902bf303863d"
+    },
+    {
+      "path": "RP-lidar-A1\\connector-7pin-2_5.ipt",
+      "sha256": "0bc578c5ed08e6955881c91e9e6b3be167933d807d0f22709061846aa50f093f"
+    },
+    {
+      "path": "RP-lidar-A1\\motor-board.ipt",
+      "sha256": "6051af550273b2a532af0250d8301c698aa2f0c307832609d4d2970edc61fa34"
+    },
+    {
+      "path": "RP-lidar-A1\\bottom-lid.ipt",
+      "sha256": "b82092f7b9ca4b8000ab34ee10673c246f4ed61c5217fc0f50cea44f88bb2828"
+    },
+    {
+      "path": "RP-lidar-A1\\connector-1_25-3pin.ipt",
+      "sha256": "674b895a00adebd2a117d2bd77feb834e8aca90056ed905a21c5515613bf28b4"
+    },
+    {
+      "path": "RP-lidar-A1\\connector-1_25-4pin.ipt",
+      "sha256": "5475e8fc1c9072c6152277f1581670df283188d51388a3daa6fc11b075d4263f"
+    },
+    {
+      "path": "RP-lidar-A1\\laser-mount.ipt",
+      "sha256": "e2c8af2e8fe8b44dc98a4efeda3b9946fb31d91b137402b41d2ac439fd8637a7"
+    },
+    {
+      "path": "RP-lidar-A1\\base.ipt",
+      "sha256": "72e61881492450d896d0aa0b713b49dba4321f8fbae8113cb3e1a86586c67cc5"
+    },
+    {
+      "path": "RP-lidar-A1\\detector-mount.ipt",
+      "sha256": "e323651ae5a623462f1d2239388540c5536243bc54b3d9cb275b8c8a485283cf"
+    },
+    {
+      "path": "RP-lidar-A1\\head-base.ipt",
+      "sha256": "be46b8d4ba8457490b862f37d952756327fcfa2734249794696e8ef8ca1c6eac"
+    },
+    {
+      "path": "RP-lidar-A1\\detector.ipt",
+      "sha256": "699fc1c576d24b9738713b9769fd56781eb586d572b0d514f076c88c06b1b15d"
+    },
+    {
+      "path": "RP-lidar-A1\\Woodscrews_GB_TYPE136 M2X6-N.ipt",
+      "sha256": "83280318947e521b8ea115db180d4339383b4f7662b2ed98bfba3c99381bef56"
+    },
+    {
+      "path": "RP-lidar-A1\\head.ipt",
+      "sha256": "0c4896795edbf037fc0fb8acbcf4ef63eeb7564252baf69d98e398ae04fcbddb"
+    },
+    {
+      "path": "RP-lidar-A1\\devboard.ipt",
+      "sha256": "3709f75937e812def7698bd8cbfb23c271ab9da1a5b6bdacbfd70e1006bcd099"
+    },
+    {
+      "path": "RP-lidar-A1\\laser.ipt",
+      "sha256": "e82c0a99c91be4874b25035bfc9cc21c51ce38e05e8754d1dab11b5ce3c82821"
+    },
+    {
+      "path": "RP-lidar-A1\\motor.ipt",
+      "sha256": "1ed31bbbd0ef96637283a0d5ad907ae11ed575d6ff22bf236251a9120159d8d6"
+    },
+    {
+      "path": "RP-lidar-A1\\motherboard.ipt",
+      "sha256": "149f81a74cdfde57a8bb4283eb0e70525e06b3b19536cf37dff9273d96fa5956"
+    },
+    {
+      "path": "RP-lidar-A1\\RP-lidar-A1.iam",
+      "sha256": "530f0bf5d0831acb0f812189cccb135aa7b6c20845bd5b5ee7c48a4558206566"
+    },
+    {
+      "path": "RP-lidar-A1\\rubber.ipt",
+      "sha256": "657e37f932c726752446b2c26b02247e510a3790293e591db9c20baf4fd3557c"
+    },
+    {
+      "path": "RP-lidar-A1\\stand-8x2.ipt",
+      "sha256": "1f13af1985ab4dfe9119106b5aa6cb998ddd7bfb9f3b0090a3e696926f7274ed"
+    },
+    {
+      "path": "RP-lidar-A1\\wheel.ipt",
+      "sha256": "ef4df3c409c6d8c218667ed5dc26eedaea7b6439e472d0fce1e4088e2ab99d14"
+    },
+    {
+      "path": "RP-lidar-A1.png",
+      "sha256": "fcde7a88aed10b8c2fc34d4ad76708581a0d6f7e4827c0f1bde57d85b18da669"
+    },
+    {
+      "path": "RP-lidar-A1-bottom.png",
+      "sha256": "8111557289084d94fbd53792a4f9fb539cfc3e896cc63929202619d4fb4dace7"
+    },
+    {
+      "path": "RP-lidar-A1.igs",
+      "sha256": "0a006ec4e66d072285c2e93596c0b70b522e392ebb12991c187dae8fd7f46760"
+    }
+  ],
+  "iges_unit": "MM",
+  "ocp_version": "8.0.1.0.0",
+  "numpy_version": "2.5.3",
+  "simplifier_version": "0.1.12",
+  "tessellation": {
+    "linear_deflection_mm": 0.2,
+    "angular_deflection_rad": 0.4,
+    "triangles": 127350
+  },
+  "datum": {
+    "native_upright_axis": "+Y",
+    "origin_native_mm": [
+      -90.5532631996498,
+      719.6923217773438,
+      132.91757220044087
+    ],
+    "rotation_native_to_output": [
+      [
+        -1.0,
+        0.0,
+        0.0
+      ],
+      [
+        0.0,
+        0.0,
+        1.0
+      ],
+      [
+        0.0,
+        1.0,
+        0.0
+      ]
+    ],
+    "scale_to_metres": 0.001,
+    "output_origin": "rotor axis in XY, bottom mounting foot plane Z=0",
+    "output_orientation": "Z up; motor end toward -X",
+    "rotor_cap_circle_radius_mm": 33.61226102098813,
+    "fit_points": 44,
+    "fit_residual_mm": 8.301283763501033e-06,
+    "optical_zero_azimuth": null,
+    "provisional_scan_height_m": 0.04459999777511621,
+    "scan_height_basis": "Named laser IGES instance center; provisional, not calibrated optical center",
+    "component_instance_centers_native_mm": {
+      "laser": [
+        -96.1267591964847,
+        764.29231955246,
+        107.826214990866
+      ],
+      "detector": [
+        -93.3268808357013,
+        763.292319552459,
+        153.093632303553
+      ],
+      "head": [
+        -90.5532633910172,
+        773.192319552449,
+        132.917570962889
+      ]
+    }
+  },
+  "source_mesh_bounds_mm": [
+    [
+      -126.4432601928711,
+      719.6923217773438,
+      97.02778625488281
+    ],
+    [
+      -28.955467224121094,
+      773.1923217773438,
+      168.800048828125
+    ]
+  ],
+  "mesh": {
+    "name": "normalized-full-m.stl",
+    "source_sha256": "8275dc3347348d5ca8b1d7301a322414d735efc03ab28e5e8dbc7024fa300f8b",
+    "output_sha256": "be20315df6e701b2ad9005b5c357d796887e6ee7d7aa64af3c959a77bd45bd8a",
+    "source_triangles": 127284,
+    "target_triangles": 30000,
+    "output_triangles": 30000,
+    "removed_source_degenerate": 0,
+    "removed_output_degenerate": 0,
+    "source_bounds_m": [
+      [
+        -0.0615977942943573,
+        -0.03588978573679924,
+        0.0
+      ],
+      [
+        0.03588999807834625,
+        0.03588247671723366,
+        0.05350000038743019
+      ]
+    ],
+    "output_bounds_m": [
+      [
+        -0.06229021027684212,
+        -0.035998471081256866,
+        0.0
+      ],
+      [
+        0.03591592237353325,
+        0.03599345684051514,
+        0.054611049592494965
+      ]
+    ],
+    "max_bound_deviation_m": 0.0011110492050647736,
+    "finite_nondegenerate": true,
+    "valid_unit_normals": true
+  },
+  "output": "meshes/lidar/rplidar_a1.stl",
+  "limitations": [
+    "CAD reassembly provenance; no hardware calibration or redistribution license inferred.",
+    "True optical scan-plane height and azimuth are uncalibrated; provisional height uses CAD laser instance placement.",
+    "Decimated visual mesh is not exact topology or collision geometry; bounds checks do not prove full surface fidelity."
+  ]
+}

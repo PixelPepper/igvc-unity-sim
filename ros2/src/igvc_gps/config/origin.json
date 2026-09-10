@@ -1,0 +1,9 @@
+{
+  "latitude": 42.0,
+  "longitude": -83.0,
+  "altitude": 0.0,
+  "world_frame": "odom",
+  "axes": "x_east_y_north_z_up",
+  "model": "synthetic_ideal_from_odometry",
+  "noise_stddev_m": 0.0
+}
