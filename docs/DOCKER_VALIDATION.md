@@ -1,7 +1,7 @@
 # Docker validation — 2026-09-09
 
-Status: Docker live integration passed on this host; clean-checkout validation and
-upload remain in progress. Native-WSL course results are not Docker evidence.
+Status: Docker live integration, clean-checkout build/start and source upload
+passed on this host. Native-WSL course results are not Docker evidence.
 
 ## Environment and build
 
@@ -49,9 +49,29 @@ TF without assuming flat ground or obstacles at an arbitrary pose. It does not
 establish geometric sensor calibration. The first control-test attempt used an
 insufficient fixed discovery wait; it now waits for odometry with a30s deadline.
 
-## Remaining gates
+## Clean checkout, restart and publication
 
-Restart; GitHub source upload and clean checkout.
+- Clean local Git checkout at `artifacts/clean-checkout` started with no Unity
+  Library, generated robot, course import or player. Its own pinned course download
+  and `unity-build` passed the same 3/6/70/12 render/depth/ramp/caster checks.
+- Its Docker image built from checkout source, independent of the native ROS
+  overlay. After stopping/removing the first Compose session, its own player and
+  container started and passed environment/mesh and all seven live transport checks.
+- Two reporting regression tests passed: restart archives/removes stale Docker
+  run evidence; failed audit returns nonzero. Tests use temporary fixtures.
+- Source pushed to private `PixelPepper/igvc-unity-sim`, branch `main`, using the
+  existing Git credential-manager login. No new credential was required.
+- Small [audit](evidence/docker/course-audit.json), [transport](evidence/docker/docker-integration.json),
+  [camera](evidence/docker/docker-camera.json) and [control](evidence/docker/docker-controls.json)
+  reports are tracked. Full trajectories, images, builds and original inputs are
+  excluded. Build dependencies may update within Jazzy; the base manifest and
+  Unity bridge/source asset revisions are pinned, not every apt package version.
+
+The full 82-checkpoint mission was exercised on the first container build; the
+clean-checkout repeat verified build/start/transport after report-handling fixes,
+not another full mission. No second physical computer or Docker Desktop backend
+was tested. WSLg software rendering and an activated Unity license were available
+on this Windows host.
 
 Local detailed evidence is retained in ignored artifacts and build logs. This
 document will record actual outcomes; startup or historical runs do not count.

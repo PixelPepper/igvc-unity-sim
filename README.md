@@ -2,7 +2,7 @@
 
 A Windows Unity simulator with ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity renders RGB and ideal depth and simulates lidar, robot motion, and a seeded obstacle course.
 
-The Docker-backed seed-2027 run completed **82/82 checkpoints**, including the ramp and return to start, and passed all 12 course-audit checks. Container sensor/TF, camera control, terminal motion/timeout/E-stop checks and RViz rendering passed on the development host. Clean-checkout validation is pending. See the [delivery plan](docs/DOCKER_PLAN.md) and [validation record](docs/DOCKER_VALIDATION.md). Earlier native-WSL results are retained separately in [history](docs/HISTORY.md).
+The Docker-backed seed-2027 run completed **82/82 checkpoints**, including the ramp and return to start, and passed all 12 course-audit checks. Container sensor/TF, camera control, terminal motion/timeout/E-stop checks and RViz rendering passed on the development host. A clean checkout independently downloaded its course assets, built the image and Windows player, and passed environment and live transport checks after restart. See the [delivery plan](docs/DOCKER_PLAN.md) and [validation record](docs/DOCKER_VALIDATION.md). Earlier native-WSL results are retained separately in [history](docs/HISTORY.md).
 
 ## Prerequisites
 
@@ -39,9 +39,11 @@ wsl -d Ubuntu-24.04 -u root -- docker compose version
 
 The wrapper invokes Docker as root in this WSL distribution. Confirm both version commands succeed before building.
 
+This configuration supports one simulator session at a time, including across checkouts: Compose uses the fixed project name `igvc-sim` and TCP port 10000.
+
 ## Download and build
 
-The repository is private; sign into GitHub with an account that has access. Source upload is in progress.
+The [repository](https://github.com/PixelPepper/igvc-unity-sim) is private; sign into GitHub with an account that has access.
 
 ```powershell
 git clone https://github.com/PixelPepper/igvc-unity-sim.git
