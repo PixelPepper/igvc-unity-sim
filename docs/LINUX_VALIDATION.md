@@ -41,10 +41,32 @@ checksum and Authenticode publisher were checked before installation.
 - Windows rebuild via `tools/docker.ps1 unity-build` after the Linux target switch
   exited0 and produced the Windows player. Windows wrapper selection remains Win64.
 - Scoped-cookie construction and rejection of an unauthenticated native display
-  passed mocked tests. An additional authenticated Xvfb integration attempt could
-  not create its Unix socket on the WSLg-provided `/tmp/.X11-unix` mount. That attempt
-  failed before starting the simulator; it is not counted as a successful X11 test.
-- Actual display validation used WSLg's cookieless local socket, as explicitly
-  supported by the launcher. Native authenticated desktop access remains to be
-  validated on a native host, alongside Linux Editor/license activation and GPU
-  driver combinations. No native-desktop certification is claimed.
+  passed mocked tests. The original Xvfb attempt could not create its Unix socket
+  on WSLg's read-only socket mount; the isolated test below resolved that fixture
+  limitation without changing the host display mount.
+- Linux Editor/license activation and physical desktop/GPU driver combinations
+  remain untested. No native-desktop certification is claimed.
+
+## Authenticated X11 integration (September 10, 2026)
+
+A private mount namespace provided a writable X11 socket directory to Xvfb
+`:90` (2560x1600, TCP disabled, MIT-MAGIC-COOKIE authentication). The Docker bind
+source used `IGVC_X11_SOCKET_DIR` to reach that same directory from the daemon.
+Unity and the launcher ran as the normal user; root was used only to isolate the
+test mount. WSLg's original socket mount remained read-only and unchanged.
+
+- A client with an empty authority file was rejected with `Authorization required`.
+- The launcher's scoped cookie admitted RViz in the non-root ROS container.
+- All seven live integration checks passed over 20 seconds: RGB 10.79 Hz,
+  depth 7.95 Hz, scan 4.50 Hz, odometry 45.52 Hz; no payload errors, 215 RGB
+  and 159 depth/CameraInfo pairs. See [report](evidence/linux/xauth-integration.json).
+- [RViz capture](evidence/linux/xauth-rviz.png) was visually checked: Global Status
+  OK, robot, costmaps, RGB and metric depth rendered. The previously documented
+  first-map GLSL warning still occurred. Software rendering was used.
+- All 15 launcher tests passed again; session cleanup removed the player,
+  container and virtual display. The full course was not repeated for this
+  display-only check; the earlier 82/82 result remains the course evidence.
+
+The first isolated capture attempt used a screen smaller than the RViz window and
+failed `X_GetImage`; enlarging the virtual screen allowed the capture to succeed.
+This verifies authenticated virtual X11 integration, not physical GPU behavior.

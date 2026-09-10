@@ -69,6 +69,12 @@ separately. The ROS container uses software rendering for RViz; Unity uses the h
 graphics driver. Stop a session from the checkout that started it before switching
 checkouts or platforms. Only one session can own TCP port 10000.
 
+Authenticated X11 access was also tested with a cookie-protected virtual display:
+Unity, container RViz and all seven live transport checks passed; a client without
+the cookie was rejected. Normal desktops use `/tmp/.X11-unix`. For an isolated
+display fixture, `IGVC_X11_SOCKET_DIR` can override the Docker bind source; the
+same sockets must still be visible to the host player at `/tmp/.X11-unix`.
+
 Native Linux Editor installation/build and native desktop GPU combinations were
 not exercised on this Windows host. The Linux executable was cross-built with the
 matching Unity version and exercised on Linux; this is not a claim of native

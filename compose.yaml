@@ -16,5 +16,5 @@ services:
       LIBGL_ALWAYS_SOFTWARE: "1"
     volumes:
       - ./artifacts:/opt/igvc/artifacts
-      - /tmp/.X11-unix:/tmp/.X11-unix:ro
+      - ${IGVC_X11_SOCKET_DIR:-/tmp/.X11-unix}:/tmp/.X11-unix:ro
     stop_grace_period: 20s
