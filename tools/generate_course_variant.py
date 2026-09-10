@@ -284,14 +284,14 @@ def main():
     parser.add_argument('--difficulty',choices=('easy','normal','hard'),default='normal')
     args=parser.parse_args();course,mission=generate(args.seed,args.difficulty)
     output=ROOT/f'artifacts/courses/seed-{args.seed}';output.mkdir(parents=True,exist_ok=True)
-    if (output/'run.json').exists():
+    if (output/'run.json').exists() or (output/'docker-run.json').exists():
         import datetime, shutil
         archive=output/('previous-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
         archive.mkdir()
-        for name in ('course.json','mission.json','overview.png','run.json','validation.json','sensors.json','unity.log','hazard-rgb.png','hazard-mask.png'):
+        for name in ('course.json','mission.json','overview.png','run.json','docker-run.json','validation.json','sensors.json','unity.log','docker-unity.log','hazard-rgb.png','hazard-mask.png'):
             if (output/name).is_file():shutil.copy2(output/name,archive/name)
         # The previous run is retained in the archive; a new layout has no run yet.
-        for name in ('run.json','validation.json','sensors.json'):
+        for name in ('run.json','docker-run.json','validation.json','sensors.json'):
             if (output/name).is_file():(output/name).unlink()
     (output/'course.json').write_text(json.dumps(course,indent=2)+'\n')
     import hashlib

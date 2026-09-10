@@ -139,6 +139,7 @@ def main():
     output.write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps({k:report[k] for k in ('passed','checks','minimum_sampled_clearance',
          'minimum_conservative_swept_clearance','maximum_chord_speed_mps','line_blocks')},indent=2))
+    return 0 if report['passed'] else 1
 
 
-if __name__=='__main__':main()
+if __name__=='__main__':raise SystemExit(main())
