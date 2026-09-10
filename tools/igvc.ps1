@@ -69,7 +69,7 @@ switch ($Action) {
         & wsl -d Ubuntu-24.04 -- bash "$linuxRoot/tools/build_ros.sh"
         if ($LASTEXITCODE -ne 0) { throw 'ROS build failed' }
         $terrainLog=Join-Path $logs 'terrain-body-unity-build.log'
-        $process=Start-Process -FilePath $Unity -ArgumentList "-batchmode -quit -projectPath `"$project`" -executeMethod TerrainBenchBuild.Build -logFile `"$terrainLog`"" -WindowStyle Hidden -PassThru
+        $process=Start-Process -FilePath $Unity -ArgumentList "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod TerrainBenchBuild.Build -logFile `"$terrainLog`"" -WindowStyle Hidden -PassThru
         $process.WaitForExit()
         if ($process.ExitCode -ne 0) { throw 'Terrain bench build failed' }
     }
@@ -165,7 +165,7 @@ switch ($Action) {
         & wsl -d Ubuntu-24.04 -- bash "$linuxRoot/tools/build_ros.sh"
         if ($LASTEXITCODE -ne 0) { throw 'ROS build failed' }
         $buildLog = Join-Path $logs 'sooner-course-build.log'
-        $arguments = "-batchmode -quit -projectPath `"$project`" -executeMethod GroundRenderChecks.BuildCourse -logFile `"$buildLog`""
+        $arguments = "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod GroundRenderChecks.BuildCourse -logFile `"$buildLog`""
         $process = Start-Process -FilePath $Unity -ArgumentList $arguments -WindowStyle Hidden -PassThru
         $process.WaitForExit()
         if ($process.ExitCode -ne 0) { throw "Course build failed; inspect $buildLog" }
@@ -188,7 +188,7 @@ switch ($Action) {
         & wsl -d Ubuntu-24.04 -- bash "$linuxRoot/tools/build_ros.sh"
         if ($LASTEXITCODE -ne 0) { throw 'ROS build failed' }
         $buildLog = Join-Path $logs 'r3a-drive-build.log'
-        $arguments = "-batchmode -quit -projectPath `"$project`" -executeMethod R3aDriveBuild.Build -logFile `"$buildLog`""
+        $arguments = "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod R3aDriveBuild.Build -logFile `"$buildLog`""
         $process = Start-Process -FilePath $Unity -ArgumentList $arguments -WindowStyle Hidden -PassThru
         $process.WaitForExit()
         if ($process.ExitCode -ne 0) { throw "R3-a drive build failed; inspect $buildLog" }
@@ -209,7 +209,7 @@ switch ($Action) {
         & wsl -d Ubuntu-24.04 -- bash "$linuxRoot/tools/build_ros.sh"
         if ($LASTEXITCODE -ne 0) { throw 'ROS description build failed' }
         $robotBuildLog = Join-Path $logs 'robot-build.log'
-        $arguments = "-batchmode -quit -projectPath `"$project`" -executeMethod RobotInspectionBuild.Build -logFile `"$robotBuildLog`""
+        $arguments = "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod RobotInspectionBuild.Build -logFile `"$robotBuildLog`""
         $process = Start-Process -FilePath $Unity -ArgumentList $arguments -WindowStyle Hidden -PassThru
         $process.WaitForExit()
         if ($process.ExitCode -ne 0) { throw "Robot inspection build failed; inspect $robotBuildLog" }
@@ -248,7 +248,7 @@ switch ($Action) {
         if ($LASTEXITCODE -ne 0) { throw 'ROS build failed' }
         foreach ($method in @('ProbeChecks.Run','ProbeBuild.Build')) {
             $buildLog = Join-Path $logs "$method.log"
-            $arguments = "-batchmode -quit -projectPath `"$project`" -executeMethod $method -logFile `"$buildLog`""
+            $arguments = "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod $method -logFile `"$buildLog`""
             $process = Start-Process -FilePath $Unity -ArgumentList $arguments -WindowStyle Hidden -PassThru
             $process.WaitForExit() # Wait for Editor, not persistent licensing descendants.
             if ($process.ExitCode -ne 0) { throw "Unity $method failed; inspect $buildLog" }

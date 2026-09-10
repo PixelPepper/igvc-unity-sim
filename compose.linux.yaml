@@ -1,0 +1,15 @@
+# Native Linux: run ROS/RViz as the desktop user and provide only an X cookie file.
+services:
+  ros:
+    user: "${IGVC_UID:?Use tools/docker.sh}:${IGVC_GID:?Use tools/docker.sh}"
+    environment:
+      HOME: /tmp/igvc-home
+      ROS_LOG_DIR: /tmp/igvc-ros-logs
+      XAUTHORITY: /tmp/igvc.xauth
+    volumes:
+      - type: bind
+        source: ${IGVC_XAUTHORITY:?Use tools/docker.sh}
+        target: /tmp/igvc.xauth
+        read_only: true
+        bind:
+          create_host_path: false

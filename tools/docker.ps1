@@ -34,7 +34,7 @@ switch($Action){
         New-Item -ItemType Directory -Force (Join-Path $root 'artifacts/logs') | Out-Null
         $log=Join-Path $root 'artifacts/logs/docker-unity-build.log'
         $project=Join-Path $root 'unity/IGVCSim'
-        $proc=Start-Process -FilePath $Unity -ArgumentList "-batchmode -quit -projectPath `"$project`" -executeMethod GroundRenderChecks.BuildCourse -logFile `"$log`"" -WindowStyle Hidden -PassThru
+        $proc=Start-Process -FilePath $Unity -ArgumentList "-batchmode -quit -buildTarget Win64 -projectPath `"$project`" -executeMethod GroundRenderChecks.BuildCourse -logFile `"$log`"" -WindowStyle Hidden -PassThru
         $proc.WaitForExit()
         if($proc.ExitCode -ne 0 -or !(Test-Path -LiteralPath $player)){throw "Unity build failed; inspect $log"}
     }

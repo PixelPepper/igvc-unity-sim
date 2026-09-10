@@ -113,10 +113,20 @@ public static class R3aDriveBuild
 
     public static void BuildScene(string scene, string relativeOutput)
     {
+        var target = EditorUserBuildSettings.activeBuildTarget;
+        if (target == BuildTarget.StandaloneLinux64)
+        {
+            var directory = Path.GetDirectoryName(relativeOutput) + "-linux";
+            relativeOutput = Path.Combine(directory, Path.GetFileNameWithoutExtension(relativeOutput) + ".x86_64");
+        }
+        else if (target != BuildTarget.StandaloneWindows64)
+            throw new Exception("Select -buildTarget Win64 or Linux64 before building R3-a.");
+        if (!BuildPipeline.IsBuildTargetSupported(BuildTargetGroup.Standalone, target))
+            throw new Exception("Install Unity build support for " + target);
         string output = Path.GetFullPath(Path.Combine(Application.dataPath, "../../../artifacts/", relativeOutput));
         Directory.CreateDirectory(Path.GetDirectoryName(output));
         var result = BuildPipeline.BuildPlayer(new BuildPlayerOptions { scenes = new[] { scene },
-            locationPathName = output, target = BuildTarget.StandaloneWindows64, options = BuildOptions.Development });
+            locationPathName = output, target = target, options = BuildOptions.Development });
         if (result.summary.result != BuildResult.Succeeded) throw new Exception("R3-a drive build failed");
     }
     [Serializable] private class LidarEvidence

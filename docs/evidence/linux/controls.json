@@ -1,0 +1,10 @@
+{
+  "passed": true,
+  "checks": {
+    "velocity_command_moves_robot": true,
+    "command_expiration_stops": true,
+    "estop_overrides_fresh_command": true,
+    "clear_estop_does_not_rearm": true
+  },
+  "distance_m": 0.2430000000000006
+}

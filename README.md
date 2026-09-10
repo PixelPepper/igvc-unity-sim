@@ -1,10 +1,80 @@
 # IGVC Unity Simulation
 
-A Windows Unity simulator with ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity renders RGB and ideal depth and simulates lidar, robot motion, and a seeded obstacle course.
+A Unity simulator with Windows and Linux launchers, ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity runs on the host, rendering RGB and ideal depth and simulating lidar, robot motion, and a seeded obstacle course.
+
+Use [Linux setup](#linux-setup-ubuntu-2404-x86_64) below or [Windows setup](#windows-prerequisites). Both Windows and Linux players completed the 82-checkpoint course. Linux runtime testing used Ubuntu under WSL2/WSLg, not a second native Linux desktop; see [Linux validation](docs/LINUX_VALIDATION.md).
 
 The Docker-backed seed-2027 run completed **82/82 checkpoints**, including the ramp and return to start, and passed all 12 course-audit checks. Container sensor/TF, camera control, terminal motion/timeout/E-stop checks and RViz rendering passed on the development host. A clean checkout independently downloaded its course assets, built the image and Windows player, and passed environment and live transport checks after restart. See the [delivery plan](docs/DOCKER_PLAN.md) and [validation record](docs/DOCKER_VALIDATION.md). Earlier native-WSL results are retained separately in [history](docs/HISTORY.md).
 
-## Prerequisites
+## Linux setup (Ubuntu 24.04 x86_64)
+
+Use a graphical desktop with X11 or XWayland and an OpenGL-capable graphics driver.
+The launcher requires a local `DISPLAY`; an SSH-only shell without a desktop is not
+sufficient for the rendered sensors. Unity lists Ubuntu 24.04 in its
+[Unity 6.3 requirements](https://docs.unity3d.com/6000.3/Documentation/Manual/system-requirements.html).
+
+Install Docker and preparation tools:
+
+```bash
+sudo apt update
+sudo apt install -y docker.io docker-compose-v2 git gh python3 xauth
+sudo systemctl enable --now docker
+sudo usermod -aG docker "$USER"
+```
+
+Log out and back in so group membership applies, then confirm `docker info` works
+without sudo. Run the launcher as your desktop user. The Linux Compose overlay
+runs ROS/RViz with your UID/GID so generated files remain owned by you.
+
+Install [Unity Hub](https://unity.com/download) for Linux, sign in and activate your
+license, then install **Unity 6000.3.23f1 with Linux Build Support (Mono)**. Close the
+project in the Editor before building. Adjust `UNITY_EDITOR` to the actual path.
+No host ROS installation or Windows/WSL executable is needed by these commands.
+
+```bash
+# Authenticate for this private repository if Git is not already configured.
+gh auth login
+gh auth setup-git
+git clone https://github.com/PixelPepper/igvc-unity-sim.git
+cd igvc-unity-sim
+export UNITY_EDITOR="$HOME/Unity/Hub/Editor/6000.3.23f1/Editor/Unity"
+bash tools/docker.sh prepare-unity
+bash tools/docker.sh build
+bash tools/docker.sh unity-build
+bash tools/docker.sh start --seed 2027 --difficulty normal
+bash tools/docker.sh run python3 docker/verify_environment.py
+bash tools/docker.sh run python3 docker/verify_integration.py
+bash tools/docker.sh rviz
+```
+
+In another terminal in the repository:
+
+```bash
+bash tools/docker.sh course --seed 2027 --difficulty normal
+bash tools/docker.sh audit --seed 2027 --difficulty normal
+bash tools/docker.sh status
+bash tools/docker.sh stop
+```
+
+`bash tools/docker.sh shell` opens an interactive ROS terminal; `run` executes a
+single command. For other variants, use the same seed and difficulty for `start`,
+`course` and `audit`. The Linux player is
+`artifacts/build-course-linux/IGVCCourse.x86_64`; keep its entire build directory
+together. The build log is `artifacts/logs/docker-unity-build-linux.log`.
+
+RViz uses a scoped Xauthority cookie and the host X11 socket. On Wayland, enable
+XWayland; if the launcher cannot find a cookie, set `XAUTHORITY` to your desktop's
+authority file. It does not run `xhost +`. WSLg's local cookieless display is handled
+separately. The ROS container uses software rendering for RViz; Unity uses the host
+graphics driver. Stop a session from the checkout that started it before switching
+checkouts or platforms. Only one session can own TCP port 10000.
+
+Native Linux Editor installation/build and native desktop GPU combinations were
+not exercised on this Windows host. The Linux executable was cross-built with the
+matching Unity version and exercised on Linux; this is not a claim of native
+desktop certification. See the [test record](docs/LINUX_VALIDATION.md).
+
+## Windows prerequisites
 
 - Windows with WSL2, the `Ubuntu-24.04` distribution, and WSLg for RViz.
 - Unity Hub and **Unity 6000.3.23f1**, with Windows build support and an activated Unity license. Use the same editor version as this project.
