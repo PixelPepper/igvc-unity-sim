@@ -13,10 +13,10 @@ from igvc_gps.geodesy import LocalFrame
 
 MARGIN = .2
 BODY_RADIUS = math.hypot(1.1, .5)
-DEFAULT_RAMP = dict(id='ramp-001', x=2., y=0., yaw=0., width=3.,
+DEFAULT_RAMP = dict(id='ramp-001', x=18., y=44.5, yaw=math.pi, width=3.,
                     rise_length=3., deck_length=2., height=.4)
-RAMP_CHECKPOINTS = ((1., 'approach'), (2., 'start'), (5., 'deck_start'),
-                    (7., 'deck_end'), (10., 'exit'), (11., 'departure'))
+RAMP_CHECKPOINTS = ((19., 'approach'), (18., 'start'), (15., 'deck_start'),
+                    (13., 'deck_end'), (10., 'exit'), (9., 'departure'))
 
 
 def point_segment(p, a, b):
@@ -115,9 +115,9 @@ def sweep_bounds(points,yaws):
 
 
 def lane_half_width(p):
-    # Opening ramp paint lies fully on the 3 m surface: center at +/-1.44 m.
-    if abs(p[1])>.7 or not 0<=p[0]<=12:return 3.
-    blend=min(1.,p[0]/2,(12-p[0])/2)
+    # Far-side ramp paint lies fully on its 3 m surface.
+    if abs(p[1]-44.5)>.7 or not 8<=p[0]<=20:return 3.
+    blend=min(1.,(p[0]-8)/2,(20-p[0])/2)
     blend=blend*blend*(3-2*blend)
     return 3.-1.56*blend
 
@@ -161,26 +161,31 @@ def generate(seed=2027,difficulty='normal',base=None):
             x,y=p[0]-math.sin(yaw)*offset,p[1]+math.cos(yaw)*offset
             start_blend=max(0.,min(1.,(near-3)/5));start_blend=start_blend**2*(3-2*start_blend)
             opening=max(0.,min(1.,(s-12)/12));opening=opening*opening*(3-2*opening)
-            shaped.append((x,y*start_blend*opening))
+            y=y*start_blend*opening
+            if y>38:
+                flat=max(0.,min(1.,(x-4)/4,(24-x)/4))
+                flat=flat*flat*(3-2*flat)
+                y=y*(1-flat)+44.5*flat
+            shaped.append((x,y))
         points,route_modes=resample(shaped,modes)
         yaw=headings(points)
         good,boundary_margin=check_boundary(points,yaw,route_modes)
         if good:break
     else:raise ValueError('Base geometry cannot provide the required painted-boundary clearance')
-    # Insert exact opening anchors into the dense route; no nearest-point jumps.
+    # Insert exact far-side ramp anchors into the dense route.
     for x, _ in RAMP_CHECKPOINTS:
         candidates=[i for i,(a,b) in enumerate(zip(points,points[1:]))
-                    if a[0] <= x <= b[0] and abs(a[1])<1e-9 and abs(b[1])<1e-9]
-        if not candidates:raise ValueError('Opening cannot traverse the default ramp center')
+                    if b[0] <= x <= a[0] and abs(a[1]-44.5)<1e-9 and abs(b[1]-44.5)<1e-9]
+        if not candidates:raise ValueError('Far side cannot traverse the ramp center')
         i=candidates[0]
-        if math.dist(points[i],(x,0.))>1e-8 and math.dist(points[i+1],(x,0.))>1e-8:
-            points.insert(i+1,(x,0.));route_modes.insert(i+1,route_modes[i])
+        if math.dist(points[i],(x,44.5))>1e-8 and math.dist(points[i+1],(x,44.5))>1e-8:
+            points.insert(i+1,(x,44.5));route_modes.insert(i+1,route_modes[i])
     yaw=headings(points)
     ss=arcs(points); sweep=sweep_bounds(points,yaw)
     ramp=dict(DEFAULT_RAMP)
     reserved=box(ramp['x'],ramp['y'],ramp['yaw'],-1.,9.,-2.,2.)
     for p in points:
-        if 2 <= p[0] <= 10 and abs(p[1])<2 and abs(p[1])>=.65:
+        if 10 <= p[0] <= 18 and abs(p[1]-44.5)<2 and abs(p[1]-44.5)>=.65:
             raise ValueError('Route enters ramp reservation away from center')
     counts={'easy':(16,4,1),'normal':(24,8,2),'hard':(36,12,3)}[difficulty]
     obstacles=[]; obstacle_margins=[]
@@ -198,12 +203,22 @@ def generate(seed=2027,difficulty='normal',base=None):
                        width=.25 if kind=='barricade' else diameter,
                        height=.8 if kind=='barricade' else (.9 if kind=='barrel' else 0.),
                        depth=rng.uniform(.12,.25) if kind=='pothole' else 0.)
+                if kind=='barrel':
+                    # Sample the whole enclosed field and lane corridor, not two
+                    # narrow bands beside the centerline. Keep a clear guide route.
+                    o['x']=rng.uniform(min(p[0] for p in points)-2.5,max(p[0] for p in points)+2.5)
+                    o['y']=rng.uniform(min(p[1] for p in points)-2.5,max(p[1] for p in points)+2.5)
+                    inside=False
+                    for a,b in zip(points,points[1:]):
+                        if (a[1]>o['y'])!=(b[1]>o['y']) and o['x']<(b[0]-a[0])*(o['y']-a[1])/(b[1]-a[1])+a[0]:inside=not inside
+                    if not inside and min(point_segment((o['x'],o['y']),a,b) for a,b in zip(points,points[1:]))>2.5:continue
+                    if math.hypot(o['x'],o['y'])<3:continue
                 # Include the full synthetic pothole cutout/rim, not just bowl diameter.
                 if kind=='barricade':
                     if polygon_distance(reserved,obstacle_box(o))<=0:continue
                 else:
                     radius=max(o['length'],o['width'])/2+.85 if kind=='pothole' else o['width']/2
-                    reservation=dict(x=6.,y=0.,yaw=0.,length=10.,width=4.)
+                    reservation=dict(x=14.,y=44.5,yaw=math.pi,length=10.,width=4.)
                     if point_box((o['x'],o['y']),reservation)<=radius:continue
                 if any(obstacle_distance(o,b)<MARGIN for b in obstacles):continue
                 conservative=math.inf
@@ -224,21 +239,35 @@ def generate(seed=2027,difficulty='normal',base=None):
                                 obstacle_conservative_clearance_m=min(obstacle_margins),
                                 clearance_model='Oriented rectangles/circles; endpoint distance minus translation+angular sweep bound. No contact physics.'))
     frame=LocalFrame(base['origin']);goals=[]
-    count=math.ceil(ss[-1]/2)
-    for j in range(1,count+1):
-        target=ss[-1]*j/count;i=min(range(len(ss)),key=lambda k:abs(ss[k]-target));p=points[i]
+    # Keep sparse straight-leg goals; split curved legs before their chord cuts
+    # more than 0.6 m from the dense route. Preserve surface-mode transitions.
+    selected=[];start=0
+    while start<len(points)-1:
+        end=start+1
+        while end+1<len(points) and ss[end+1]-ss[start]<=8.:
+            if route_modes[end]!=route_modes[start]:break
+            if max(point_segment(p,points[start],points[end+1]) for p in points[start:end+2])>.6:break
+            a,b=points[start],points[end+1]
+            angle=math.atan2(b[1]-a[1],b[0]-a[0]);steps=max(1,math.ceil(math.dist(a,b)/.2))
+            if any(body_clearance((a[0]+(b[0]-a[0])*k/steps,a[1]+(b[1]-a[1])*k/steps),angle,o)<MARGIN+.1
+                   for o in obstacles if point_segment((o['x'],o['y']),a,b)<3
+                   for k in range(steps+1)):break
+            end+=1
+        selected.append(end);start=end
+    for j,i in enumerate(selected,1):
+        p=points[i]
         lat,lon,alt=frame.to_geodetic(*p)
         goals.append(dict(name=f'variant_{j:03}',latitude=lat,longitude=lon,altitude=alt,yaw=yaw[i],
                           odom_xy=p,route_s_m=ss[i],mode=route_modes[i]))
     # Remove nearby regular samples, then merge required ramp poses by route arc.
     critical=[]
     for x,label in RAMP_CHECKPOINTS:
-        i=next(i for i,p in enumerate(points) if math.dist(p,(x,0.))<1e-8)
-        lat,lon,alt=frame.to_geodetic(x,0.)
+        i=next(i for i,p in enumerate(points) if math.dist(p,(x,44.5))<1e-8)
+        lat,lon,alt=frame.to_geodetic(x,44.5)
         critical.append(dict(name='ramp_001_'+label,latitude=lat,longitude=lon,altitude=alt,
-                             yaw=0.,odom_xy=(x,0.),route_s_m=ss[i],mode=route_modes[i],
+                             yaw=math.pi,odom_xy=(x,44.5),route_s_m=ss[i],mode=route_modes[i],
                              ramp_id=ramp['id'],ramp_checkpoint=label))
-    goals=[g for g in goals if all(abs(g['route_s_m']-c['route_s_m'])>.4 for c in critical)]
+    goals=[g for g in goals if all(abs(g['route_s_m']-c['route_s_m'])>2 for c in critical)]
     goals=sorted(goals+critical,key=lambda g:g['route_s_m'])
     goals[-1].update(odom_xy=[0.,0.],yaw=0.)
     mission=dict(origin=base['origin'],seed=seed,difficulty=difficulty,waypoints=goals,

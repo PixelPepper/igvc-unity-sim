@@ -2,6 +2,11 @@
 
 A Unity simulator with Windows and Linux launchers, ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity runs on the host, rendering RGB and ideal depth and simulating lidar, robot motion, and a seeded obstacle course.
 
+Current generated layout: barrels across the enclosed field and lane corridor,
+ramp opposite the start, and 28 guidance waypoints for seed 2027 (previously 82).
+See [layout changes and validation](docs/COURSE_LAYOUT_UPDATE.md). The 82-checkpoint
+results below refer to the earlier layout.
+
 Use [Linux setup](#linux-setup-ubuntu-2404-x86_64) below or [Windows setup](#windows-prerequisites). Both Windows and Linux players completed the 82-checkpoint course. Linux runtime testing used Ubuntu under WSL2/WSLg, not a second native Linux desktop; see [Linux validation](docs/LINUX_VALIDATION.md).
 
 The Docker-backed seed-2027 run completed **82/82 checkpoints**, including the ramp and return to start, and passed all 12 course-audit checks. Container sensor/TF, camera control, terminal motion/timeout/E-stop checks and RViz rendering passed on the development host. A clean checkout independently downloaded its course assets, built the image and Windows player, and passed environment and live transport checks after restart. See the [delivery plan](docs/DOCKER_PLAN.md) and [validation record](docs/DOCKER_VALIDATION.md). Earlier native-WSL results are retained separately in [history](docs/HISTORY.md).

@@ -1,5 +1,10 @@
 # IGVC simulation implementation plan
 
+Current layout slice: [sparse course guidance](COURSE_LAYOUT_UPDATE.md) moves the
+ramp opposite the start, distributes barrels throughout the field and reduces
+seed-2027 mission goals from 82 to 28. Earlier evidence below retains its original
+layout and checkpoint count.
+
 Latest gate evidence: [ramp-edge/surface perception](RAMP_EDGE_PERCEPTION.md) completed all82 ordered checkpoints on seed2027 and returned to start; independent audit passed without reset/gaps/lineguardblocks. Ramp-edgepaint now narrows onto the raised surface. Connected observed shallow surfaces replace global-plane obstacle extrapolation; RGB uses depth support. This resolves the previously demonstrated ramp blockage in this controlled course. General terrain, sparse-edge projection accuracy and hardware calibration remain open.
 
 Map integration: [procedural ramp](COURSE_RAMP.md) now uses the terrain/suspension model in new variants, with reserved obstacle clearance and ordered guide checkpoints. Seed 2027 now has 82 checkpoints. Manual course traversal passed; the previous 78/78 flat-course run is archived and does not close the autonomous ramp gate.

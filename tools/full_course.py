@@ -280,8 +280,9 @@ class Mission:
         self.state['status']='completed';self.event('Full loop completed and stopped at start')
 
     def course_zone(self, index):
-        arcs=[p['route_s_m'] for p in self.points if p['mode']=='unmarked']
-        return bool(arcs and min(arcs)-6 <= self.points[index]['route_s_m'] <= max(arcs)+2)
+        route=self.config['route'];s=self.points[index]['route_s_m']
+        arcs=[arc for arc,mode in zip(route['dense_s_m'],route['dense_modes']) if mode=='unmarked']
+        return bool(arcs and min(arcs)-6 <= s <= max(arcs)+2)
 
     def run(self):
         """Roll ordered through-poses goals without an arrival at each guide point."""
@@ -321,6 +322,9 @@ class Mission:
                     # declared unpainted sections, not at ordinary guide points.
                     for i in range(cursor+1,end):
                         if self.course_zone(i)!=zone: end=i;break
+                        # Sparse goals must not send the planner beyond currently
+                        # observed terrain. Extend the horizon as the robot moves.
+                        if math.dist(self.xy,self.points[i]['odom_xy'])>10.5: end=i;break
                     wanted=(cursor,end)
                     if wanted!=window:
                         zone_name='unmarked' if zone else 'painted'
@@ -350,7 +354,11 @@ class Mission:
                     elif result is not None and result.done():
                         status=result.result().status
                         if status!=4: raise RuntimeError(f'Nav2 action failed: {status}')
-                        raise RuntimeError('Horizon arrived without visiting required checkpoints')
+                        # A preemption can coincide with the old FollowPath
+                        # finishing before its replacement path is installed.
+                        # Reissue the still-unvisited goal; the physical audit
+                        # and unchanged 90 s deadline remain authoritative.
+                        window=None;result=None
                 if time.monotonic()>deadline: raise RuntimeError('No ordered checkpoint progress for 90 seconds')
             except ProgressError: raise
             except RuntimeError as exc:
