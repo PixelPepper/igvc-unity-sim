@@ -6,6 +6,8 @@ Current generated layout follows the supplied course reference: alternating
 barrel passages, random colored barrels in driving sectors, and separate line
 gaps around a marked ramp opposite the start. Seed 2027 uses 31 guidance waypoints
 (originally 82). See [reference layout and validation](docs/REFERENCE_COURSE.md).
+Normal difficulty now has 16 colored barrels across the two open ramp approaches,
+8 on each side of the ramp, with white markings retained on the ramp itself.
 The 82-checkpoint results below refer to the earlier layout.
 
 Use [Linux setup](#linux-setup-ubuntu-2404-x86_64) below or [Windows setup](#windows-prerequisites). Both Windows and Linux players completed the 82-checkpoint course. Linux runtime testing used Ubuntu under WSL2/WSLg, not a second native Linux desktop; see [Linux validation](docs/LINUX_VALIDATION.md).

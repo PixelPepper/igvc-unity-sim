@@ -71,7 +71,15 @@ class CourseVariantChecks(unittest.TestCase):
         route=self.mission['route']['dense_xy']
         barrels=[o for o in self.course['obstacles'] if o['kind']=='barrel']
         self.assertEqual({o['sector'] for o in barrels},{'east','west','open-ramp'})
-        self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),4)
+        self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),16)
+        open_barrels=[o for o in barrels if o['sector']=='open-ramp']
+        self.assertEqual(sum(o['x']<8 for o in open_barrels),8)
+        self.assertEqual(sum(o['x']>20 for o in open_barrels),8)
+        for group in ([o for o in open_barrels if o['x']<8],
+                      [o for o in open_barrels if o['x']>20]):
+            self.assertTrue(any(o['y']<44.5 for o in group))
+            self.assertTrue(any(o['y']>44.5 for o in group))
+            self.assertGreater(max(o['x'] for o in group)-min(o['x'] for o in group),3.)
         self.assertGreaterEqual(len({o['color'] for o in barrels}),4)
         for o in barrels:
             self.assertIn(o['color'],('red','orange','blue','green','yellow','white'))
@@ -99,7 +107,7 @@ class CourseVariantChecks(unittest.TestCase):
 
     def test_counts_and_pothole_dimensions(self):
         kinds=[o['kind'] for o in self.course['obstacles']]
-        self.assertEqual(kinds.count('barrel'),24);self.assertEqual(kinds.count('barricade'),8)
+        self.assertEqual(kinds.count('barrel'),36);self.assertEqual(kinds.count('barricade'),8)
         self.assertEqual(kinds.count('pothole'),2)
         for o in self.course['obstacles']:
             if o['kind']=='pothole':

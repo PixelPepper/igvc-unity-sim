@@ -194,7 +194,8 @@ def generate(seed=2027,difficulty='normal',base=None):
     for p in points:
         if 10 <= p[0] <= 18 and abs(p[1]-44.5)<2 and abs(p[1]-44.5)>=.65:
             raise ValueError('Route enters ramp reservation away from center')
-    counts={'easy':(16,4,1),'normal':(24,8,2),'hard':(36,12,3)}[difficulty]
+    counts={'easy':(24,4,1),'normal':(36,8,2),'hard':(52,12,3)}[difficulty]
+    open_barrels={'easy':12,'normal':16,'hard':20}[difficulty]
     obstacles=[]; obstacle_margins=[]
     sectors=[(x,y,(-1)**k) for x in (right,left) for k,y in enumerate((12.,22.,32.))]
     for kind,count in zip(('barrel','barricade','pothole'),counts):
@@ -220,9 +221,11 @@ def generate(seed=2027,difficulty='normal',base=None):
                     longitudinal=0. if index<6 else rng.uniform(-2.,2.)
                     o.update(x=cx-direction*lateral,y=cy+longitudinal,
                              color=rng.choice(BARREL_COLORS),sector='east' if cx==right else 'west')
-                    if index>=count-4:
-                        o.update(x=rng.uniform(-3.,5.) if index%2 else rng.uniform(23.,25.),
-                                 y=44.5+rng.choice((-1,1))*rng.uniform(1.8,2.4),sector='open-ramp')
+                    if index>=count-open_barrels:
+                        # Equal populations in BOTH line gaps, spanning each
+                        # approach rather than a few barrels at distant corners.
+                        o.update(x=rng.uniform(left+1.,7.2) if index%2 else rng.uniform(20.8,right-1.),
+                                 y=44.5+rng.choice((-1,1))*rng.uniform(1.4,2.4),sector='open-ramp')
                         if min(point_segment((o['x'],o['y']),a,b) for a,b in zip(lane_points,lane_points[1:]))>2.5:continue
                 # Include the full synthetic pothole cutout/rim, not just bowl diameter.
                 if kind=='barricade':

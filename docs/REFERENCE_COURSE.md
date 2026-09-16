@@ -10,6 +10,11 @@ reconstruction or a statement of IGVC 2027 rule compliance.
   unshifted centerline traversal; the clearance-checked guide weaves around them.
 - An open sector opposite the start contains random barrels and barricades.
   Boundary paint ends before the ramp approaches and resumes after the exits.
+  The clarified dense layout has 16 barrels in these two gaps on normal
+  difficulty (8 in each), up from 4 total. Easy has 12 and hard has 20. The
+  normal course has 36 barrels overall; ramp surface and guide clearance remain
+  reserved. The sequence is painted lane → open barrel area → white-edged ramp
+  → open barrel area → painted lane.
 - The ramp retains white paint along both edges. Its painted section separates
   the two gaps; mission perception modes no longer merge them into one interval.
 - Barrel colors are seeded red, orange, blue, green, yellow and white. Legacy
@@ -23,6 +28,23 @@ that path. It still uses known geometry to author guidance goals, so this fixtur
 does not prove general autonomous discovery of an unknown competition course.
 
 ## Validation
+
+### Denser ramp approaches
+
+The clarified 16-barrel open sector passed all 13 geometry tests, followed by an
+uninterrupted 31/31 lap with all 12 [audit checks](evidence/dense-ramp/audit.json)
+passing. Minimum sampled clearance was 0.307 m and conservative swept clearance
+0.211 m; no resets, recording gaps or line interventions. The initial Nav2
+startup encountered a lifecycle service timeout and the startup sensor-rate
+check failed; after a ROS container restart, navigation became active and all
+seven [integration checks](evidence/dense-ramp/integration.json) passed before
+the successful lap. No Unity code changes or player rebuild were needed for
+this manifest-only density adjustment. Earlier results below refer to the
+four-barrel open sector.
+
+![Denser open areas before and after the marked ramp](evidence/dense-ramp/overview.png)
+
+### Initial sector layout
 
 Geometry: 13 tests passed on Ubuntu across multiple seeds/difficulties, including
 barrel coverage, obstruction of unshifted traversal, alternating passage,
