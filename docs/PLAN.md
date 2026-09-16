@@ -1,5 +1,9 @@
 # IGVC simulation implementation plan
 
+Latest reference refinement: [sector-based course](REFERENCE_COURSE.md) replaces
+midfield barrel scattering with alternating passages and random colored barrels
+around separate line gaps flanking the painted ramp. Seed 2027 uses 31 goals.
+
 Current layout slice: [sparse course guidance](COURSE_LAYOUT_UPDATE.md) moves the
 ramp opposite the start, distributes barrels throughout the field and reduces
 seed-2027 mission goals from 82 to 28. Earlier evidence below retains its original

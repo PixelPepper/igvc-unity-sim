@@ -34,7 +34,7 @@ def main():
                 for edge in (left,right):draw.line([px(edge[i]),px(edge[i+1])],fill='white',width=2)
         draw.line([px(p) for p in pts],fill='#81918d',width=1)
         for o in course['obstacles']:
-            color={'barrel':'#f08222','barricade':'#c04032','pothole':'#20262d'}[o['kind']]
+            color=o.get('color','orange') if o['kind']=='barrel' else {'barricade':'#c04032','pothole':'#20262d'}[o['kind']]
             if o['kind']=='barricade':draw.polygon([px(p) for p in obstacle_box(o)],fill=color)
             else:
                 x,y=px((o['x'],o['y']));r=max(2,o['width']*scale/2)

@@ -12,7 +12,7 @@ namespace IGVC
     {
         [Serializable] public class Point { public double x, y, half_width; public bool painted; }
         [Serializable] public class Obstacle
-        { public string id, kind; public double x, y, yaw, length, width, height, depth; }
+        { public string id, kind, color; public double x, y, yaw, length, width, height, depth; }
         [Serializable] public class Manifest
         {
             public int schema_version, seed;
@@ -30,6 +30,19 @@ namespace IGVC
             var template=Resources.Load<Material>("IGVCVariantPalette");
             if (template==null) throw new InvalidOperationException("Variant palette missing; rebuild course");
             var material=new Material(template); material.color=color;return material;
+        }
+        public static Color BarrelColor(string name)
+        {
+            switch(name)
+            {
+                case null: case "": case "orange": return new Color(1f,.36f,.025f);
+                case "red": return new Color(.9f,.045f,.035f);
+                case "blue": return new Color(.025f,.3f,.95f);
+                case "green": return new Color(.025f,.72f,.18f);
+                case "yellow": return new Color(1f,.9f,.025f);
+                case "white": return new Color(.94f,.94f,.94f);
+                default: throw new InvalidDataException("Unknown barrel color: "+name);
+            }
         }
         public static Manifest Load(string path, LaneBoundaryGuard guard)
         {
@@ -53,6 +66,7 @@ namespace IGVC
                     || (o.kind!="barrel"&&o.kind!="barricade"&&o.kind!="pothole"))
                     throw new InvalidDataException("Invalid obstacle");
             if(m.ramps != null && m.ramps.Length>1) throw new InvalidDataException("At most one course ramp is supported");
+            foreach(var o in m.obstacles) if(o.kind=="barrel") BarrelColor(o.color);
             if(m.ramps != null) foreach(var ramp in m.ramps) CourseRamp.Validate(ramp);
             var original=GameObject.Find("Course frame (source spawn to odom origin)");
             if (original==null) throw new InvalidOperationException("Expected reference course root missing");
@@ -61,6 +75,12 @@ namespace IGVC
             var gray=Paint(new Color(.40f,.42f,.43f));
             var white=Paint(Color.white);var orange=Paint(new Color(1,.36f,.025f));
             var dark=Paint(new Color(.045f,.045f,.045f));
+            var barrelMaterials=new Dictionary<string,Material>();
+            foreach(var o in m.obstacles) if(o.kind=="barrel")
+            {
+                var key=string.IsNullOrEmpty(o.color)?"orange":o.color;
+                if(!barrelMaterials.ContainsKey(key))barrelMaterials[key]=Paint(BarrelColor(key));
+            }
             var ground=Ground(root,m,gray);
             if(m.ramps != null && m.ramps.Length>0)
             {
@@ -77,10 +97,11 @@ namespace IGVC
                 item.rotation=Quaternion.Euler(0,(float)(-o.yaw*Mathf.Rad2Deg),0);
                 if(o.kind=="barrel")
                 {
-                    Primitive(item,PrimitiveType.Cylinder,new Vector3(0,(float)o.height/2,0),new Vector3((float)o.width,(float)o.height/2,(float)o.length),orange);
+                    var key=string.IsNullOrEmpty(o.color)?"orange":o.color;
+                    Primitive(item,PrimitiveType.Cylinder,new Vector3(0,(float)o.height/2,0),new Vector3((float)o.width,(float)o.height/2,(float)o.length),barrelMaterials[key]);
                     // Ring geometry gives RGB barrel context while retaining a solid scan obstacle.
                     foreach(float h in new[]{.34f,.68f})
-                        Primitive(item,PrimitiveType.Cylinder,new Vector3(0,(float)o.height*h,0),new Vector3((float)o.width+.004f,.045f,(float)o.length+.004f),white);
+                        Primitive(item,PrimitiveType.Cylinder,new Vector3(0,(float)o.height*h,0),new Vector3((float)o.width+.004f,.045f,(float)o.length+.004f),key=="white"?dark:white);
                 }
                 else if(o.kind=="barricade")
                 {

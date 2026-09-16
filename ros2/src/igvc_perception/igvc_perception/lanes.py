@@ -6,11 +6,14 @@ import numpy as np
 def lane_pixels(rgb):
     hsv = cv2.cvtColor(rgb, cv2.COLOR_RGB2HSV)
     mask = cv2.inRange(hsv, (0, 0, 220), (179, 50, 255))
-    orange = cv2.inRange(hsv, (0, 100, 70), (28, 255, 255)) > 0
-    above, below = np.zeros_like(orange), np.zeros_like(orange)
+    # Hue-independent context covers all saturated barrel body colors. White
+    # barrels cannot be distinguished from paint here; observed depth must
+    # reject their elevated surfaces during projection.
+    colored = cv2.inRange(hsv, (0, 100, 70), (179, 255, 255)) > 0
+    above, below = np.zeros_like(colored), np.zeros_like(colored)
     for distance in range(1, 25):
-        above[distance:] |= orange[:-distance]
-        below[:-distance] |= orange[distance:]
+        above[distance:] |= colored[:-distance]
+        below[:-distance] |= colored[distance:]
     # Remove the band itself, not the whole connected component: lane paint
     # can touch a barrel's white stripe in the camera image.
     barrel_band = cv2.dilate((above & below).astype(np.uint8), np.ones((3, 3), np.uint8)) > 0
@@ -19,7 +22,7 @@ def lane_pixels(rgb):
     # Acquisition-time ray/plane projection rejects remaining sky/horizon pixels.
     mask[:int(rgb.shape[0]*.40)] = 0
     # Opening erases one-pixel antialiased distant paint. Keep its continuity;
-    # component area, shape and orange-context checks below reject noise.
+    # component area, shape and color-context checks reject noise.
     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, np.ones((3, 3), np.uint8))
     mask[barrel_band] = 0
     count, labels, stats, _ = cv2.connectedComponentsWithStats(mask)

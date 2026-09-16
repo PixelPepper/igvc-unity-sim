@@ -12,15 +12,20 @@ class LaneGeometryTests(unittest.TestCase):
         self.assertEqual(len(lane_pixels(image)[0]), 0)
 
     def test_paint_touching_barrel_band_keeps_paint_only(self):
-        image = np.full((480, 640, 3), 145, np.uint8)
-        cv2.line(image, (30, 430), (240, 325), (245, 245, 245), 4)
-        cv2.rectangle(image, (230, 280), (410, 400), (210, 55, 30), -1)
-        cv2.rectangle(image, (230, 315), (410, 335), (245, 245, 245), -1)
-        pixels, mask, count = lane_pixels(image)
-        self.assertGreater(len(pixels), 100)
-        self.assertEqual(count, 1)
-        self.assertGreater(np.count_nonzero(mask[:, :220]), 100)
-        self.assertEqual(np.count_nonzero(mask[315:336, 230:411]), 0)
+        colors = {'red': (210, 30, 55), 'orange': (210, 90, 30),
+                  'blue': (30, 55, 210), 'green': (30, 170, 55),
+                  'yellow': (230, 210, 30)}
+        for name, color in colors.items():
+            with self.subTest(color=name):
+                image = np.full((480, 640, 3), 145, np.uint8)
+                cv2.line(image, (30, 430), (240, 325), (245, 245, 245), 4)
+                cv2.rectangle(image, (230, 280), (410, 400), color, -1)
+                cv2.rectangle(image, (230, 315), (410, 335), (245, 245, 245), -1)
+                pixels, mask, count = lane_pixels(image)
+                self.assertGreater(len(pixels), 100)
+                self.assertEqual(count, 1)
+                self.assertGreater(np.count_nonzero(mask[:, :220]), 100)
+                self.assertEqual(np.count_nonzero(mask[315:336, 230:411]), 0)
 
     def test_converging_lane_paint_is_retained(self):
         image = np.full((480, 640, 3), 110, np.uint8)

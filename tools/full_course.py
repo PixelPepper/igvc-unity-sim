@@ -55,6 +55,9 @@ class Mission:
             if self.state['status']=='completed': raise ValueError('Loop already complete')
             self.saved_audit=self.state['audit']
             self.state['status']='resuming'
+            # Prior cleanup resets the adapter to painted mode; reapply the
+            # saved position's zone before arming, even if the report says unmarked.
+            self.state.pop('zone',None)
         self.origin = None; self.last_gps = 0.; self.last_scan = 0.
         self.course_hash = None
         self.last_fix_stamp = None; self.enabled = False; self.armed = False
@@ -281,8 +284,12 @@ class Mission:
 
     def course_zone(self, index):
         route=self.config['route'];s=self.points[index]['route_s_m']
-        arcs=[arc for arc,mode in zip(route['dense_s_m'],route['dense_modes']) if mode=='unmarked']
-        return bool(arcs and min(arcs)-6 <= s <= max(arcs)+2)
+        # Keep separate gaps separate: the painted ramp between them must still
+        # require lane observations. A 3 m approach/exit buffer accounts for the
+        # forward camera losing nearby paint before the axle reaches the gap.
+        return any(a-3. <= s <= b+3. for a,b,mode in
+                   zip(route['dense_s_m'],route['dense_s_m'][1:],route['dense_modes'])
+                   if mode=='unmarked')
 
     def run(self):
         """Roll ordered through-poses goals without an arrival at each guide point."""
@@ -324,7 +331,7 @@ class Mission:
                         if self.course_zone(i)!=zone: end=i;break
                         # Sparse goals must not send the planner beyond currently
                         # observed terrain. Extend the horizon as the robot moves.
-                        if math.dist(self.xy,self.points[i]['odom_xy'])>10.5: end=i;break
+                        if math.dist(self.xy,self.points[i]['odom_xy'])>8.5: end=i;break
                     wanted=(cursor,end)
                     if wanted!=window:
                         zone_name='unmarked' if zone else 'painted'

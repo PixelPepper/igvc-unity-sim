@@ -7,8 +7,10 @@ def hazard_pixels(rgb):
     """Return <=1500 XY image pixels, mono8 mask and accepted component count.
 
     Assumes the procedural fixture's dark bowls on brighter ground. Border
-    components and orange-adjacent patches are excluded. TF/range projection
+    components and saturated-color-adjacent patches are excluded. TF/range projection
     and expiry remain the caller's responsibility; shadows can still imitate holes.
+    White-barrel dark rings have no color veto and may remain candidates;
+    projecting to observed depth alone does not classify them as negative terrain.
     """
     rgb = np.asarray(rgb)
     if rgb.ndim != 3 or rgb.shape[2] != 3 or rgb.dtype != np.uint8:
@@ -23,7 +25,9 @@ def hazard_pixels(rgb):
     # Remove isolated pixel noise without bridging nearby text strokes.
     dark = cv2.morphologyEx(dark, cv2.MORPH_OPEN, np.ones((3, 3), np.uint8))
     count, labels, stats, _ = cv2.connectedComponentsWithStats(dark)
-    orange = cv2.inRange(hsv, (0, 100, 65), (28, 255, 255)) > 0
+    # Barrel shadows can accompany any saturated body hue. This contextual
+    # veto is fixture-specific and cannot reject rings on white barrels.
+    colored = cv2.inRange(hsv, (0, 100, 65), (179, 255, 255)) > 0
     accepted = np.zeros((height, width), np.uint8)
     components = 0
     for index in range(1, count):
@@ -37,7 +41,7 @@ def hazard_pixels(rgb):
         if max(w, h)/min(w, h) > 6 or area/(w*h) < .45:
             continue
         pad = max(4, min(15, min(w, h)))
-        context = orange[max(0, y-pad):min(height, y+h+pad), max(0, x-pad):min(width, x+w+pad)]
+        context = colored[max(0, y-pad):min(height, y+h+pad), max(0, x-pad):min(width, x+w+pad)]
         if context.mean() > .08:
             continue
         component = (labels[y:y+h, x:x+w] == index).astype(np.uint8)

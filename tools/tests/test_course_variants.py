@@ -66,23 +66,36 @@ class CourseVariantChecks(unittest.TestCase):
             if route['dense_modes'][i]!=route['dense_modes'][i-1]:
                 self.assertIn(arcs[i],goal_arcs)
 
-    def test_barrels_cover_field_interior_and_map_extent(self):
-        points=self.mission['route']['dense_xy']
-        barrels=[(o['x'],o['y']) for o in self.course['obstacles'] if o['kind']=='barrel']
-        # Old lane-edge-only sampling cannot satisfy this interior clearance.
-        interior=[]
-        for p in barrels:
-            distance=min(segment_distance(p,a,b) for a,b in zip(points,points[1:]))
-            # Winding angle independently verifies enclosure, unlike generator ray casting.
-            winding=sum(math.atan2((a[0]-p[0])*(b[1]-p[1])-(a[1]-p[1])*(b[0]-p[0]),
-                                   (a[0]-p[0])*(b[0]-p[0])+(a[1]-p[1])*(b[1]-p[1]))
-                        for a,b in zip(points,points[1:]))
-            inside=abs(winding)>math.pi
-            self.assertTrue(inside or distance<=2.5)
-            if inside and distance>4.:interior.append(p)
-        self.assertGreaterEqual(len(interior),6)
-        self.assertGreater(max(p[0] for p in barrels)-min(p[0] for p in barrels),.65*(max(p[0] for p in points)-min(p[0] for p in points)))
-        self.assertGreater(max(p[1] for p in barrels)-min(p[1] for p in barrels),.7*(max(p[1] for p in points)-min(p[1] for p in points)))
+    def test_barrels_occupy_corridors_and_force_alternating_passages(self):
+        lane=[(p['x'],p['y']) for p in self.course['centerline']]
+        route=self.mission['route']['dense_xy']
+        barrels=[o for o in self.course['obstacles'] if o['kind']=='barrel']
+        self.assertEqual({o['sector'] for o in barrels},{'east','west','open-ramp'})
+        self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),4)
+        self.assertGreaterEqual(len({o['color'] for o in barrels}),4)
+        for o in barrels:
+            self.assertIn(o['color'],('red','orange','blue','green','yellow','white'))
+            self.assertLessEqual(min(segment_distance((o['x'],o['y']),a,b)
+                                     for a,b in zip(lane,lane[1:])),2.5)
+        for side in ('east','west'):
+            blockers=[o for o in barrels[:6] if o['sector']==side]
+            self.assertEqual(len(blockers),3)
+            offsets=[]
+            for o in sorted(blockers,key=lambda o:o['y']):
+                self.assertLess(min(math.dist(p,(o['x'],o['y'])) for p in lane),.13)
+                p=min(route,key=lambda p:math.dist(p,(o['x'],o['y'])))
+                # Centerline blockers intersect any unshifted straight traversal.
+                # The independently inspected guide passes on alternating sides.
+                self.assertGreater(abs(p[0]-o['x']),1.3)
+                offsets.append(p[0]-o['x'])
+            self.assertTrue(all(a*b<0 for a,b in zip(offsets,offsets[1:])))
+
+    def test_open_sector_flanks_painted_ramp(self):
+        for p in self.course['centerline']:
+            if p['y']>38:
+                self.assertEqual(p['painted'],8<=p['x']<=20)
+        modes=self.mission['route']['dense_modes']
+        self.assertEqual(sum(a!=b for a,b in zip(modes,modes[1:])),4)
 
     def test_counts_and_pothole_dimensions(self):
         kinds=[o['kind'] for o in self.course['obstacles']]
@@ -171,21 +184,28 @@ class CourseVariantChecks(unittest.TestCase):
                 self.assertTrue(all(abs(p[1]-44.5)<.65 for p in crossing))
                 self.assertTrue(all(b[0]<a[0] for a,b in zip(crossing,crossing[1:])))
                 self.assertEqual(course['ramps'],self.course['ramps'])
+                self.assertLessEqual(len(mission['waypoints']),40)
+                self.assertGreaterEqual(course['generation']['obstacle_conservative_clearance_m'],.2)
+                self.assertGreaterEqual(course['generation']['boundary_conservative_clearance_m'],.2)
 
     def test_painted_boundary_margin(self):
-        points=self.mission['route']['dense_xy'];normals=[]
-        for i in range(len(points)-1):
-            a=points[i-1] if i else points[-2];b=points[i+1]
-            angle=math.atan2(b[1]-a[1],b[0]-a[0]);normals.append((-math.sin(angle),math.cos(angle)))
+        points=self.mission['route']['dense_xy']
+        lane=self.course['centerline'];normals=[]
+        for i in range(len(lane)-1):
+            a=lane[i-1] if i else lane[-2];b=lane[i+1]
+            angle=math.atan2(b['y']-a['y'],b['x']-a['x'])
+            normals.append((-math.sin(angle),math.cos(angle)))
         normals.append(normals[0])
-        widths=[p['half_width'] for p in self.course['centerline']]
-        lines=[[(p[0]+side*w*n[0],p[1]+side*w*n[1]) for p,n,w in zip(points,normals,widths)] for side in (-1,1)]
+        lines=[[(p['x']+side*p['half_width']*n[0],p['y']+side*p['half_width']*n[1])
+                for p,n in zip(lane,normals)] for side in (-1,1)]
         for i in range(0,len(points)-1,3):
-            yaw=math.atan2(-normals[i][0],normals[i][1]);body=rectangle(*points[i],yaw,(-1.1,.6,.5))
+            prev=points[i-1] if i else points[-2];nxt=points[i+1]
+            yaw=math.atan2(nxt[1]-prev[1],nxt[0]-prev[0])
+            body=rectangle(*points[i],yaw,(-1.1,.6,.5))
             for line in lines:
-                for j in range(max(0,i-16),min(len(points)-1,i+17)):
-                    if not self.course['centerline'][j]['painted']:continue
-                    self.assertGreater(min(segment_distance(p,line[j],line[j+1]) for p in body),.2)
+                for j,(a,b) in enumerate(zip(line,line[1:])):
+                    if not lane[j]['painted'] or math.dist(points[i],a)>5:continue
+                    self.assertGreater(min(segment_distance(p,a,b) for p in body),.2)
 
     def test_ramp_paint_inside_edges_and_tapered(self):
         surface=[];tapers=[]

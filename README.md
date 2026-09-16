@@ -2,10 +2,11 @@
 
 A Unity simulator with Windows and Linux launchers, ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity runs on the host, rendering RGB and ideal depth and simulating lidar, robot motion, and a seeded obstacle course.
 
-Current generated layout: barrels across the enclosed field and lane corridor,
-ramp opposite the start, and 28 guidance waypoints for seed 2027 (previously 82).
-See [layout changes and validation](docs/COURSE_LAYOUT_UPDATE.md). The 82-checkpoint
-results below refer to the earlier layout.
+Current generated layout follows the supplied course reference: alternating
+barrel passages, random colored barrels in driving sectors, and separate line
+gaps around a marked ramp opposite the start. Seed 2027 uses 31 guidance waypoints
+(originally 82). See [reference layout and validation](docs/REFERENCE_COURSE.md).
+The 82-checkpoint results below refer to the earlier layout.
 
 Use [Linux setup](#linux-setup-ubuntu-2404-x86_64) below or [Windows setup](#windows-prerequisites). Both Windows and Linux players completed the 82-checkpoint course. Linux runtime testing used Ubuntu under WSL2/WSLg, not a second native Linux desktop; see [Linux validation](docs/LINUX_VALIDATION.md).
 

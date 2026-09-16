@@ -38,6 +38,22 @@ class HazardTests(unittest.TestCase):
         cv2.putText(rgb, 'TEST', (0, 479), cv2.FONT_HERSHEY_SIMPLEX, 1, (12, 12, 12), 2)
         self.assertEqual(hazard_pixels(rgb)[2], 0)
 
+    def test_colored_barrel_shadow_rejected_but_separate_bowl_retained(self):
+        colors = {'red': (210, 30, 55), 'orange': (210, 90, 30),
+                  'blue': (30, 55, 210), 'green': (30, 170, 55),
+                  'yellow': (230, 210, 30)}
+        for name, color in colors.items():
+            with self.subTest(color=name):
+                rgb = self.ground()
+                cv2.rectangle(rgb, (100, 280), (220, 370), color, -1)
+                cv2.rectangle(rgb, (100, 310), (220, 325), (245, 245, 245), -1)
+                cv2.ellipse(rgb, (165, 380), (45, 12), 0, 0, 360, (12, 12, 12), -1)
+                cv2.ellipse(rgb, (440, 380), (45, 12), 0, 0, 360, (12, 12, 12), -1)
+                _, mask, count = hazard_pixels(rgb)
+                self.assertEqual(count, 1)
+                self.assertEqual(mask[380, 165], 0)
+                self.assertEqual(mask[380, 440], 255)
+
     def test_broad_dark_patch_and_thin_stroke_rejected(self):
         rgb = self.ground()
         cv2.rectangle(rgb, (30, 290), (260, 430), (12, 12, 12), -1)

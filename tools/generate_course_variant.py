@@ -11,6 +11,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'ros2/src/igvc_gps'))
 from igvc_gps.geodesy import LocalFrame
 
+BARREL_COLORS = ('red', 'orange', 'blue', 'green', 'yellow', 'white')
 MARGIN = .2
 BODY_RADIUS = math.hypot(1.1, .5)
 DEFAULT_RAMP = dict(id='ramp-001', x=18., y=44.5, yaw=math.pi, width=3.,
@@ -126,11 +127,13 @@ def boundaries(points,yaws):
     return [[(p[0]-side*lane_half_width(p)*math.sin(y),p[1]+side*lane_half_width(p)*math.cos(y)) for p,y in zip(points,yaws)] for side in (-1,1)]
 
 
-def check_boundary(points,yaws,modes):
-    lines=boundaries(points,yaws); bounds=sweep_bounds(points,yaws)
+def check_boundary(points,yaws,modes,lane_points=None,lane_modes=None):
+    lane_points=points if lane_points is None else lane_points
+    lane_modes=modes if lane_modes is None else lane_modes
+    lines=boundaries(lane_points,headings(lane_points)); bounds=sweep_bounds(points,yaws)
     segments=[]
     for line in lines:
-        segments.extend((a,b) for i,(a,b) in enumerate(zip(line,line[1:])) if modes[i]=='painted')
+        segments.extend((a,b) for i,(a,b) in enumerate(zip(line,line[1:])) if lane_modes[i]=='painted')
     lowest=math.inf
     for p,yaw,pad in zip(points,yaws,bounds):
         body=box(*p,yaw,-1.1,.6,-.5,.5)
@@ -148,30 +151,34 @@ def generate(seed=2027,difficulty='normal',base=None):
     if difficulty not in ('easy','normal','hard'):raise ValueError('Unknown difficulty')
     if base is None:base=json.loads((ROOT/'ros2/src/igvc_gps/config/full_loop.json').read_text())
     rng=random.Random(seed)
-    original, modes=resample(base['route']['dense_xy'],base['route']['dense_modes'])
-    ss=arcs(original); yaws=headings(original)
-    amplitude=rng.uniform(1.,2.); phase=rng.uniform(-math.pi,math.pi); wavelength=rng.uniform(28.,40.)
-    # Bounded fallback progressively reduces shape change, never geometry clearance.
-    for multiplier in (1.,.75,.5,.25,0.):
-        shaped=[]
-        for p,s,yaw in zip(original,ss,yaws):
-            near=min(s,ss[-1]-s)
-            blend=max(0.,min(1.,(near-8)/12));blend=blend*blend*(3-2*blend)
-            offset=amplitude*multiplier*blend*math.sin(2*math.pi*s/wavelength+phase)
-            x,y=p[0]-math.sin(yaw)*offset,p[1]+math.cos(yaw)*offset
-            start_blend=max(0.,min(1.,(near-3)/5));start_blend=start_blend**2*(3-2*start_blend)
-            opening=max(0.,min(1.,(s-12)/12));opening=opening*opening*(3-2*opening)
-            y=y*start_blend*opening
-            if y>38:
-                flat=max(0.,min(1.,(x-4)/4,(24-x)/4))
-                flat=flat*flat*(3-2*flat)
-                y=y*(1-flat)+44.5*flat
-            shaped.append((x,y))
-        points,route_modes=resample(shaped,modes)
-        yaw=headings(points)
-        good,boundary_margin=check_boundary(points,yaw,route_modes)
-        if good:break
-    else:raise ValueError('Base geometry cannot provide the required painted-boundary clearance')
+    # Rounded rectangle: long start straight, two connecting slalom sectors,
+    # and the opposite open/ramp sector. Seed changes the connecting-end width.
+    left=-9.+rng.uniform(-.35,.35);right=29.+rng.uniform(-.35,.35)
+    radius=6.;anchors=[(0.,0.),(right-radius,0.)]
+    for cx,cy,start_angle in ((right-radius,6.,-90),(right-radius,38.5,0),
+                              (left+radius,38.5,90),(left+radius,6.,180)):
+        for degree in range(start_angle,start_angle+91,3):
+            angle=math.radians(degree)
+            p=(cx+radius*math.cos(angle),cy+radius*math.sin(angle))
+            if math.dist(anchors[-1],p)>1e-8:anchors.append(p)
+    anchors.append((0.,0.))
+    lane_points,_=resample(anchors,['painted']*len(anchors))
+    def mode(p):
+        return 'unmarked' if p[1]>38 and not 8<=p[0]<=20 else 'painted'
+    lane_modes=[mode(p) for p in lane_points]
+    shaped=[]
+    for x,y in lane_points:
+        shift=0.
+        if 7.<y<37. and (abs(x-left)<.01 or abs(x-right)<.01):
+            # Smooth alternating excursions, with zero slope at group centers.
+            k=min(2,int((y-7.)/10.));center=12.+10*k
+            shift=1.5*((-1)**k)*.5*(1+math.cos(math.pi*(y-center)/5.))
+        shaped.append((x+shift,y))
+    points,_=resample(shaped,lane_modes)
+    route_modes=[mode(p) for p in points]
+    yaw=headings(points)
+    good,boundary_margin=check_boundary(points,yaw,route_modes,lane_points,lane_modes)
+    if not good:raise ValueError('Slalom route cannot provide painted-boundary clearance')
     # Insert exact far-side ramp anchors into the dense route.
     for x, _ in RAMP_CHECKPOINTS:
         candidates=[i for i,(a,b) in enumerate(zip(points,points[1:]))
@@ -189,6 +196,7 @@ def generate(seed=2027,difficulty='normal',base=None):
             raise ValueError('Route enters ramp reservation away from center')
     counts={'easy':(16,4,1),'normal':(24,8,2),'hard':(36,12,3)}[difficulty]
     obstacles=[]; obstacle_margins=[]
+    sectors=[(x,y,(-1)**k) for x in (right,left) for k,y in enumerate((12.,22.,32.))]
     for kind,count in zip(('barrel','barricade','pothole'),counts):
         for index in range(count):
             for attempt in range(1000):
@@ -204,15 +212,18 @@ def generate(seed=2027,difficulty='normal',base=None):
                        height=.8 if kind=='barricade' else (.9 if kind=='barrel' else 0.),
                        depth=rng.uniform(.12,.25) if kind=='pothole' else 0.)
                 if kind=='barrel':
-                    # Sample the whole enclosed field and lane corridor, not two
-                    # narrow bands beside the centerline. Keep a clear guide route.
-                    o['x']=rng.uniform(min(p[0] for p in points)-2.5,max(p[0] for p in points)+2.5)
-                    o['y']=rng.uniform(min(p[1] for p in points)-2.5,max(p[1] for p in points)+2.5)
-                    inside=False
-                    for a,b in zip(points,points[1:]):
-                        if (a[1]>o['y'])!=(b[1]>o['y']) and o['x']<(b[0]-a[0])*(o['y']-a[1])/(b[1]-a[1])+a[0]:inside=not inside
-                    if not inside and min(point_segment((o['x'],o['y']),a,b) for a,b in zip(points,points[1:]))>2.5:continue
-                    if math.hypot(o['x'],o['y'])<3:continue
+                    # First six barrels occupy the lane center and require the
+                    # alternating guide excursions. Others extend those groups
+                    # toward the blocked edge; never populate unused midfield.
+                    cx,cy,direction=sectors[index%len(sectors)]
+                    lateral=0. if index<6 else rng.uniform(.65,2.45)
+                    longitudinal=0. if index<6 else rng.uniform(-2.,2.)
+                    o.update(x=cx-direction*lateral,y=cy+longitudinal,
+                             color=rng.choice(BARREL_COLORS),sector='east' if cx==right else 'west')
+                    if index>=count-4:
+                        o.update(x=rng.uniform(-3.,5.) if index%2 else rng.uniform(23.,25.),
+                                 y=44.5+rng.choice((-1,1))*rng.uniform(1.8,2.4),sector='open-ramp')
+                        if min(point_segment((o['x'],o['y']),a,b) for a,b in zip(lane_points,lane_points[1:]))>2.5:continue
                 # Include the full synthetic pothole cutout/rim, not just bowl diameter.
                 if kind=='barricade':
                     if polygon_distance(reserved,obstacle_box(o))<=0:continue
@@ -231,9 +242,12 @@ def generate(seed=2027,difficulty='normal',base=None):
             else:raise ValueError(f'Bounded placement exhausted for {kind}; no unsafe fallback')
     course=dict(schema_version=1,seed=seed,difficulty=difficulty,units='m',frame='odom',lane_width_m=6.,
                 camera_pitch_rad=.1745329252,
-                centerline=[dict(x=p[0],y=p[1],painted=m=='painted',half_width=lane_half_width(p)) for p,m in zip(points,route_modes)],
+                centerline=[dict(x=p[0],y=p[1],painted=m=='painted',half_width=lane_half_width(p)) for p,m in zip(lane_points,lane_modes)],
                 obstacles=obstacles,ramps=[ramp],
-                generation=dict(shape_amplitude_m=amplitude*multiplier,shape_fallback_multiplier=multiplier,
+                guide_route_xy=points,
+                generation=dict(layout='rectangular-loop-slalom-open-ramp',
+                                slalom_centers=[dict(x=x,y=y,guide_offset_x=1.5*d) for x,y,d in sectors],
+                                barrel_palette=list(BARREL_COLORS),shape_amplitude_m=1.5,shape_fallback_multiplier=1.,
                                 clearance_margin_m=MARGIN,footprint=[-1.1,.6,-.5,.5],
                                 boundary_conservative_clearance_m=boundary_margin,
                                 obstacle_conservative_clearance_m=min(obstacle_margins),
@@ -259,7 +273,8 @@ def generate(seed=2027,difficulty='normal',base=None):
         lat,lon,alt=frame.to_geodetic(*p)
         goals.append(dict(name=f'variant_{j:03}',latitude=lat,longitude=lon,altitude=alt,yaw=yaw[i],
                           odom_xy=p,route_s_m=ss[i],mode=route_modes[i]))
-    # Remove nearby regular samples, then merge required ramp poses by route arc.
+    # Replace only regular samples within the ramp checkpoints. Keep the
+    # neighboring gap transitions and straight-leg spacing outside the ramp.
     critical=[]
     for x,label in RAMP_CHECKPOINTS:
         i=next(i for i,p in enumerate(points) if math.dist(p,(x,44.5))<1e-8)
@@ -267,7 +282,7 @@ def generate(seed=2027,difficulty='normal',base=None):
         critical.append(dict(name='ramp_001_'+label,latitude=lat,longitude=lon,altitude=alt,
                              yaw=math.pi,odom_xy=(x,44.5),route_s_m=ss[i],mode=route_modes[i],
                              ramp_id=ramp['id'],ramp_checkpoint=label))
-    goals=[g for g in goals if all(abs(g['route_s_m']-c['route_s_m'])>2 for c in critical)]
+    goals=[g for g in goals if not critical[0]['route_s_m']<=g['route_s_m']<=critical[-1]['route_s_m']]
     goals=sorted(goals+critical,key=lambda g:g['route_s_m'])
     goals[-1].update(odom_xy=[0.,0.],yaw=0.)
     mission=dict(origin=base['origin'],seed=seed,difficulty=difficulty,waypoints=goals,
@@ -293,17 +308,25 @@ def render(course,path):
         length=2*ramp['rise_length']+ramp['deck_length']
         outline=box(ramp['x'],ramp['y'],ramp['yaw'],0.,length,-ramp['width']/2,ramp['width']/2)
         draw.polygon([px(p) for p in outline],fill='#d6bd80',outline='#806529')
+        for side in (-1,1):
+            c,s=math.cos(ramp['yaw']),math.sin(ramp['yaw'])
+            offset=side*(ramp['width']/2-.06)
+            edge=[(ramp['x']+c*a-s*offset,ramp['y']+s*a+c*offset) for a in (0.,length)]
+            draw.line([px(p) for p in edge],fill='white',width=3)
         draw.text(px((ramp['x'],ramp['y']-ramp['width']/2-.4)),
                   f"{ramp['id']} {ramp['height']:.2f} m",fill='#604710')
-    draw.line([px(p) for p in points],fill='#426ba5',width=2)
+    draw.line([px(p) for p in course.get('guide_route_xy',points)],fill='#426ba5',width=2)
     for o in course['obstacles']:
-        color={'barrel':'#d86a25','barricade':'#b33427','pothole':'#48494a'}[o['kind']]
+        color=o.get('color',{'barrel':'orange','barricade':'#b33427','pothole':'#48494a'}[o['kind']])
         if o['kind']=='barricade':draw.polygon([px(p) for p in obstacle_box(o)],fill=color)
         else:
             x,y=px((o['x'],o['y']));r=o['width']*scale/2;draw.ellipse((x-r,y-r,x+r,y+r),fill=color)
     x,y=px((0,0));draw.text((x,y+8),'START / FINISH +X',fill='black')
-    draw.text((40,20),f"Seed {course['seed']} | {course['difficulty']} | 6 m lane | orange barrels / red barricades / grey potholes",fill='black')
+    draw.text((40,20),f"Seed {course['seed']} | {course['difficulty']} | 6 m lane | multicolor barrels / red barricades / grey potholes",fill='black')
     draw.text((40,42),'Blue: clearance-checked guide. White: painted boundaries. Unmarked section retains camera processing.',fill='black')
+    draw.text(px((4.,40.)), 'OPEN / RAMP SECTOR', fill='#604710')
+    draw.text(px((max(p[0] for p in points)-5.,24.)), 'SLALOM', fill='#303b24')
+    draw.text(px((min(p[0] for p in points)-2.,24.)), 'SLALOM', fill='#303b24')
     image.save(path)
 
 
