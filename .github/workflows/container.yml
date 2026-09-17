@@ -1,0 +1,43 @@
+name: Publish ROS Jazzy container
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: New release tag (letters, numbers, dot, underscore, hyphen)
+        required: true
+        type: string
+permissions:
+  contents: write
+concurrency:
+  group: publish-jazzy
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Build and verify Ubuntu / ROS / model assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          image="igvc-sim"
+          docker build -f docker/Dockerfile \
+            --label "org.opencontainers.image.source=https://github.com/${GITHUB_REPOSITORY}" \
+            --label "org.opencontainers.image.revision=${GITHUB_SHA}" \
+            -t "$image:jazzy" -t "$image:sha-${GITHUB_SHA}" .
+          docker run --rm "$image:jazzy" python3 docker/verify_environment.py
+          docker run --rm "$image:jazzy" python3 -m py_compile tools/sensor_course.py tools/sensor_route_policy.py tools/export_autonomy_mission.py tools/audit_sensor_run.py
+      - name: Publish downloadable image on GitHub Releases
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ inputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$RELEASE_TAG" =~ ^[A-Za-z0-9][A-Za-z0-9._-]*$ ]]
+          docker save igvc-sim:jazzy | gzip -1 > igvc-sim-jazzy-linux-amd64.tar.gz
+          sha256sum igvc-sim-jazzy-linux-amd64.tar.gz > SHA256SUMS
+          gh release create "$RELEASE_TAG" igvc-sim-jazzy-linux-amd64.tar.gz SHA256SUMS \
+            --target "$GITHUB_SHA" --title "ROS Jazzy image: $RELEASE_TAG" \
+            --notes "Ubuntu 24.04 / ROS 2 Jazzy. Load with docker load -i igvc-sim-jazzy-linux-amd64.tar.gz. Unity runs separately on the host. Read README and docs/SENSOR_AUTONOMY.md for setup and current experimental limitations."

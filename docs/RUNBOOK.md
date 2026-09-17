@@ -1,5 +1,10 @@
 # Transport probe runbook
 
+Docker `course` now runs experimental [sensor-led navigation](SENSOR_AUTONOMY.md).
+Use `guided-course` explicitly for the older generated-route regression described
+in historical lap instructions. Sensor mode requires rebuilt Unity and Docker;
+it refuses an older player that enforces hidden lane geometry.
+
 For the [caster swivel test](CASTER_SWIVEL.md), use a fresh `drive-start -Visible` and run `wsl -d Ubuntu-24.04 -- bash tools/run_ros.sh python3 tools/verify_caster_swivel.py` from the repository root. It commands bounded forward/reverse/pivot/arc phases and stops afterward. All R3-a players must be rebuilt for the new swivel scene references.
 
 Run `terrain-turn-test` after a fresh `terrain-start -Visible` for the [bounded ramp pivot and arc experiment](CASTER_TURNING.md). It drives manually, checks measured motion, and stops afterward; it does not reset the robot or enable autonomy.

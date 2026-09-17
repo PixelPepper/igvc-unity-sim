@@ -68,6 +68,7 @@ namespace IGVC
         public void ConfigureCameraDefaultPitch(double value) { defaultCameraPitch = Math.Clamp(value, -Math.PI/6, Math.PI/6); }
 
         // Generated ROS message registrars run after scene Awake; register topics in Start.
+        private bool scoreLinesOnly;
         private void Start()
         {
             Application.runInBackground = true;
@@ -80,6 +81,7 @@ namespace IGVC
                 throw new InvalidOperationException("R3-a wheel/lidar references missing; rebuild the scene.");
             ros = ROSConnection.GetOrCreateInstance();
             string variantPath = Arg("--course-manifest", "");
+            scoreLinesOnly = Arg("--line-guard", "enforce") == "scoring";
             if (!string.IsNullOrEmpty(variantPath))
             {
                 if (!r3aMode || laneGuard == null) throw new InvalidOperationException("Variants require the course scene");
@@ -182,7 +184,7 @@ namespace IGVC
             motion.Step(motion.Paused ? 0 : 0.01, Time.realtimeSinceStartupAsDouble, !ros.HasConnectionError);
             if (r3aMode && !motion.Paused)
             {
-                if (laneGuard != null && !laneGuard.AllowsMotion(drive.AxleX, drive.AxleY, drive.Yaw, motion.Linear, motion.Angular, .01))
+                if (laneGuard != null && !laneGuard.AllowsMotion(drive.AxleX, drive.AxleY, drive.Yaw, motion.Linear, motion.Angular, .01) && !scoreLinesOnly)
                     motion.RejectMotion(SimTime);
                 planarLinear = motion.Linear;
                 if (TerrainMode)
@@ -375,7 +377,7 @@ namespace IGVC
                 capturePath = "";
             }
             if (Time.frameCount % 60 == 0 && !ros.HasConnectionError)
-                ros.Publish("/sim/status", new StringMsg($"{(r3aMode ? "r3a_kinematic_oracle" : "probe")} run={runId} course={courseIdentity} terrain_support={TerrainMode} caster_suspension={CasterMode} camera_pitch={cameraPitch:F4} paused={motion.Paused} estop={motion.Stopped} line_blocks={laneGuard?.BlockedSteps ?? 0} sim={SimTime:F2} {cameraPublisher.Diagnostics} {depthPublisher.Diagnostics}"));
+                ros.Publish("/sim/status", new StringMsg($"{(r3aMode ? "r3a_kinematic_oracle" : "probe")} run={runId} course={courseIdentity} terrain_support={TerrainMode} caster_suspension={CasterMode} camera_pitch={cameraPitch:F4} paused={motion.Paused} estop={motion.Stopped} line_guard={(scoreLinesOnly ? "scoring" : "enforce")} line_blocks={laneGuard?.BlockedSteps ?? 0} sim={SimTime:F2} {cameraPublisher.Diagnostics} {depthPublisher.Diagnostics}"));
         }
 
         private void OnGUI()

@@ -1,0 +1,29 @@
+{
+  "passed": true,
+  "checks": {
+    "streams_fresh": true,
+    "stream_rates": true,
+    "clock_advancing": true,
+    "rgb_info_pairs": true,
+    "depth_info_pairs": true,
+    "valid_payloads": true,
+    "robot_sensor_tf": true
+  },
+  "rates_hz": {
+    "clock": 84.39218106012736,
+    "odom": 42.77069685462937,
+    "rgb": 11.542092258667505,
+    "rgb_info": 11.542092258667505,
+    "depth": 8.044488543919778,
+    "depth_info": 8.044488543919778,
+    "scan": 4.546884829172048,
+    "joints": 42.77069685462937
+  },
+  "errors": {},
+  "pairs": {
+    "rgb": 231,
+    "depth": 161
+  },
+  "finite_scan_returns": 1092,
+  "duration_s": 20.01370244000009
+}

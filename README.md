@@ -2,6 +2,12 @@
 
 A Unity simulator with Windows and Linux launchers, ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity runs on the host, rendering RGB and ideal depth and simulating lidar, robot motion, and a seeded obstacle course.
 
+**Navigation update:** `course` selects local goals from observed camera/depth/lidar
+costs using six broad GPS destinations. This experimental mode has no generated
+route input. `guided-course` retains the earlier route-informed regression.
+The successful lap results below describe that guided mode, not proven sensor-led
+autonomy. See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
+
 Current generated layout follows the supplied course reference: alternating
 barrel passages, random colored barrels in driving sectors, and separate line
 gaps around a marked ramp opposite the start. Seed 2027 uses 31 guidance waypoints
@@ -40,9 +46,7 @@ project in the Editor before building. Adjust `UNITY_EDITOR` to the actual path.
 No host ROS installation or Windows/WSL executable is needed by these commands.
 
 ```bash
-# Authenticate for this private repository if Git is not already configured.
-gh auth login
-gh auth setup-git
+# Public checkout; authentication is not required to download.
 git clone https://github.com/PixelPepper/igvc-unity-sim.git
 cd igvc-unity-sim
 export UNITY_EDITOR="$HOME/Unity/Hub/Editor/6000.3.23f1/Editor/Unity"
@@ -59,7 +63,7 @@ In another terminal in the repository:
 
 ```bash
 bash tools/docker.sh course --seed 2027 --difficulty normal
-bash tools/docker.sh audit --seed 2027 --difficulty normal
+# audit applies only after an explicitly requested guided-course regression
 bash tools/docker.sh status
 bash tools/docker.sh stop
 ```
@@ -127,7 +131,7 @@ This configuration supports one simulator session at a time, including across ch
 
 ## Download and build
 
-The [repository](https://github.com/PixelPepper/igvc-unity-sim) is private; sign into GitHub with an account that has access.
+Download the public [repository](https://github.com/PixelPepper/igvc-unity-sim).
 
 ```powershell
 git clone https://github.com/PixelPepper/igvc-unity-sim.git
@@ -142,6 +146,40 @@ Run these and subsequent commands from the repository root in PowerShell. Close 
 `prepare-unity` runs [docker/prepare-unity.sh](docker/prepare-unity.sh). It downloads SoonerRobotics' reference simulator at commit `0298b11c4f469404d08b37ad98431cdab6e02818` and imports the needed environment assets locally. These external assets are **not redistributed in this repository**. Their reuse terms remain unresolved; review upstream terms before redistribution. An existing checkout at another revision is rejected.
 
 The repository retains the robot description, source meshes, configuration, and Unity source assets needed for the simulator. Original SolidWorks inputs remain external and unchanged. Generated Unity/ROS output, downloaded course assets, and local reports stay under ignored paths.
+
+## Download the prebuilt ROS container
+
+The [GitHub release](https://github.com/PixelPepper/igvc-unity-sim/releases/tag/sensor-autonomy-preview-2026.09.16)
+provides `igvc-sim-jazzy-linux-amd64.tar.gz` and `SHA256SUMS`. The image runs
+Ubuntu 24.04 with ROS 2 Jazzy, RViz and Nav2. It supports Linux x86-64 and Windows
+through the WSL2 Docker setup above; it is not a Windows-container or ARM image.
+Unity remains a separate host application and still needs preparation/build.
+
+After downloading both release files, verify the checksum and load the image.
+On Linux, in the download directory:
+
+```bash
+sha256sum -c SHA256SUMS
+docker load -i igvc-sim-jazzy-linux-amd64.tar.gz
+```
+
+On this Windows/WSL2 setup (adjust the downloaded path):
+
+```powershell
+Get-FileHash "$env:USERPROFILE/Downloads/igvc-sim-jazzy-linux-amd64.tar.gz" -Algorithm SHA256
+# Compare with SHA256SUMS, then load through the WSL Docker engine:
+$archive = Join-Path $env:USERPROFILE 'Downloads/igvc-sim-jazzy-linux-amd64.tar.gz'
+$wslArchive = (wsl -d Ubuntu-24.04 -- wslpath -a "$archive").Trim()
+wsl -d Ubuntu-24.04 -u root -- docker load -i "$wslArchive"
+```
+
+Loading installs `igvc-sim:jazzy`, so skip the `build` action and use the normal
+`prepare-unity`, `unity-build`, `start`, `rviz`, and `course` commands. Check out
+the matching release tag to keep Unity and ROS interfaces aligned:
+`git checkout sensor-autonomy-preview-2026.09.16`.
+For registry-hosted images, Compose also accepts an `IGVC_IMAGE` override.
+See [asset provenance](THIRD_PARTY_ASSETS.md); public availability does not grant
+a new blanket license for vendor CAD.
 
 ## Start, inspect, and drive the course
 
@@ -161,11 +199,15 @@ Stop any existing native ROS simulator session first so TCP port 10000 is availa
 ./tools/docker.ps1 run python3 docker/verify_environment.py
 ./tools/docker.ps1 run python3 docker/verify_integration.py
 ./tools/docker.ps1 course -Seed 2027
-./tools/docker.ps1 audit -Seed 2027
+# audit is only for the separate guided-course regression
 ./tools/docker.ps1 stop
 ```
 
-`course` requests autonomous motion and writes `artifacts/courses/seed-2027/docker-run.json`. `audit` evaluates that run against its course. Inspect the reports before claiming success. Use the same seed for `start`, `course`, and `audit`; difficulties are `easy`, `normal`, and `hard`. `stop` stops the owned Unity player and removes the running Compose services. Restart with `start`.
+`course` requests experimental sensor-led motion and writes `artifacts/courses/seed-2027/sensor-run.json`.
+`guided-course` uses the known guide, writes `docker-run.json`, and can be checked
+with `audit`. These are different tests. Use the same seed for start and mission;
+difficulties are `easy`, `normal`, and `hard`. `stop` stops the owned Unity player
+and removes Compose services. Restart with `start`.
 
 For an interactive ROS terminal:
 

@@ -23,9 +23,9 @@ def parser():
     result = argparse.ArgumentParser(description=__doc__)
     actions = result.add_subparsers(dest='action', required=True)
     for name in ('build', 'prepare-unity', 'unity-build', 'start', 'status',
-                 'rviz', 'shell', 'run', 'course', 'audit', 'stop'):
+                 'rviz', 'shell', 'run', 'course', 'guided-course', 'sensor-audit', 'audit', 'stop'):
         action = actions.add_parser(name)
-        if name in ('start', 'course', 'audit'):
+        if name in ('start', 'course', 'guided-course', 'sensor-audit', 'audit'):
             action.add_argument('--seed', type=int, default=2027)
             action.add_argument('--difficulty', choices=('easy', 'normal', 'hard'), default='normal')
         if name == 'unity-build':
@@ -207,7 +207,7 @@ class Session:
             folder = self.root / f'artifacts/courses/seed-{args.seed}'
             with (folder / 'linux-player-stdout.log').open('w') as log:
                 child = subprocess.Popen([str(self.player), '--ros-ip', '127.0.0.1',
-                    '--ros-port', '10000', '--course-manifest', str(folder / 'course.json'),
+                    '--ros-port', '10000', '--line-guard', 'scoring', '--course-manifest', str(folder / 'course.json'),
                     '-logFile', str(folder / 'docker-unity.log')], cwd=self.root,
                     env=self.env, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
             identity = process_identity(child.pid)
@@ -256,7 +256,7 @@ class Session:
             raise SessionError(f'Generate this course with start first: {path}') from exc
         if course.get('seed') != args.seed or course.get('difficulty') != args.difficulty:
             raise SessionError('Requested seed/difficulty does not match the generated course.')
-        if args.action == 'course':
+        if args.action in ('course', 'guided-course'):
             state = self.saved()
             if not self.owns_player(state) or state.get('seed') != args.seed or state.get('difficulty') != args.difficulty:
                 raise SessionError('The running owned player does not match this seed/difficulty.')
@@ -321,12 +321,19 @@ def main(argv=None):
             session.exec_ros('ros2', 'run', 'rviz2', 'rviz2', '-d',
                 '/opt/igvc/install/igvc_sim_bridge/share/igvc_sim_bridge/rviz/nav.rviz',
                 '--ros-args', '-p', 'use_sim_time:=true', interactive=True)
-        elif args.action in ('course', 'audit'):
+        elif args.action in ('course', 'guided-course', 'sensor-audit', 'audit'):
             session.validate_course(args)
             folder = f'/opt/igvc/artifacts/courses/seed-{args.seed}'
             if args.action == 'course':
+                session.exec_ros('python3', 'tools/sensor_course.py', '--mission',
+                                 f'{folder}/autonomy.json', '--report', f'{folder}/sensor-run.json')
+            elif args.action == 'guided-course':
                 session.exec_ros('python3', 'tools/full_course.py', '--mission',
                                  f'{folder}/mission.json', '--report', f'{folder}/docker-run.json')
+            elif args.action == 'sensor-audit':
+                session.exec_ros('python3', 'tools/audit_sensor_run.py', '--course',
+                                 f'{folder}/course.json', '--run', f'{folder}/sensor-run.json',
+                                 '--output', f'{folder}/sensor-audit.json')
             else:
                 session.exec_ros('python3', 'tools/audit_course_variant.py', '--course',
                                  f'{folder}/course.json', '--run', f'{folder}/docker-run.json')

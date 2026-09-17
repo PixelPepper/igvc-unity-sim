@@ -1,6 +1,6 @@
 param(
     [Parameter(Position=0)]
-    [ValidateSet('build','start','stop','status','rviz','shell','run','course','audit','prepare-unity','unity-build')]
+    [ValidateSet('build','start','stop','status','rviz','shell','run','course','guided-course','sensor-audit','audit','prepare-unity','unity-build')]
     [string]$Action='status',
     [int]$Seed=2027,
     [ValidateSet('easy','normal','hard')][string]$Difficulty='normal',
@@ -45,12 +45,14 @@ switch($Action){
         Compose @('run','--rm','--no-deps','ros','python3','tools/generate_course_variant.py','--seed',"$Seed",'--difficulty',$Difficulty)
         $folder=Join-Path $root "artifacts/courses/seed-$Seed"
         New-Item -ItemType Directory -Force (Split-Path $state) | Out-Null
-        $proc=Start-Process -FilePath $player -ArgumentList "--ros-ip 127.0.0.1 --ros-port 10000 --course-manifest `"$folder/course.json`" -logFile `"$folder/docker-unity.log`"" -WindowStyle Normal -PassThru
+        $proc=Start-Process -FilePath $player -ArgumentList "--ros-ip 127.0.0.1 --ros-port 10000 --line-guard scoring --course-manifest `"$folder/course.json`" -logFile `"$folder/docker-unity.log`"" -WindowStyle Normal -PassThru
         @{pid=$proc.Id;start=$proc.StartTime.ToUniversalTime().ToString('o');seed=$Seed} | ConvertTo-Json | Set-Content -LiteralPath $state
         Write-Output 'Unity and container started. Run rviz, then course. Startup alone is not an integration test.'
     }
     'rviz' { Compose @('exec','ros','/opt/igvc/docker/entrypoint.sh','ros2','run','rviz2','rviz2','-d','/opt/igvc/install/igvc_sim_bridge/share/igvc_sim_bridge/rviz/nav.rviz','--ros-args','-p','use_sim_time:=true') }
-    'course' { Exec-Ros @('python3','tools/full_course.py','--mission',"/opt/igvc/artifacts/courses/seed-$Seed/mission.json",'--report',"/opt/igvc/artifacts/courses/seed-$Seed/docker-run.json") }
+    'guided-course' { Exec-Ros @('python3','tools/full_course.py','--mission',"/opt/igvc/artifacts/courses/seed-$Seed/mission.json",'--report',"/opt/igvc/artifacts/courses/seed-$Seed/docker-run.json") }
+    'course' { Exec-Ros @('python3','tools/sensor_course.py','--mission',"/opt/igvc/artifacts/courses/seed-$Seed/autonomy.json",'--report',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-run.json") }
+    'sensor-audit' { Exec-Ros @('python3','tools/audit_sensor_run.py','--course',"/opt/igvc/artifacts/courses/seed-$Seed/course.json",'--run',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-run.json",'--output',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-audit.json") }
     'audit' { Exec-Ros @('python3','tools/audit_course_variant.py','--course',"/opt/igvc/artifacts/courses/seed-$Seed/course.json",'--run',"/opt/igvc/artifacts/courses/seed-$Seed/docker-run.json") }
     'stop' {
         if(Test-Path -LiteralPath $state){

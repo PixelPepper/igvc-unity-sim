@@ -339,19 +339,21 @@ def main():
     parser.add_argument('--difficulty',choices=('easy','normal','hard'),default='normal')
     args=parser.parse_args();course,mission=generate(args.seed,args.difficulty)
     output=ROOT/f'artifacts/courses/seed-{args.seed}';output.mkdir(parents=True,exist_ok=True)
-    if (output/'run.json').exists() or (output/'docker-run.json').exists():
+    if any((output/name).exists() for name in ('run.json', 'docker-run.json', 'sensor-run.json')):
         import datetime, shutil
         archive=output/('previous-'+datetime.datetime.now(datetime.timezone.utc).strftime('%Y%m%dT%H%M%S%fZ'))
         archive.mkdir()
-        for name in ('course.json','mission.json','overview.png','run.json','docker-run.json','validation.json','sensors.json','unity.log','docker-unity.log','hazard-rgb.png','hazard-mask.png'):
+        for name in ('course.json','mission.json','autonomy.json','sensor-run.json','sensor-audit.json','overview.png','run.json','docker-run.json','validation.json','sensors.json','unity.log','docker-unity.log','hazard-rgb.png','hazard-mask.png'):
             if (output/name).is_file():shutil.copy2(output/name,archive/name)
         # The previous run is retained in the archive; a new layout has no run yet.
-        for name in ('run.json','docker-run.json','validation.json','sensors.json'):
+        for name in ('run.json','docker-run.json','sensor-run.json','sensor-audit.json','validation.json','sensors.json'):
             if (output/name).is_file():(output/name).unlink()
     (output/'course.json').write_text(json.dumps(course,indent=2)+'\n')
     import hashlib
     mission['course_sha256']=hashlib.sha256((output/'course.json').read_bytes()).hexdigest()
     (output/'mission.json').write_text(json.dumps(mission,indent=2)+'\n')
+    from export_autonomy_mission import export_mission
+    (output/'autonomy.json').write_text(json.dumps(export_mission(mission, course),indent=2)+'\n')
     render(course,output/'overview.png')
     print(json.dumps(dict(output=str(output),obstacles=len(course['obstacles']),waypoints=len(mission['waypoints']),
                          length_m=mission['route']['length_m'],generation=course['generation']),indent=2))

@@ -1,5 +1,6 @@
 # Local artifacts and credentials
 /artifacts/
+/.codex-remote-attachments/
 # User-requested local reference import; upstream reuse terms unresolved.
 /unity/IGVCSim/Assets/IGVC/External/
 /unity/IGVCSim/Assets/IGVC/External.meta

@@ -1,5 +1,9 @@
 # IGVC simulation implementation plan
 
+Current autonomy change: [sensor-led navigation](SENSOR_AUTONOMY.md) replaces
+route-informed mission control with observed-costmap local goals and six broad
+GPS destinations. Earlier lap evidence below belongs to guided regression.
+
 Latest reference refinement: [sector-based course](REFERENCE_COURSE.md) replaces
 midfield barrel scattering with alternating passages and random colored barrels
 around separate line gaps flanking the painted ramp. Seed 2027 uses 31 goals.
