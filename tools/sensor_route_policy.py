@@ -41,7 +41,8 @@ def _clearance_mask(costs, width, height, radius_cells):
 
 def select_local_goal(origin_xy, resolution, width, height, costs,
                       robot_xy, robot_yaw, destination_xy, *, robot_radius=0.65,
-                      lookahead=3.0, max_path_length=14.0, min_progress=0.25):
+                      lookahead=3.0, max_path_length=14.0, min_progress=0.25,
+                      forward_only=False):
     """Return ``{local_goal, yaw, path, diagnostics}``, or fail closed with None.
 
     Coordinates and distances are metres, yaw is radians, and ``costs`` is the
@@ -58,6 +59,9 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     reduce destination distance by ``min_progress``. If none exists, the robot is
     unsafe, or input is invalid, return None rather than inventing an escape.
     There is no claim of completeness when a detour exceeds the observed horizon.
+    With ``forward_only``, every step stays within 80 degrees of the current
+    robot heading; destinations behind the robot fail closed. Replanning with
+    updated headings permits gradual bends without planning a reversing escape.
     """
     try:
         values = (*origin_xy, *robot_xy, robot_yaw, *destination_xy, resolution,
@@ -77,6 +81,15 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     ox, oy = origin_xy
     rx, ry = robot_xy
     gx, gy = destination_xy
+    heading = (math.cos(robot_yaw), math.sin(robot_yaw))
+    minimum_alignment = math.cos(math.radians(80.))
+
+    def forward_step(dx, dy):
+        length = math.hypot(dx, dy)
+        return length > 1e-12 and (dx*heading[0]+dy*heading[1])/length >= minimum_alignment
+
+    if forward_only and (gx-rx)*heading[0]+(gy-ry)*heading[1] < 0:
+        return None
     sx, sy = math.floor((rx - ox) / resolution), math.floor((ry - oy) / resolution)
     if not (0 <= sx < width and 0 <= sy < height):
         return None
@@ -100,12 +113,13 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     lengths = [infinity] * count
     parents = [-1] * count
     distances[start] = 0.0
-    lengths[start] = math.dist(robot_xy, point(start))
+    lengths[start] = 0.0 if forward_only else math.dist(robot_xy, point(start))
     queue = [(0.0, start)]
     best, best_score = None, infinity
     expanded = 0
     neighbours = [(dx, dy, math.hypot(dx, dy) * resolution)
-                  for dy in (-1, 0, 1) for dx in (-1, 0, 1) if dx or dy]
+                  for dy in (-1, 0, 1) for dx in (-1, 0, 1)
+                  if (dx or dy) and (not forward_only or forward_step(dx, dy))]
     while queue:
         travel_cost, cell = heapq.heappop(queue)
         if travel_cost != distances[cell]:
@@ -128,7 +142,16 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
                 continue
             if dx and dy and (not clear[y * width + nx] or not clear[ny * width + x]):
                 continue
-            length = lengths[cell] + step
+            edge_length = step
+            if forward_only and cell == start:
+                # Connect the actual pose directly to the first neighbour.
+                # Snapping backward to the current cell centre would violate
+                # forward-only motion even when all subsequent edges comply.
+                qx, qy = point(other)
+                if not forward_step(qx-rx, qy-ry):
+                    continue
+                edge_length = math.hypot(qx-rx, qy-ry)
+            length = lengths[cell] + edge_length
             if length > max_path_length:
                 continue
             # Soft costs preserve inflation gradients; a heading penalty on
@@ -137,7 +160,7 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
             if cell == start:
                 alignment = math.cos(math.atan2(dy, dx) - robot_yaw)
                 turn = .8 * (1.0 - alignment) + (1.0 if alignment < -.25 else 0.0)
-            candidate = travel_cost + step * (1.0 + 4.0 * costs[other] / 98.0) + turn
+            candidate = travel_cost + edge_length * (1.0 + 2.0 * costs[other] / 98.0) + turn
             if candidate < distances[other]:
                 distances[other] = candidate
                 lengths[other] = length
@@ -150,7 +173,7 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     while cells[-1] != start:
         cells.append(parents[cells[-1]])
     cells.reverse()
-    full_path = [tuple(robot_xy)] + [point(cell) for cell in cells]
+    full_path = [tuple(robot_xy)] + [point(cell) for cell in (cells[1:] if forward_only else cells)]
     path = [full_path[0]]
     travelled = 0.0
     for position in full_path[1:]:
@@ -170,5 +193,6 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
             'path_length': lengths[best], 'local_path_length': travelled,
             'weighted_cost': distances[best], 'robot_radius': robot_radius,
             'unknown_is_blocked': True,
+            'forward_only': forward_only,
         },
     }

@@ -122,6 +122,51 @@ class SensorRoutePolicyTests(unittest.TestCase):
         self.assertIsNone(self.run_policy(self.grid()[:-1]))
         self.assertIsNone(self.run_policy(self.grid(), start=(-1., 6.)))
 
+    def assert_forward_path(self, result, heading):
+        self.assertIsNotNone(result)
+        for a,b in zip(result['path'],result['path'][1:]):
+            if math.dist(a,b)<1e-10:
+                continue
+            delta=math.atan2(b[1]-a[1],b[0]-a[0])-heading
+            self.assertLessEqual(abs(math.atan2(math.sin(delta),math.cos(delta))),math.radians(80.)+1e-9)
+        delta=result['yaw']-heading
+        self.assertLessEqual(abs(math.atan2(math.sin(delta),math.cos(delta))),math.radians(80.)+1e-9)
+
+    def test_forward_only_allows_obstacle_detour_without_backward_snap(self):
+        costs=self.grid()
+        self.mark(costs,24,27,25,35)
+        result=self.run_policy(costs,start=(2.19,6.19),lookahead=14.,forward_only=True)
+        self.assert_footprint_clear(result,costs)
+        self.assert_forward_path(result,0.)
+        self.assertGreater(result['local_goal'][0],8.)
+        self.assertTrue(any(abs(p[1]-6.19)>1.5 for p in result['path']))
+
+    def test_forward_only_rejects_destination_behind(self):
+        self.assertIsNone(self.run_policy(self.grid(),destination=(1.1,6.1),forward_only=True))
+        self.assertIsNotNone(self.run_policy(self.grid(),destination=(1.1,6.1)))
+
+    def test_forward_only_trapped_reverse_escape_fails_closed(self):
+        costs=self.grid()
+        self.mark(costs,25,28,20,41)
+        self.mark(costs,10,28,20,23)
+        self.mark(costs,10,28,38,41)
+        options=dict(start=(4.1,6.1),destination=(9.1,6.1),max_path_length=25.,lookahead=25.)
+        escape=self.run_policy(costs,**options)
+        self.assert_footprint_clear(escape,costs)
+        self.assertTrue(any(b[0]<a[0] for a,b in zip(escape['path'],escape['path'][1:])))
+        self.assertIsNone(self.run_policy(costs,forward_only=True,**options))
+
+    def test_forward_only_gradual_bend_uses_updated_heading(self):
+        costs=self.grid()
+        for pose,heading,target in (((2.1,2.1),0.,(8.1,6.1)),
+                                    ((5.1,4.1),math.pi/4,(7.1,9.1)),
+                                    ((6.1,7.1),math.pi/2,(6.1,10.1))):
+            with self.subTest(heading=heading):
+                result=select_local_goal((0,0),self.resolution,self.size,self.size,
+                                         costs,pose,heading,target,forward_only=True)
+                self.assert_forward_path(result,heading)
+                self.assertGreater(result['diagnostics']['endpoint_progress'],.25)
+
     def test_no_route_or_map_file_dependency(self):
         import sensor_route_policy
         tree = ast.parse(Path(sensor_route_policy.__file__).read_text())

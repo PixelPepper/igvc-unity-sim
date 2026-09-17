@@ -58,7 +58,7 @@ def run(args):
     from geometry_msgs.msg import PoseStamped
     from std_msgs.msg import Bool, String
     from std_srvs.srv import SetBool
-    from nav2_msgs.action import NavigateToPose, BackUp
+    from nav2_msgs.action import NavigateToPose
     from nav2_msgs.msg import SpeedLimit
     from nav2_msgs.srv import ClearEntireCostmap
 
@@ -67,7 +67,6 @@ def run(args):
     rclpy.init()
     node = rclpy.create_node('igvc_sensor_course')
     nav = ActionClient(node, NavigateToPose, '/navigate_to_pose')
-    backup = ActionClient(node, BackUp, '/backup')
     gate = node.create_client(SetBool, '/sim/set_autonomy')
     zone = node.create_client(SetBool, '/sim/set_unmarked_mode')
     speed = node.create_publisher(SpeedLimit, '/speed_limit', 10)
@@ -158,7 +157,6 @@ def run(args):
         state['status'] = 'running'
         end = time.monotonic()+args.timeout
         target = None; result = None; last_plan = 0.; no_plan_since = None
-        recoveries = set()
         while time.monotonic() < end:
             rclpy.spin_once(node, timeout_sec=.05)
             now = time.monotonic()
@@ -193,7 +191,8 @@ def run(args):
             gx, gy, radius = goals[state['completed_destinations']]
             plan = select_local_goal((grid.info.origin.position.x, grid.info.origin.position.y),
                 grid.info.resolution, grid.info.width, grid.info.height, grid.data,
-                (x, y), yaw, (gx, gy), robot_radius=.5, lookahead=4., max_path_length=14., min_progress=.1)
+                (x, y), yaw, (gx, gy), robot_radius=.5, lookahead=4., max_path_length=14., min_progress=.1,
+                forward_only=True)
             last_plan = now
             if plan is None:
                 if handle is not None:
@@ -201,21 +200,7 @@ def run(args):
                 target = None
                 no_plan_since = no_plan_since or now
                 if now-no_plan_since > 10:
-                    cursor = state['completed_destinations']
-                    if cursor in recoveries or not backup.wait_for_server(timeout_sec=2):
-                        raise RuntimeError('No safe observed route toward destination; stopped without oracle fallback')
-                    recoveries.add(cursor)
-                    request = BackUp.Goal(); request.target.x = -.4
-                    request.speed = .1; request.time_allowance.sec = 10
-                    handle = wait(backup.send_goal_async(request))
-                    if not handle.accepted:
-                        raise RuntimeError('Collision-checked backup rejected')
-                    recovery = wait(handle.get_result_async(), 12)
-                    handle = None
-                    if recovery.status != 4:
-                        raise RuntimeError('Collision-checked backup failed; stopped')
-                    state.setdefault('recoveries', []).append({'destination': cursor, 'distance_m': .4})
-                    no_plan_since = None
+                    raise RuntimeError('No safe forward route; stopped without reversing or turning around')
                 continue
             no_plan_since = None
             if target is not None and handle is not None and not result.done() and math.hypot(target[0]-plan['local_goal'][0], target[1]-plan['local_goal'][1]) < 1.:

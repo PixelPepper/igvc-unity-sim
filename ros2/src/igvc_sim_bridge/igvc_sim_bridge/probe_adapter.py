@@ -12,6 +12,7 @@ from std_srvs.srv import SetBool
 from std_msgs.msg import Bool
 from rclpy.qos import QoSProfile, DurabilityPolicy
 from tf2_ros import TransformBroadcaster, StaticTransformBroadcaster
+from .navigation_policy import forward_command_allowed
 
 
 class ProbeAdapter(Node):
@@ -89,7 +90,7 @@ class ProbeAdapter(Node):
 
     def nav_command(self, msg):
         if self.autonomy_enabled:
-            self.accept_command(msg)
+            self.accept_command(msg if forward_command_allowed(msg.linear.x, msg.angular.z) else Twist())
 
     def set_autonomy(self, request, response):
         if request.data and not self.perception_fresh():

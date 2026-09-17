@@ -48,9 +48,25 @@ The local selector uses a 0.5 m half-width approximation plus grid padding; Nav2
 retains the complete asymmetric rectangular footprint for execution. Nav2's 99
 cost cells already represent inscribed inflation and block centres without being
 dilated again; lethal 100 paint/obstacles and unknown space receive clearance.
-When no route is observed, the mission cancels forward navigation, waits for new
-observations, and permits one collision-checked 0.4 m backup per broad destination.
-Failure then stops the mission rather than using the generated guide.
+When no route is observed, the mission cancels navigation and waits for new
+observations. After ten seconds without a safe forward route it stops. Backup
+recovery is disabled by the user's updated preference.
+
+Current forward-motion profile: inflation radius 0.65 m (previously 0.75), decay
+factor 8 (previously 5), and local soft-cost multiplier 2 (previously 4). Unknown,
+lethal and inscribed cells retain their blocking semantics. Search steps stay
+within 80 degrees of the current heading, and destinations behind the robot are
+rejected. Nav2 reversing and pivot-to-heading are disabled; final goal orientation
+does not trigger a spin. The adapter stops autonomous reverse/pivot commands and
+turns tighter than a 1 m radius rather than changing their checked curvature.
+Normal forward course bends remain permitted. This can stop in confined areas;
+it is not proof against every possible multi-step loop in an observed map.
+
+Forward-profile validation: 15 local-planner tests and two command-policy tests
+passed. Four [live command-gate checks](evidence/sensor-autonomy/forward-policy.json)
+confirmed reverse, pivot and tight-turn commands stop while a forward command
+passes. Live parameters confirmed 0.65 m inflation and disabled pivot-to-heading.
+This validates the command policy, not full-course completion.
 
 Initial sensor validation speed is 0.7 m/s; the 2.2 m/s ceiling remains. A simple
 observed-grid search is not a complete exploration planner: unseen detours or
