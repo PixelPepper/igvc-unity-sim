@@ -9,7 +9,9 @@ reconstruction or a statement of IGVC 2027 rule compliance.
 - Two connecting sectors contain alternating barrel groups. Six barrels obstruct
   unshifted centerline traversal; the clearance-checked guide weaves around them.
 - An open sector opposite the start contains random barrels and barricades.
-  Boundary paint ends before the ramp approaches and resumes after the exits.
+  Both white boundaries continue around the end bends, matching the red-marked
+  extensions in the user's September 16 screenshot. Paint then ends on the
+  straight ramp approaches and resumes around the opposite bend after the exit.
   The clarified dense layout has 16 barrels in these two gaps on normal
   difficulty (8 in each), up from 4 total. Easy has 12 and hard has 20. The
   normal course has 36 barrels overall; ramp surface and guide clearance remain
@@ -17,6 +19,9 @@ reconstruction or a statement of IGVC 2027 rule compliance.
   → open barrel area → painted lane.
 - The ramp retains white paint along both edges. Its painted section separates
   the two gaps; mission perception modes no longer merge them into one interval.
+  Its midpoint is centered between the two side-lane centerlines for every seed;
+  the painted tapers, obstacle reservation and guided regression checkpoints
+  move with it. The two open barrel approaches have equal available width.
 - Barrel colors are seeded red, orange, blue, green, yellow and white. Legacy
   manifests without a color still render orange. White barrels use dark rings;
   other colors use white rings. Colors are appearance, not navigation commands.

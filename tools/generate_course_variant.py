@@ -16,8 +16,8 @@ MARGIN = .2
 BODY_RADIUS = math.hypot(1.1, .5)
 DEFAULT_RAMP = dict(id='ramp-001', x=18., y=44.5, yaw=math.pi, width=3.,
                     rise_length=3., deck_length=2., height=.4)
-RAMP_CHECKPOINTS = ((19., 'approach'), (18., 'start'), (15., 'deck_start'),
-                    (13., 'deck_end'), (10., 'exit'), (9., 'departure'))
+RAMP_CHECKPOINT_OFFSETS = ((5., 'approach'), (4., 'start'), (1., 'deck_start'),
+                           (-1., 'deck_end'), (-4., 'exit'), (-5., 'departure'))
 
 
 def point_segment(p, a, b):
@@ -115,22 +115,23 @@ def sweep_bounds(points,yaws):
     return bounds
 
 
-def lane_half_width(p):
+def lane_half_width(p, ramp_center=14.):
     # Far-side ramp paint lies fully on its 3 m surface.
-    if abs(p[1]-44.5)>.7 or not 8<=p[0]<=20:return 3.
-    blend=min(1.,(p[0]-8)/2,(20-p[0])/2)
+    offset=p[0]-ramp_center
+    if abs(p[1]-44.5)>.7 or abs(offset)>6:return 3.
+    blend=min(1.,(offset+6)/2,(6-offset)/2)
     blend=blend*blend*(3-2*blend)
     return 3.-1.56*blend
 
 
-def boundaries(points,yaws):
-    return [[(p[0]-side*lane_half_width(p)*math.sin(y),p[1]+side*lane_half_width(p)*math.cos(y)) for p,y in zip(points,yaws)] for side in (-1,1)]
+def boundaries(points,yaws,ramp_center=14.):
+    return [[(p[0]-side*lane_half_width(p,ramp_center)*math.sin(y),p[1]+side*lane_half_width(p,ramp_center)*math.cos(y)) for p,y in zip(points,yaws)] for side in (-1,1)]
 
 
-def check_boundary(points,yaws,modes,lane_points=None,lane_modes=None):
+def check_boundary(points,yaws,modes,lane_points=None,lane_modes=None,ramp_center=14.):
     lane_points=points if lane_points is None else lane_points
     lane_modes=modes if lane_modes is None else lane_modes
-    lines=boundaries(lane_points,headings(lane_points)); bounds=sweep_bounds(points,yaws)
+    lines=boundaries(lane_points,headings(lane_points),ramp_center); bounds=sweep_bounds(points,yaws)
     segments=[]
     for line in lines:
         segments.extend((a,b) for i,(a,b) in enumerate(zip(line,line[1:])) if lane_modes[i]=='painted')
@@ -154,6 +155,8 @@ def generate(seed=2027,difficulty='normal',base=None):
     # Rounded rectangle: long start straight, two connecting slalom sectors,
     # and the opposite open/ramp sector. Seed changes the connecting-end width.
     left=-9.+rng.uniform(-.35,.35);right=29.+rng.uniform(-.35,.35)
+    ramp_center=(left+right)/2
+    ramp_checkpoints=[(ramp_center+offset,label) for offset,label in RAMP_CHECKPOINT_OFFSETS]
     radius=6.;anchors=[(0.,0.),(right-radius,0.)]
     for cx,cy,start_angle in ((right-radius,6.,-90),(right-radius,38.5,0),
                               (left+radius,38.5,90),(left+radius,6.,180)):
@@ -164,7 +167,9 @@ def generate(seed=2027,difficulty='normal',base=None):
     anchors.append((0.,0.))
     lane_points,_=resample(anchors,['painted']*len(anchors))
     def mode(p):
-        return 'unmarked' if p[1]>38 and not 8<=p[0]<=20 else 'painted'
+        # Carry both white edges around the end bends before opening the ramp
+        # approaches. The gaps belong on the opposite straight, not the turns.
+        return 'unmarked' if p[1]>44.45 and abs(p[0]-ramp_center)>6 else 'painted'
     lane_modes=[mode(p) for p in lane_points]
     shaped=[]
     for x,y in lane_points:
@@ -177,10 +182,10 @@ def generate(seed=2027,difficulty='normal',base=None):
     points,_=resample(shaped,lane_modes)
     route_modes=[mode(p) for p in points]
     yaw=headings(points)
-    good,boundary_margin=check_boundary(points,yaw,route_modes,lane_points,lane_modes)
+    good,boundary_margin=check_boundary(points,yaw,route_modes,lane_points,lane_modes,ramp_center)
     if not good:raise ValueError('Slalom route cannot provide painted-boundary clearance')
     # Insert exact far-side ramp anchors into the dense route.
-    for x, _ in RAMP_CHECKPOINTS:
+    for x, _ in ramp_checkpoints:
         candidates=[i for i,(a,b) in enumerate(zip(points,points[1:]))
                     if b[0] <= x <= a[0] and abs(a[1]-44.5)<1e-9 and abs(b[1]-44.5)<1e-9]
         if not candidates:raise ValueError('Far side cannot traverse the ramp center')
@@ -189,10 +194,10 @@ def generate(seed=2027,difficulty='normal',base=None):
             points.insert(i+1,(x,44.5));route_modes.insert(i+1,route_modes[i])
     yaw=headings(points)
     ss=arcs(points); sweep=sweep_bounds(points,yaw)
-    ramp=dict(DEFAULT_RAMP)
+    ramp=dict(DEFAULT_RAMP,x=ramp_center+4)
     reserved=box(ramp['x'],ramp['y'],ramp['yaw'],-1.,9.,-2.,2.)
     for p in points:
-        if 10 <= p[0] <= 18 and abs(p[1]-44.5)<2 and abs(p[1]-44.5)>=.65:
+        if abs(p[0]-ramp_center)<=4 and abs(p[1]-44.5)<2 and abs(p[1]-44.5)>=.65:
             raise ValueError('Route enters ramp reservation away from center')
     counts={'easy':(24,4,1),'normal':(36,8,2),'hard':(52,12,3)}[difficulty]
     open_barrels={'easy':12,'normal':16,'hard':20}[difficulty]
@@ -224,7 +229,7 @@ def generate(seed=2027,difficulty='normal',base=None):
                     if index>=count-open_barrels:
                         # Equal populations in BOTH line gaps, spanning each
                         # approach rather than a few barrels at distant corners.
-                        o.update(x=rng.uniform(left+1.,7.2) if index%2 else rng.uniform(20.8,right-1.),
+                        o.update(x=rng.uniform(left+1.,ramp_center-6.8) if index%2 else rng.uniform(ramp_center+6.8,right-1.),
                                  y=44.5+rng.choice((-1,1))*rng.uniform(1.4,2.4),sector='open-ramp')
                         if min(point_segment((o['x'],o['y']),a,b) for a,b in zip(lane_points,lane_points[1:]))>2.5:continue
                 # Include the full synthetic pothole cutout/rim, not just bowl diameter.
@@ -232,7 +237,7 @@ def generate(seed=2027,difficulty='normal',base=None):
                     if polygon_distance(reserved,obstacle_box(o))<=0:continue
                 else:
                     radius=max(o['length'],o['width'])/2+.85 if kind=='pothole' else o['width']/2
-                    reservation=dict(x=14.,y=44.5,yaw=math.pi,length=10.,width=4.)
+                    reservation=dict(x=ramp_center,y=44.5,yaw=math.pi,length=10.,width=4.)
                     if point_box((o['x'],o['y']),reservation)<=radius:continue
                 if any(obstacle_distance(o,b)<MARGIN for b in obstacles):continue
                 conservative=math.inf
@@ -245,7 +250,7 @@ def generate(seed=2027,difficulty='normal',base=None):
             else:raise ValueError(f'Bounded placement exhausted for {kind}; no unsafe fallback')
     course=dict(schema_version=1,seed=seed,difficulty=difficulty,units='m',frame='odom',lane_width_m=6.,
                 camera_pitch_rad=.1745329252,
-                centerline=[dict(x=p[0],y=p[1],painted=m=='painted',half_width=lane_half_width(p)) for p,m in zip(lane_points,lane_modes)],
+                centerline=[dict(x=p[0],y=p[1],painted=m=='painted',half_width=lane_half_width(p,ramp_center)) for p,m in zip(lane_points,lane_modes)],
                 obstacles=obstacles,ramps=[ramp],
                 guide_route_xy=points,
                 generation=dict(layout='rectangular-loop-slalom-open-ramp',
@@ -279,7 +284,7 @@ def generate(seed=2027,difficulty='normal',base=None):
     # Replace only regular samples within the ramp checkpoints. Keep the
     # neighboring gap transitions and straight-leg spacing outside the ramp.
     critical=[]
-    for x,label in RAMP_CHECKPOINTS:
+    for x,label in ramp_checkpoints:
         i=next(i for i,p in enumerate(points) if math.dist(p,(x,44.5))<1e-8)
         lat,lon,alt=frame.to_geodetic(x,44.5)
         critical.append(dict(name='ramp_001_'+label,latitude=lat,longitude=lon,altitude=alt,
@@ -302,7 +307,8 @@ def render(course,path):
     scale=min(1050/spanx,1100/spany)
     def px(p):return (int(65+(p[0]-xmin)*scale),int(85+(ymax-p[1])*scale))
     image=Image.new('RGB',(1200,1300),'#eceee7');draw=ImageDraw.Draw(image)
-    lines=boundaries(points,headings(points))
+    ramp_center=course['ramps'][0]['x']-4
+    lines=boundaries(points,headings(points),ramp_center)
     for i in range(len(points)-1):
         draw.polygon([px(lines[0][i]),px(lines[0][i+1]),px(lines[1][i+1]),px(lines[1][i])],fill='#c3c9b6')
         if course['centerline'][i]['painted']:

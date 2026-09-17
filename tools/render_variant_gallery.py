@@ -27,7 +27,9 @@ def main():
         xmin=min(p[0] for p in pts)-4;ymax=max(p[1] for p in pts)+4
         scale=min(470/(max(p[0] for p in pts)-xmin+4),615/(ymax-min(p[1] for p in pts)+4))
         def px(p):return (panel*540+35+(p[0]-xmin)*scale,130+(ymax-p[1])*scale)
-        left,right=boundaries(pts,headings(pts))
+        ramp=course.get('ramps',[None])[0]
+        ramp_center=(ramp['x']-ramp['rise_length']-ramp['deck_length']/2) if ramp else 14.
+        left,right=boundaries(pts,headings(pts),ramp_center)
         for i in range(len(pts)-1):
             draw.polygon([px(left[i]),px(left[i+1]),px(right[i+1]),px(right[i])],fill='#bdc5ba')
             if course['centerline'][i]['painted'] and course['centerline'][i+1]['painted']:

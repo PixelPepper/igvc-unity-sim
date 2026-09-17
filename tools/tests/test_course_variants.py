@@ -21,6 +21,11 @@ def segment_distance(p,a,b):
     return math.dist(p,(a[0]+t*v[0],a[1]+t*v[1]))
 
 
+def lane_midpoint_x(course):
+    xs=[p['x'] for p in course['centerline']]
+    return (min(xs)+max(xs))/2
+
+
 def separated_with_margin(a,b,margin):
     # A separating projection gap is a conservative independent clearance proof.
     for poly in (a,b):
@@ -73,10 +78,11 @@ class CourseVariantChecks(unittest.TestCase):
         self.assertEqual({o['sector'] for o in barrels},{'east','west','open-ramp'})
         self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),16)
         open_barrels=[o for o in barrels if o['sector']=='open-ramp']
-        self.assertEqual(sum(o['x']<8 for o in open_barrels),8)
-        self.assertEqual(sum(o['x']>20 for o in open_barrels),8)
-        for group in ([o for o in open_barrels if o['x']<8],
-                      [o for o in open_barrels if o['x']>20]):
+        center=lane_midpoint_x(self.course)
+        self.assertEqual(sum(o['x']<center-6 for o in open_barrels),8)
+        self.assertEqual(sum(o['x']>center+6 for o in open_barrels),8)
+        for group in ([o for o in open_barrels if o['x']<center-6],
+                      [o for o in open_barrels if o['x']>center+6]):
             self.assertTrue(any(o['y']<44.5 for o in group))
             self.assertTrue(any(o['y']>44.5 for o in group))
             self.assertGreater(max(o['x'] for o in group)-min(o['x'] for o in group),3.)
@@ -99,9 +105,16 @@ class CourseVariantChecks(unittest.TestCase):
             self.assertTrue(all(a*b<0 for a,b in zip(offsets,offsets[1:])))
 
     def test_open_sector_flanks_painted_ramp(self):
+        center=lane_midpoint_x(self.course)
         for p in self.course['centerline']:
-            if p['y']>38:
-                self.assertEqual(p['painted'],8<=p['x']<=20)
+            if 38.5 < p['y'] <= 44.45:
+                self.assertTrue(p['painted'], 'White edges must continue around both end bends')
+            if abs(p['y']-44.5)<.001:
+                self.assertEqual(p['painted'],center-6<=p['x']<=center+6)
+        gaps=[p for p in self.course['centerline'] if not p['painted']]
+        self.assertTrue(any(p['x']<center-6 for p in gaps))
+        self.assertTrue(any(p['x']>center+6 for p in gaps))
+        self.assertTrue(all(p['y']>44.45 for p in gaps))
         modes=self.mission['route']['dense_modes']
         self.assertEqual(sum(a!=b for a,b in zip(modes,modes[1:])),4)
 
@@ -150,19 +163,21 @@ class CourseVariantChecks(unittest.TestCase):
 
     def test_ramp_reservation_excludes_full_obstacle_extent(self):
         ramp=self.course['ramps'][0]
+        center=lane_midpoint_x(self.course)
         self.assertEqual(self.course['schema_version'],1)
-        self.assertEqual((ramp['x'],ramp['y'],ramp['width'],ramp['height']),(18.,44.5,3.,.4))
+        self.assertAlmostEqual(ramp['x']-4,center)
+        self.assertEqual((ramp['y'],ramp['width'],ramp['height']),(44.5,3.,.4))
         self.assertAlmostEqual(ramp['yaw'],math.pi)
         self.assertEqual(2*ramp['rise_length']+ramp['deck_length'],8.)
-        # Independent world-axis checks on reservation x9..19,y42.5..46.5.
-        reserved=rectangle(14.,44.5,0.,(-5.,5.,2.))
+        # Independent world-axis reservation: centred ramp plus 1 m at each end.
+        reserved=rectangle(center,44.5,0.,(-5.,5.,2.))
         for obstacle in self.course['obstacles']:
             if obstacle['kind']=='barricade':
                 shape=rectangle(obstacle['x'],obstacle['y'],obstacle['yaw'],
                                 (-obstacle['length']/2,obstacle['length']/2,obstacle['width']/2))
                 self.assertTrue(separated_with_margin(reserved,shape,1e-9),obstacle['id'])
             else:
-                closest=(min(19.,max(9.,obstacle['x'])),min(46.5,max(42.5,obstacle['y'])))
+                closest=(min(center+5,max(center-5,obstacle['x'])),min(46.5,max(42.5,obstacle['y'])))
                 radius=max(obstacle['length'],obstacle['width'])/2+.85 if obstacle['kind']=='pothole' else obstacle['width']/2
                 self.assertGreater(math.dist((obstacle['x'],obstacle['y']),closest),radius)
 
@@ -170,7 +185,9 @@ class CourseVariantChecks(unittest.TestCase):
         goals=self.mission['waypoints'];critical=[g for g in goals if 'ramp_checkpoint' in g]
         self.assertEqual([g['ramp_checkpoint'] for g in critical],
                          ['approach','start','deck_start','deck_end','exit','departure'])
-        self.assertEqual([g['odom_xy'][0] for g in critical],[19.,18.,15.,13.,10.,9.])
+        center=lane_midpoint_x(self.course)
+        for goal,offset in zip(critical,(5.,4.,1.,-1.,-4.,-5.)):
+            self.assertAlmostEqual(goal['odom_xy'][0],center+offset)
         self.assertTrue(all(a['route_s_m']<b['route_s_m'] for a,b in zip(goals,goals[1:])))
         route=self.mission['route']
         for goal in critical:
@@ -184,14 +201,29 @@ class CourseVariantChecks(unittest.TestCase):
         for seed,difficulty in [(7,'easy'),(2028,'normal'),(2029,'hard')]:
             with self.subTest(seed=seed,difficulty=difficulty):
                 course,mission=generate(seed,difficulty)
+                center=lane_midpoint_x(course)
+                ramp=course['ramps'][0]
+                length=2*ramp['rise_length']+ramp['deck_length']
+                self.assertAlmostEqual(ramp['x']+math.cos(ramp['yaw'])*length/2,center)
+                self.assertAlmostEqual(ramp['y']+math.sin(ramp['yaw'])*length/2,44.5)
                 points=mission['route']['dense_xy']
-                entry_index=next(i for i,p in enumerate(points) if p==(19.,44.5))
-                exit_index=next(i for i,p in enumerate(points) if p==(9.,44.5))
+                entry_index=next(i for i,p in enumerate(points) if math.dist(p,(center+5,44.5))<1e-8)
+                exit_index=next(i for i,p in enumerate(points) if math.dist(p,(center-5,44.5))<1e-8)
                 crossing=points[entry_index:exit_index+1]
                 self.assertGreater(len(crossing),25)
                 self.assertTrue(all(abs(p[1]-44.5)<.65 for p in crossing))
                 self.assertTrue(all(b[0]<a[0] for a,b in zip(crossing,crossing[1:])))
-                self.assertEqual(course['ramps'],self.course['ramps'])
+                for key in ('yaw','y','width','height','rise_length','deck_length'):
+                    self.assertEqual(ramp[key],self.course['ramps'][0][key])
+                gaps=[p for p in course['centerline'] if not p['painted']]
+                self.assertTrue(any(p['x']<center-6 for p in gaps))
+                self.assertTrue(any(p['x']>center+6 for p in gaps))
+                self.assertTrue(all(p['y']>44.45 for p in gaps))
+                for side in (-1,1):
+                    corner=[p for p in course['centerline']
+                            if side*(p['x']-center)>6 and 38.5<p['y']<=44.45]
+                    self.assertTrue(corner)
+                    self.assertTrue(all(p['painted'] for p in corner))
                 self.assertLessEqual(len(mission['waypoints']),40)
                 self.assertGreaterEqual(course['generation']['obstacle_conservative_clearance_m'],.2)
                 self.assertGreaterEqual(course['generation']['boundary_conservative_clearance_m'],.2)
@@ -217,12 +249,13 @@ class CourseVariantChecks(unittest.TestCase):
 
     def test_ramp_paint_inside_edges_and_tapered(self):
         surface=[];tapers=[]
+        center=lane_midpoint_x(self.course)
         for p in self.course['centerline']:
-            if 10<=p['x']<=18 and abs(p['y']-44.5)<.01:
+            if center-4<=p['x']<=center+4 and abs(p['y']-44.5)<.01:
                 surface.append(p)
                 self.assertAlmostEqual(p['half_width'],1.44)
                 self.assertLessEqual(p['half_width']+.06,1.5+1e-9)
-            if (8<p['x']<10 or 18<p['x']<20) and abs(p['y']-44.5)<.01:
+            if 4<abs(p['x']-center)<6 and abs(p['y']-44.5)<.01:
                 tapers.append(p)
                 self.assertTrue(1.44<p['half_width']<3.)
         self.assertGreater(len(surface),25)
