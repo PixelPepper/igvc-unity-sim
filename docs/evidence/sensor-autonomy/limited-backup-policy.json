@@ -1,0 +1,11 @@
+{
+  "passed": true,
+  "checks": {
+    "fast_reverse_stops": true,
+    "pivot_stops": true,
+    "slow_backup_passes": true,
+    "reverse_turn_stops": true,
+    "tight_turn_stops": true,
+    "forward_passes": true
+  }
+}

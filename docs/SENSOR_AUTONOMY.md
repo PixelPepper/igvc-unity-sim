@@ -49,24 +49,31 @@ retains the complete asymmetric rectangular footprint for execution. Nav2's 99
 cost cells already represent inscribed inflation and block centres without being
 dilated again; lethal 100 paint/obstacles and unknown space receive clearance.
 When no route is observed, the mission cancels navigation and waits for new
-observations. After ten seconds without a safe forward route it stops. Backup
-recovery is disabled by the user's updated preference.
+observations. After ten seconds without a safe forward route it may request one
+collision-checked Nav2 backup of 0.3 m at 0.1 m/s per broad destination. If that
+fails or the same destination requires another backup, it stops.
 
-Current forward-motion profile: inflation radius 0.65 m (previously 0.75), decay
+Current forward-motion profile: inflation radius 0.50 m (previously 0.65), decay
 factor 8 (previously 5), and local soft-cost multiplier 2 (previously 4). Unknown,
 lethal and inscribed cells retain their blocking semantics. Search steps stay
 within 80 degrees of the current heading, and destinations behind the robot are
 rejected. Nav2 reversing and pivot-to-heading are disabled; final goal orientation
-does not trigger a spin. The adapter stops autonomous reverse/pivot commands and
+does not trigger a spin. The adapter permits straight backup up to 0.1 m/s, stops pivots and
 turns tighter than a 1 m radius rather than changing their checked curvature.
 Normal forward course bends remain permitted. This can stop in confined areas;
 it is not proof against every possible multi-step loop in an observed map.
 
-Forward-profile validation: 15 local-planner tests and two command-policy tests
+Previous strict-forward-profile validation: 15 local-planner tests and two command-policy tests
 passed. Four [live command-gate checks](evidence/sensor-autonomy/forward-policy.json)
 confirmed reverse, pivot and tight-turn commands stop while a forward command
 passes. Live parameters confirmed 0.65 m inflation and disabled pivot-to-heading.
 This validates the command policy, not full-course completion.
+
+Limited-backup update: 17 planner/command unit tests passed; the local Docker
+image rebuilt successfully and both live inflation parameters read 0.5 m.
+All six [live command checks](evidence/sensor-autonomy/limited-backup-policy.json)
+passed, including slow straight backup and rejection of reverse turns, pivots,
+and faster reverse. This does not yet establish full-course recovery success.
 
 Initial sensor validation speed is 0.7 m/s; the 2.2 m/s ceiling remains. A simple
 observed-grid search is not a complete exploration planner: unseen detours or

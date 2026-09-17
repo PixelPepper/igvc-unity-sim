@@ -58,7 +58,7 @@ def run(args):
     from geometry_msgs.msg import PoseStamped
     from std_msgs.msg import Bool, String
     from std_srvs.srv import SetBool
-    from nav2_msgs.action import NavigateToPose
+    from nav2_msgs.action import NavigateToPose, BackUp
     from nav2_msgs.msg import SpeedLimit
     from nav2_msgs.srv import ClearEntireCostmap
 
@@ -67,6 +67,8 @@ def run(args):
     rclpy.init()
     node = rclpy.create_node('igvc_sensor_course')
     nav = ActionClient(node, NavigateToPose, '/navigate_to_pose')
+    backup = ActionClient(node, BackUp, '/backup')
+    recoveries = set()
     gate = node.create_client(SetBool, '/sim/set_autonomy')
     zone = node.create_client(SetBool, '/sim/set_unmarked_mode')
     speed = node.create_publisher(SpeedLimit, '/speed_limit', 10)
@@ -200,7 +202,35 @@ def run(args):
                 target = None
                 no_plan_since = no_plan_since or now
                 if now-no_plan_since > 10:
-                    raise RuntimeError('No safe forward route; stopped without reversing or turning around')
+                    cursor = state['completed_destinations']
+                    if cursor in recoveries or not backup.wait_for_server(timeout_sec=2):
+                        raise RuntimeError('No safe forward route after limited backup recovery')
+                    recoveries.add(cursor)
+                    request = BackUp.Goal()
+                    request.target.x = -.3
+                    request.speed = .1
+                    request.time_allowance.sec = 8
+                    handle = wait(backup.send_goal_async(request))
+                    if not handle.accepted:
+                        raise RuntimeError('Nav2 rejected backup recovery')
+                    recovery_future = handle.get_result_async()
+                    recovery_deadline = time.monotonic()+10
+                    while not recovery_future.done():
+                        rclpy.spin_once(node, timeout_sec=.05)
+                        recovery_now = time.monotonic()
+                        recovery_run = re.search(r'\brun=(\d+)\b', latest['status'][1].data)
+                        if (recovery_now >= min(end, recovery_deadline) or latest.get('reset')
+                                or recovery_run is None or recovery_run.group(1) != initial_run.group(1)
+                                or any(recovery_now-latest[k][0] > limit for k, limit in
+                                       (('grid', 3.), ('odom', 1.), ('status', 3.), ('enabled', 1.)))
+                                or not latest['enabled'][1].data):
+                            raise RuntimeError('Backup interrupted: timeout, reset, stale sensors or autonomy stopped')
+                    recovery = recovery_future.result()
+                    handle = None
+                    if recovery.status != 4:
+                        raise RuntimeError('Collision-checked backup did not complete')
+                    state.setdefault('recoveries', []).append({'destination': cursor, 'distance_m': .3})
+                    no_plan_since = None
                 continue
             no_plan_since = None
             if target is not None and handle is not None and not result.done() and math.hypot(target[0]-plan['local_goal'][0], target[1]-plan['local_goal'][1]) < 1.:

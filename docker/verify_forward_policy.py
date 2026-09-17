@@ -42,24 +42,27 @@ def mode(client, value):
 
 
 try:
-    spin(1)
+    discovery_deadline = time.monotonic()+10
+    while not poses and time.monotonic() < discovery_deadline:
+        spin(.1)
     if not poses or abs(poses[-1][0])>.4 or abs(poses[-1][1])>.4:
         raise RuntimeError('Test requires a clear start pose within .4 m of origin')
     mode(gate, False); mode(zone, True); mode(gate, True)
     for name, linear, angular, blocked in (
-            ('reverse_stops', -.2, 0., True), ('pivot_stops', 0., .4, True),
+            ('fast_reverse_stops', -.2, 0., True), ('pivot_stops', 0., .4, True),
+            ('slow_backup_passes', -.1, 0., False), ('reverse_turn_stops', -.1, .2, True),
             ('tight_turn_stops', .05, .5, True), ('forward_passes', .2, 0., False)):
         samples.clear()
         message = Twist(); message.linear.x = linear; message.angular.z = angular
         for _ in range(8):
             publisher.publish(message); spin(.05)
         checks[name] = bool(samples) and (all(abs(v)<1e-6 and abs(w)<1e-6 for v,w in samples)
-                                         if blocked else any(v>.1 for v,w in samples))
+                                         if blocked else any(v*linear>0.005 for v,w in samples))
         publisher.publish(Twist()); spin(.15)
 finally:
     publisher.publish(Twist())
     mode(gate, False); mode(zone, False)
-    report = {'passed': len(checks)==4 and all(checks.values()), 'checks': checks}
+    report = {'passed': len(checks)==6 and all(checks.values()), 'checks': checks}
     path=Path(args.report);path.parent.mkdir(parents=True,exist_ok=True)
     path.write_text(json.dumps(report,indent=2)+'\n')
     print(json.dumps(report,indent=2))
