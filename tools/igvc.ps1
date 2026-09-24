@@ -115,7 +115,7 @@ switch ($Action) {
         $variantManifest=Join-Path $variantFolder 'course.json'
         $variantLog=Join-Path $variantFolder 'unity.log'
         $windowStyle=if($Visible){'Normal'}else{'Hidden'}
-        Start-Process -FilePath $variantPlayer -ArgumentList "--course-manifest `"$variantManifest`" -logFile `"$variantLog`"" -WindowStyle $windowStyle | Out-Null
+        Start-Process -FilePath $variantPlayer -ArgumentList "--line-guard scoring --course-manifest `"$variantManifest`" -logFile `"$variantLog`"" -WindowStyle $windowStyle | Out-Null
         Write-Output "Variant $Seed started with ramp and suspension. course-ramp-test runs a bounded manual crossing from this fresh start. Autonomous ramp perception remains experimental."
     }
     'variant-audit' {

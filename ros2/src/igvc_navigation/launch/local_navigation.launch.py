@@ -8,6 +8,11 @@ from launch_ros.actions import Node
 
 
 def generate_launch_description():
+    mppi_share = Path(get_package_share_directory('nav2_mppi_controller'))
+    if not (mppi_share / 'igvc-footprint-cost-critic-v1').is_file():
+        raise RuntimeError('This navigation profile requires the footprint-checked MPPI overlay. '
+                           'Rebuild Docker or run tools/build_native_nav2.sh; '
+                           'stock Jazzy MPPI is unsafe with 0.30 m inflation.')
     share = Path(get_package_share_directory('igvc_navigation'))
     params = LaunchConfiguration('params_file')
     names = ['planner_server', 'controller_server', 'behavior_server', 'bt_navigator']
@@ -27,8 +32,13 @@ def generate_launch_description():
         DeclareLaunchArgument('params_file', default_value=str(share / 'config/local_navigation.yaml')),
         DeclareLaunchArgument('autostart', default_value='true'),
         *nodes,
-        Node(package='igvc_perception', executable='lane_detector', output='screen'),
+        # Remember paint actually seen during this mission; do not erase a
+        # boundary behind the camera while negotiating an observed detour.
+        Node(package='igvc_perception', executable='lane_detector', output='screen',
+             parameters=[{'point_ttl': 1200.0}]),
         Node(package='igvc_perception', executable='depth_processor', output='screen'),
+        Node(package='igvc_perception', executable='scan_ground_filter', output='screen',
+             parameters=[{'use_sim_time': True}]),
         Node(package='nav2_lifecycle_manager', executable='lifecycle_manager',
              name='lifecycle_manager_igvc_navigation', output='screen',
              parameters=[{'use_sim_time': True, 'autostart': LaunchConfiguration('autostart'),

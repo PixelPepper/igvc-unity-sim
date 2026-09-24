@@ -2,18 +2,35 @@
 
 A Unity simulator with Windows and Linux launchers, ROS 2 Jazzy, Nav2, camera perception, synthetic GPS, and RViz in an Ubuntu 24.04 Docker container. The target is **IGVC 2027 AutoNav**. Unity runs on the host, rendering RGB and ideal depth and simulating lidar, robot motion, and a seeded obstacle course.
 
+**New to the project? Start with the [Master Project Guide](docs/PROJECT_GUIDE.md)**
+for architecture, startup workflows, parameter editing, rebuild steps and troubleshooting.
+Use its [linked file index](docs/FILE_INDEX.md),
+[ROS/navigation parameter reference](docs/guide/ROS_PARAMETERS.md) and
+[Unity/course editing guide](docs/guide/UNITY_AND_COURSE.md) to find the source for a change.
+
 **Navigation update:** `course` selects local goals from observed camera/depth/lidar
 costs using six broad GPS destinations. This experimental mode has no generated
 route input. `guided-course` retains the earlier route-informed regression.
 The successful lap results below describe that guided mode, not proven sensor-led
 autonomy. See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
+For the actual reuse boundary and algorithm differences, see the
+[SoonerRobotics comparison](docs/SOONER_COMPARISON.md).
+
+The current 0.30 m costmap inflation profile requires the pinned Nav2 MPPI
+footprint-check fix. Docker builds and tests it automatically. For native WSL
+Jazzy, run `wsl -d Ubuntu-24.04 -- bash tools/build_native_nav2.sh` once after
+initializing rosdep. This builds a separate overlay in `~/igvc_nav2_overlay`,
+runs the C++ regression, and enables it through `tools/ros_env.sh` only after
+tests pass. Navigation refuses an unpatched installation.
+See [native WSL AutoNav commands](docs/NATIVE_AUTONAV.md).
 
 Current generated layout follows the supplied course reference: alternating
 barrel passages, random colored barrels in driving sectors, and separate line
-gaps around a marked ramp opposite the start. Seed 2027 uses 31 guidance waypoints
-(originally 82). See [reference layout and validation](docs/REFERENCE_COURSE.md).
-Normal difficulty now has 16 colored barrels across the two open ramp approaches,
-8 on each side of the ramp, with white markings retained on the ramp itself.
+gaps around a marked ramp opposite the start. Seed 2027 uses six broad sensor-led
+destinations; the separate guided regression has 30 checkpoints.
+See [reference layout and validation](docs/REFERENCE_COURSE.md).
+Normal difficulty now has 24 colored barrels across the two open ramp approaches,
+six in each approach/lateral-side zone, with white markings retained on the ramp itself.
 The 82-checkpoint results below refer to the earlier layout.
 
 Use [Linux setup](#linux-setup-ubuntu-2404-x86_64) below or [Windows setup](#windows-prerequisites). Both Windows and Linux players completed the 82-checkpoint course. Linux runtime testing used Ubuntu under WSL2/WSLg, not a second native Linux desktop; see [Linux validation](docs/LINUX_VALIDATION.md).
@@ -191,7 +208,7 @@ Stop any existing native ROS simulator session first so TCP port 10000 is availa
 ./tools/docker.ps1 rviz
 ```
 
-`start` launches the ROS container and a visible Windows Unity player with a generated course. Startup alone does not verify that sensors or navigation are ready. RViz uses the tested WSLg/software-rendering path. A first-map GLSL warning was observed, but robot, RGB, depth and costmaps rendered; see the validation record. Keep RViz in its terminal and use another PowerShell terminal for commands:
+`start` launches the ROS container and a visible Windows Unity player with a generated course. The Windows launcher also keeps a hidden WSL process alive so Docker does not shut down after the Compose command exits; `stop` releases that helper. Startup alone does not verify that sensors or navigation are ready. RViz uses the tested WSLg/software-rendering path. A first-map GLSL warning was observed, but robot, RGB, depth and costmaps rendered; see the validation record. Keep RViz in its terminal and use another PowerShell terminal for commands:
 
 ```powershell
 ./tools/docker.ps1 run ros2 topic list --no-daemon

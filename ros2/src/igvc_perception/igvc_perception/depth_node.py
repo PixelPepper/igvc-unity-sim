@@ -10,6 +10,7 @@ from rclpy.qos import qos_profile_sensor_data
 from rclpy.time import Time
 from sensor_msgs.msg import Image, CameraInfo, PointCloud2, PointField
 from std_msgs.msg import Header, String, Bool
+from std_srvs.srv import Trigger
 from tf2_ros import Buffer, TransformListener, TransformException
 from .depth import depth_points
 from .ground import estimate_ground, terrain_obstacles
@@ -23,11 +24,15 @@ class DepthNode(Node):
         self.tf=Buffer();self.listener=TransformListener(self.tf,self)
         self.images,self.infos=OrderedDict(),OrderedDict()
         self.last_stamp=0
+        self.ground_prior=None
+        self.ground_prior_wall=float('-inf')
+        self.ground_prior_stamp=0
         self.cloud=self.create_publisher(PointCloud2,'/camera/depth/points',qos_profile_sensor_data)
         self.obstacles=self.create_publisher(PointCloud2,'/perception/depth/obstacles',qos_profile_sensor_data)
         self.surfaces=self.create_publisher(PointCloud2,'/perception/depth/surfaces',qos_profile_sensor_data)
         self.status=self.create_publisher(String,'/perception/depth/status',1)
         self.healthy=self.create_publisher(Bool,'/perception/depth/healthy',1)
+        self.create_service(Trigger,'/perception/depth/reset',self.reset)
         self.create_subscription(Image,'/camera/depth/image_raw',lambda m:self.cache(self.images,m),qos_profile_sensor_data)
         self.create_subscription(CameraInfo,'/camera/depth/camera_info',lambda m:self.cache(self.infos,m),qos_profile_sensor_data)
         self.steady_clock=Clock(clock_type=ClockType.STEADY_TIME)
@@ -36,10 +41,20 @@ class DepthNode(Node):
     @staticmethod
     def stamp(m):return m.header.stamp.sec*1_000_000_000+m.header.stamp.nanosec
 
+    def reset(self, request, response):
+        self.images.clear();self.infos.clear();self.last_stamp=0
+        self.ground_prior=None
+        self.ground_prior_wall=float('-inf');self.ground_prior_stamp=0
+        self.healthy.publish(Bool(data=False))
+        response.success=True
+        response.message='Depth observations and ground prior cleared'
+        return response
+
     def cache(self,store,m):
         stamp=self.stamp(m)
         if store is self.images and stamp<self.last_stamp:
             self.images.clear();self.infos.clear();self.last_stamp=0
+            self.ground_prior=None
         store[stamp]=(m,time.monotonic())
         while len(store)>8:store.popitem(last=False)
 
@@ -52,6 +67,8 @@ class DepthNode(Node):
 
     def tick(self):
         now=time.monotonic()
+        if now-self.ground_prior_wall>.75:
+            self.ground_prior=None
         common=[s for s in self.images.keys() & self.infos.keys() if s>self.last_stamp and now-max(self.images[s][1],self.infos[s][1])>=.04]
         if not common:
             self.healthy.publish(Bool(data=False))
@@ -86,8 +103,12 @@ class DepthNode(Node):
             # consulted, and an uncertain fit is never replaced by a flat plane.
             candidate_image=array.copy();candidate_image[:160]=np.nan
             candidates=depth_points(candidate_image,info.k,stride=4)@rotation.T+origin
-            plane=estimate_ground(candidates,origin)
+            prior_age=max(now-self.ground_prior_wall,(stamp-self.ground_prior_stamp)/1e9)
+            plane=estimate_ground(candidates,origin,self.ground_prior,prior_age)
             observed=classify_surfaces(array,info.k,rotation,origin,plane)
+            self.ground_prior=plane
+            self.ground_prior_wall=time.monotonic()
+            self.ground_prior_stamp=stamp
             obstacles=observed['obstacles']
             valid=observed['valid_mask'];ground=observed['ground_mask']
             surface_points=np.column_stack((observed['grid_world'][valid],ground[valid])).astype('<f4')

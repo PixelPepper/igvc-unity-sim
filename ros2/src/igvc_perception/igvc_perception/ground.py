@@ -31,15 +31,68 @@ def _support(points):
         raise ValueError('Insufficient two-dimensional horizontal ground extent')
 
 
-def estimate_ground(world, camera_origin):
+def estimate_ground(world, camera_origin, prior=None, prior_age=None):
     """Fit n.dot(world)+offset=0 with upward unit n, or raise ValueError.
 
-    Caller supplies lower-image ground candidates. At most 1600 points and
-    64 seeded hypotheses are used. Confidence requires >=100 inliers and
-    >=60% of the sampled candidates within 35 mm, slope <=20 degrees and
-    signed camera-to-plane distance 0.4..2 m. A failure must not imply Z=0.
+    Prefer fitting all lower-image candidates. If that fails, try their nearest
+    horizontal-distance half once: a platform transition can show two different
+    supported surfaces without one dominating the complete image. The fallback
+    supplies only a local seed to observed surface connectivity, not a terrain
+    height extrapolation. Each fit uses at most 1600 points and 64 hypotheses.
+    Both require >=100 inliers, >=60% support within 35 mm, two-dimensional
+    extent, slope <=20 degrees and camera clearance 0.4..2 m. No Z=0 fallback.
+    If both fail, an optional prior no older than .75 s can select current
+    inliers for a bounded refit; total_support_fraction reports that selection
+    separately from the refit's conditional inlier_fraction.
     """
     points, origin = _inputs(world, camera_origin)
+    try:
+        result = _fit_ground(points, origin)
+        result['support_scope'] = 'full'
+        return result
+    except ValueError as full_error:
+        if len(points) >= 200:
+            distance = np.sum((points[:, :2]-origin[:2])**2, axis=1)
+            nearest = points[np.argsort(distance, kind='stable')[:len(points)//2]]
+            try:
+                result = _fit_ground(nearest, origin)
+            except ValueError:
+                pass
+            else:
+                result['support_scope'] = 'nearest_half'
+                return result
+        if prior is not None:
+            return _track_ground(points, origin, prior, prior_age)
+        raise full_error
+
+
+def _track_ground(points, origin, prior, age):
+    """Refit current observed support selected by a fresh, validated prior.
+
+    The prior is a correspondence aid only. Missing, narrow, changed or noisy
+    current evidence must still fail; the old plane itself is never returned.
+    """
+    if age is None or not np.isfinite(age) or not 0 <= age <= .75:
+        raise ValueError('Ground tracking prior expired')
+    normal = np.asarray(prior['normal'], dtype=float)
+    offset = float(prior['offset'])
+    if (normal.shape != (3,) or not np.isfinite(normal).all() or not np.isfinite(offset)
+            or not np.isclose(np.linalg.norm(normal), 1., atol=1e-6, rtol=0)):
+        raise ValueError('Invalid ground tracking prior')
+    _geometry(normal, offset, origin)
+    supported = points[np.abs(points @ normal + offset) <= .035]
+    result = _fit_ground(supported, origin)
+    current = np.asarray(result['normal'])
+    angle = float(np.degrees(np.arccos(np.clip(current @ normal, -1., 1.))))
+    height_change = abs(float((current-normal) @ origin + result['offset']-offset))
+    if angle > 5. or height_change > .05:
+        raise ValueError('Tracked ground changed beyond supported bounds')
+    result['support_scope'] = 'tracked_current'
+    result['total_support_fraction'] = len(supported)*result['inlier_fraction']/len(points)
+    return result
+
+
+def _fit_ground(points, origin):
     if len(points) < 100:
         raise ValueError('At least 100 ground candidates required')
     rng = np.random.default_rng(0)

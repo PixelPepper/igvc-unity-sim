@@ -199,8 +199,12 @@ def generate(seed=2027,difficulty='normal',base=None):
     for p in points:
         if abs(p[0]-ramp_center)<=4 and abs(p[1]-44.5)<2 and abs(p[1]-44.5)>=.65:
             raise ValueError('Route enters ramp reservation away from center')
-    counts={'easy':(24,4,1),'normal':(36,8,2),'hard':(52,12,3)}[difficulty]
-    open_barrels={'easy':12,'normal':16,'hard':20}[difficulty]
+    # Keep the existing connecting-sector populations while adding barrels to
+    # both flanks of both open approaches. Every difficulty divides into four.
+    counts={'easy':(28,4,1),'normal':(44,8,2),'hard':(60,12,3)}[difficulty]
+    open_barrels={'easy':16,'normal':24,'hard':28}[difficulty]
+    painted_segments=[(a,b) for line in boundaries(lane_points,headings(lane_points),ramp_center)
+                      for i,(a,b) in enumerate(zip(line,line[1:])) if lane_modes[i]=='painted']
     obstacles=[]; obstacle_margins=[]
     sectors=[(x,y,(-1)**k) for x in (right,left) for k,y in enumerate((12.,22.,32.))]
     for kind,count in zip(('barrel','barricade','pothole'),counts):
@@ -227,11 +231,28 @@ def generate(seed=2027,difficulty='normal',base=None):
                     o.update(x=cx-direction*lateral,y=cy+longitudinal,
                              color=rng.choice(BARREL_COLORS),sector='east' if cx==right else 'west')
                     if index>=count-open_barrels:
-                        # Equal populations in BOTH line gaps, spanning each
-                        # approach rather than a few barrels at distant corners.
-                        o.update(x=rng.uniform(left+1.,ramp_center-6.8) if index%2 else rng.uniform(ramp_center+6.8,right-1.),
-                                 y=44.5+rng.choice((-1,1))*rng.uniform(1.4,2.4),sector='open-ramp')
-                        if min(point_segment((o['x'],o['y']),a,b) for a,b in zip(lane_points,lane_points[1:]))>2.5:continue
+                        # Cycle all four approach/flank zones deterministically;
+                        # random rejection cannot change a zone's population.
+                        # Travel here is westward, so physical left is south.
+                        open_index=index-(count-open_barrels)
+                        before=open_index%2==0
+                        lateral=-1 if (open_index//2)%2==0 else 1
+                        low,high=(ramp_center,right-7.) if before else (left+7.,ramp_center)
+                        slot=open_index//4; zone_count=open_barrels//4
+                        # The bands flank the ENTIRE sector, including the ramp
+                        # itself. They are barrels, not additional painted lanes.
+                        # Bounds reserve at least 0.7 m beyond each barrel's
+                        # extent at the two outside painted lane mouths.
+                        longitudinal=low+(high-low)*(slot+rng.uniform(.1,.9))/zone_count
+                        o.update(x=longitudinal,
+                                 y=44.5+lateral*rng.uniform(4.,5.),sector='open-ramp',
+                                 open_ramp_zone=('before' if before else 'after')+'-'+
+                                                ('left' if lateral<0 else 'right'))
+                        # Outer bands can approach the inside of an end bend;
+                        # longitudinal mouth bounds alone do not protect its
+                        # curved paint. Check actual existing painted segments.
+                        if any(point_segment((o['x'],o['y']),a,b)<o['width']/2+.7
+                               for a,b in painted_segments):continue
                 # Include the full synthetic pothole cutout/rim, not just bowl diameter.
                 if kind=='barricade':
                     if polygon_distance(reserved,obstacle_box(o))<=0:continue
@@ -256,6 +277,9 @@ def generate(seed=2027,difficulty='normal',base=None):
                 generation=dict(layout='rectangular-loop-slalom-open-ramp',
                                 slalom_centers=[dict(x=x,y=y,guide_offset_x=1.5*d) for x,y,d in sectors],
                                 barrel_palette=list(BARREL_COLORS),shape_amplitude_m=1.5,shape_fallback_multiplier=1.,
+                                open_ramp_barrels=open_barrels,
+                                open_ramp_barrels_per_zone=open_barrels//4,
+                                open_ramp_lateral_band_m=[4.,5.],
                                 clearance_margin_m=MARGIN,footprint=[-1.1,.6,-.5,.5],
                                 boundary_conservative_clearance_m=boundary_margin,
                                 obstacle_conservative_clearance_m=min(obstacle_margins),

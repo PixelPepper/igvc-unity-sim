@@ -10,11 +10,14 @@ param(
 $ErrorActionPreference='Stop'
 $root=Split-Path $PSScriptRoot -Parent
 Set-Location -LiteralPath $root
+$script:igvcKeeperState=Join-Path $root 'artifacts/session/docker-wsl-keeper.json'
+. (Join-Path $PSScriptRoot 'docker-wsl-lifetime.ps1')
 function Compose([string[]]$Arguments) {
     & wsl -d Ubuntu-24.04 -u root -- docker compose @Arguments
     if($LASTEXITCODE -ne 0){throw "Docker Compose failed ($LASTEXITCODE)"}
 }
 function Exec-Ros([string[]]$Arguments) {
+    Start-IgvcWslKeeper
     Compose (@('exec','-T','ros','/opt/igvc/docker/entrypoint.sh')+$Arguments)
 }
 $player=Join-Path $root 'artifacts/build-course/IGVCCourse.exe'
@@ -41,6 +44,7 @@ switch($Action){
     'start' {
         if(!(Test-Path -LiteralPath $player)){throw 'Run prepare-unity then unity-build first'}
         if(Get-Process IGVCCourse -ErrorAction SilentlyContinue){throw 'Stop the existing course player first'}
+        Start-IgvcWslKeeper
         Compose @('up','-d')
         Compose @('run','--rm','--no-deps','ros','python3','tools/generate_course_variant.py','--seed',"$Seed",'--difficulty',$Difficulty)
         $folder=Join-Path $root "artifacts/courses/seed-$Seed"
@@ -49,7 +53,7 @@ switch($Action){
         @{pid=$proc.Id;start=$proc.StartTime.ToUniversalTime().ToString('o');seed=$Seed} | ConvertTo-Json | Set-Content -LiteralPath $state
         Write-Output 'Unity and container started. Run rviz, then course. Startup alone is not an integration test.'
     }
-    'rviz' { Compose @('exec','ros','/opt/igvc/docker/entrypoint.sh','ros2','run','rviz2','rviz2','-d','/opt/igvc/install/igvc_sim_bridge/share/igvc_sim_bridge/rviz/nav.rviz','--ros-args','-p','use_sim_time:=true') }
+    'rviz' { Start-IgvcWslKeeper; Compose @('exec','ros','/opt/igvc/docker/entrypoint.sh','ros2','run','rviz2','rviz2','-d','/opt/igvc/install/igvc_sim_bridge/share/igvc_sim_bridge/rviz/nav.rviz','--ros-args','-p','use_sim_time:=true') }
     'guided-course' { Exec-Ros @('python3','tools/full_course.py','--mission',"/opt/igvc/artifacts/courses/seed-$Seed/mission.json",'--report',"/opt/igvc/artifacts/courses/seed-$Seed/docker-run.json") }
     'course' { Exec-Ros @('python3','tools/sensor_course.py','--mission',"/opt/igvc/artifacts/courses/seed-$Seed/autonomy.json",'--report',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-run.json") }
     'sensor-audit' { Exec-Ros @('python3','tools/audit_sensor_run.py','--course',"/opt/igvc/artifacts/courses/seed-$Seed/course.json",'--run',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-run.json",'--output',"/opt/igvc/artifacts/courses/seed-$Seed/sensor-audit.json") }
@@ -62,5 +66,6 @@ switch($Action){
             Remove-Item -LiteralPath $state
         }
         Compose @('down')
+        Stop-IgvcWslKeeper
     }
 }

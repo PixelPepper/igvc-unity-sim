@@ -1,0 +1,26 @@
+{
+  "nav": {
+    "samples": 1056,
+    "max_mps": 1.4230540990829468,
+    "straight_mean_mps": 0.8265004741287855
+  },
+  "output": {
+    "samples": 1143,
+    "max_mps": 1.4230540990829468,
+    "straight_mean_mps": 0.828344076763421
+  },
+  "transport": {
+    "samples": 1143,
+    "max_mps": 1.4230540990829468,
+    "straight_mean_mps": 0.828344076763421
+  },
+  "odom": {
+    "samples": 2710,
+    "max_mps": 1.4230540990829468,
+    "straight_mean_mps": 0.8202098618024728
+  },
+  "limits": [
+    2.2
+  ],
+  "mean_path_spacing": 0.14404932046869534
+}

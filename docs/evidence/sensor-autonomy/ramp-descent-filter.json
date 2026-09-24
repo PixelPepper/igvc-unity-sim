@@ -1,0 +1,144 @@
+{
+  "phase_counts": {
+    "approach": {
+      "matched_scans": 82,
+      "ground_raw": 0,
+      "ground_removed": 0,
+      "ground_retained": 0,
+      "central_ground_raw": 0,
+      "central_ground_removed": 0,
+      "central_ground_retained": 0,
+      "elevated_raw": 2428,
+      "elevated_retained_unchanged": 2428,
+      "elevated_removed": 0
+    },
+    "rise": {
+      "matched_scans": 37,
+      "ground_raw": 0,
+      "ground_removed": 0,
+      "ground_retained": 0,
+      "central_ground_raw": 0,
+      "central_ground_removed": 0,
+      "central_ground_retained": 0,
+      "elevated_raw": 72,
+      "elevated_retained_unchanged": 72,
+      "elevated_removed": 0,
+      "raw_without_filtered_pair": 3
+    },
+    "deck": {
+      "matched_scans": 26,
+      "ground_raw": 0,
+      "ground_removed": 0,
+      "ground_retained": 0,
+      "central_ground_raw": 0,
+      "central_ground_removed": 0,
+      "central_ground_retained": 0,
+      "elevated_raw": 0,
+      "elevated_retained_unchanged": 0,
+      "elevated_removed": 0
+    },
+    "descent": {
+      "matched_scans": 40,
+      "ground_raw": 1818,
+      "ground_removed": 1569,
+      "ground_retained": 249,
+      "central_ground_raw": 276,
+      "central_ground_removed": 276,
+      "central_ground_retained": 0,
+      "elevated_raw": 859,
+      "elevated_retained_unchanged": 859,
+      "elevated_removed": 0
+    },
+    "lower-road": {
+      "matched_scans": 95,
+      "ground_raw": 0,
+      "ground_removed": 0,
+      "ground_retained": 0,
+      "central_ground_raw": 0,
+      "central_ground_removed": 0,
+      "central_ground_retained": 0,
+      "elevated_raw": 131,
+      "elevated_retained_unchanged": 131,
+      "elevated_removed": 0,
+      "raw_without_filtered_pair": 5
+    }
+  },
+  "status_reasons": {
+    "no_fresh_preceding_surface": 6,
+    "supported_ground_filter": 183
+  },
+  "descent_examples": [
+    {
+      "stamp_ns": 131370000000,
+      "matched_scans": 1,
+      "ground_raw": 59,
+      "ground_removed": 49,
+      "ground_retained": 10,
+      "central_ground_raw": 9,
+      "central_ground_removed": 9,
+      "central_ground_retained": 0,
+      "elevated_raw": 26,
+      "elevated_retained_unchanged": 26,
+      "elevated_removed": 0,
+      "central_retained_xyz": []
+    },
+    {
+      "stamp_ns": 131560000000,
+      "matched_scans": 1,
+      "ground_raw": 60,
+      "ground_removed": 51,
+      "ground_retained": 9,
+      "central_ground_raw": 9,
+      "central_ground_removed": 9,
+      "central_ground_retained": 0,
+      "elevated_raw": 25,
+      "elevated_retained_unchanged": 25,
+      "elevated_removed": 0,
+      "central_retained_xyz": []
+    },
+    {
+      "stamp_ns": 131750000000,
+      "matched_scans": 1,
+      "ground_raw": 58,
+      "ground_removed": 50,
+      "ground_retained": 8,
+      "central_ground_raw": 9,
+      "central_ground_removed": 9,
+      "central_ground_retained": 0,
+      "elevated_raw": 26,
+      "elevated_retained_unchanged": 26,
+      "elevated_removed": 0,
+      "central_retained_xyz": []
+    },
+    {
+      "stamp_ns": 131940000000,
+      "matched_scans": 1,
+      "ground_raw": 60,
+      "ground_removed": 51,
+      "ground_retained": 9,
+      "central_ground_raw": 9,
+      "central_ground_removed": 9,
+      "central_ground_retained": 0,
+      "elevated_raw": 25,
+      "elevated_retained_unchanged": 25,
+      "elevated_removed": 0,
+      "central_retained_xyz": []
+    },
+    {
+      "stamp_ns": 132130000000,
+      "matched_scans": 1,
+      "ground_raw": 61,
+      "ground_removed": 50,
+      "ground_retained": 11,
+      "central_ground_raw": 9,
+      "central_ground_removed": 9,
+      "central_ground_retained": 0,
+      "elevated_raw": 24,
+      "elevated_retained_unchanged": 24,
+      "elevated_removed": 0,
+      "central_retained_xyz": []
+    }
+  ],
+  "diagnostic_truth_only": true,
+  "roi": "forward +/-45deg; along -3..13m, lateral +/-6m; ground residual<=.05m, elevated>=.12m"
+}

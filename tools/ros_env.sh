@@ -10,3 +10,6 @@ export FASTRTPS_DEFAULT_PROFILES_FILE="$igvc_repo_root/ros2/config/fastdds.xml"
 if [[ -f "$HOME/igvc_ws/install/setup.bash" ]]; then
     source "$HOME/igvc_ws/install/setup.bash"
 fi
+if [[ -f "$HOME/igvc_nav2_overlay/validated" ]]; then
+    source "$HOME/igvc_nav2_overlay/install/local_setup.bash"
+fi

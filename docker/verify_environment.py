@@ -10,8 +10,10 @@ release = dict(line.split('=', 1) for line in Path('/etc/os-release').read_text(
 assert release['VERSION_ID'].strip('"') == '24.04', release
 assert os.environ['ROS_DISTRO'] == 'jazzy'
 packages = ['igvc_description', 'igvc_sim_bridge', 'igvc_navigation', 'igvc_perception',
-            'igvc_gps', 'igvc_lane_layer', 'ros_tcp_endpoint', 'rviz2', 'nav2_bringup']
+            'igvc_gps', 'igvc_lane_layer', 'ros_tcp_endpoint', 'rviz2', 'nav2_bringup',
+            'nav2_smac_planner', 'nav2_mppi_controller']
 origins = {name: get_package_share_directory(name) for name in packages}
+assert (Path(origins['nav2_mppi_controller']) / 'igvc-footprint-cost-critic-v1').is_file()
 description = ET.fromstring(xacro.process_file(str(Path(origins['igvc_description']) / 'urdf/r3_a.urdf.xacro')).toxml())
 count = 0
 for mesh in description.findall('.//mesh'):

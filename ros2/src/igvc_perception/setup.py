@@ -8,4 +8,5 @@ setup(name='igvc_perception', version='0.1.0', packages=['igvc_perception'],
                   ('share/igvc_perception/launch', glob('launch/*.launch.py'))],
       install_requires=['setuptools'], zip_safe=True,
       entry_points={'console_scripts': ['lane_detector = igvc_perception.lane_node:main',
-                                       'depth_processor = igvc_perception.depth_node:main']})
+                                       'depth_processor = igvc_perception.depth_node:main',
+                                       'scan_ground_filter = igvc_perception.scan_ground_node:main']})

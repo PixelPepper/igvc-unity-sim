@@ -1,0 +1,70 @@
+{
+  "passed": false,
+  "source_status": "stopped",
+  "completed_destinations": 1,
+  "checks": {
+    "completed_six_destinations": false,
+    "sensor_led_mode": true,
+    "scoring_guard": true,
+    "zero_line_blocks": true,
+    "finite_trajectory": true,
+    "obstacle_geometry_available": true,
+    "trajectory_continuous": true,
+    "speed_at_most_2_2_mps": true,
+    "sampled_obstacles_clear": true,
+    "swept_obstacles_clear": true,
+    "returned_within_0_4_m": false,
+    "all_ramps_traversed_entry_to_exit": false,
+    "six_destinations_independently_visited_in_order": false
+  },
+  "sample_count": 3780,
+  "topology_certified": false,
+  "full_loop_certified": false,
+  "limitations": "Offline ideal geometry evidence, not contact physics. Swept bounds assume linear translation and shortest-angle rotation between recorded poses. Gaps fail continuity. Paint crossing and full-loop topology are not independently certified; line_blocks is only a simulator status assertion. Course/run pairing is caller supplied. Ramp evidence follows the driven axle centre inside the side edges from local longitudinal 0 to full ramp length; it does not certify asymmetric body containment, wheel contact, elevation or suspension.",
+  "ramp_traversals": [
+    {
+      "ramp_id": "ramp-001",
+      "passed": false,
+      "longitudinal_span_m": 8.0,
+      "reason": "No ordered positive-longitudinal entry-to-exit axle traversal within ramp width"
+    }
+  ],
+  "observed_destination_visits": [
+    {
+      "destination_index": 0,
+      "sample_index": 1645,
+      "stamp": 61.74
+    }
+  ],
+  "footprint": {
+    "x_min": -1.1,
+    "x_max": 0.6,
+    "y_min": -0.5,
+    "y_max": 0.5
+  },
+  "obstacle_count": 54,
+  "minimum": {
+    "clearance_m": 3.527912236718387,
+    "trajectory_index": 2254.0,
+    "pose": [
+      24.511207271894396,
+      1.9759621039093345,
+      2.379780430155026
+    ],
+    "obstacle_id": "barricade-003"
+  },
+  "conservative_swept_clearance_lower_bound_m": 3.522679944200528,
+  "collision_pose_count": 0,
+  "unproven_sweep_subsegments": 0,
+  "evaluated_sweep_subsegments": 4595,
+  "observed_distance_m": 28.64193621614179,
+  "maximum_interval_speed_mps": 1.4214074603437474,
+  "speed_violation_indices": [],
+  "timestamp_gap_indices": [],
+  "nonincreasing_timestamp_indices": [],
+  "final_distance_to_origin_m": 22.280641848136725,
+  "simulation_span_s": 75.58,
+  "run_sha256": "e94f743bfa07749c1af631740f7e6b10386faafb9df5f4525bb0e4d734571482",
+  "source_run": "/opt/igvc/artifacts/courses/seed-2027/point3-run.json",
+  "evaluation_course": "/opt/igvc/artifacts/courses/seed-2027/course.json"
+}

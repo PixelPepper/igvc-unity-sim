@@ -18,6 +18,7 @@ from .lanes import lane_pixels, rotation_matrix
 from .hazards import hazard_pixels
 from .terrain_history import GroundHistory
 from .surface_projection import project_observed
+from .point_memory import PointMemory
 
 
 class LaneNode(Node):
@@ -29,8 +30,8 @@ class LaneNode(Node):
         self.listener = TransformListener(self.tf, self)
         self.images, self.infos = OrderedDict(), OrderedDict()
         self.surfaces = OrderedDict()
-        self.points = OrderedDict()
-        self.hazard_points = OrderedDict()
+        self.points = PointMemory(self.ttl, 8000)
+        self.hazard_points = PointMemory(self.ttl, 4000)
         self.last_stamp = 0
         self.last_success = float('-inf')
         self.last_arrival_stamp = 0
@@ -130,11 +131,8 @@ class LaneNode(Node):
 
     def tick(self):
         now = time.monotonic()
-        expired = [key for key, (_, wall) in self.points.items() if now-wall > self.ttl]
-        for key in expired:
-            del self.points[key]
-        for key in [key for key,(_,wall) in self.hazard_points.items() if now-wall>self.ttl]:
-            del self.hazard_points[key]
+        self.points.expire(now)
+        self.hazard_points.expire(now)
         common = {stamp for stamp in self.images.keys() & self.infos.keys()
                   if now-max(self.images[stamp][1], self.infos[stamp][1]) >= .04}
         if not common or max(common) <= self.last_stamp:
@@ -182,16 +180,10 @@ class LaneNode(Node):
             projected = project_observed(pixels, info.k, rotation_matrix((q.x, q.y, q.z, q.w)), (t.x, t.y, t.z), surface[:,:3], eligible_mask=surface[:,3]>0)
             hazard_pixels_xy, hazard_mask, hazard_components = hazard_pixels(rgb)
             hazards = project_observed(hazard_pixels_xy, info.k, rotation_matrix((q.x,q.y,q.z,q.w)), (t.x,t.y,t.z), surface[:,:3])
-            for point in hazards:
-                key=tuple(np.floor(point[:2]/.075).astype(int))
-                self.hazard_points[key]=(point,now);self.hazard_points.move_to_end(key)
-            while len(self.hazard_points)>4000:self.hazard_points.popitem(last=False)
-            for point in projected:
-                key = tuple(np.floor(point[:2]/.075).astype(int))
-                self.points[key] = (point, now)
-                self.points.move_to_end(key)
-            while len(self.points) > 8000:
-                self.points.popitem(last=False)
+            self.hazard_points.observe(
+                ((tuple(np.floor(point[:2]/.075).astype(int)), point) for point in hazards), stamp, now)
+            self.points.observe(
+                ((tuple(np.floor(point[:2]/.075).astype(int)), point) for point in projected), stamp, now)
             self.last_stamp = stamp
             self.last_success = now
             self.healthy.publish(Bool(data=True))

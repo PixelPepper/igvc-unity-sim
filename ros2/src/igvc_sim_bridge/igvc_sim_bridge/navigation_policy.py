@@ -13,4 +13,4 @@ def forward_command_allowed(linear, angular):
         return False
     if linear < 0:
         return linear >= -.100001 and abs(angular) <= 1e-6
-    return abs(angular) <= max(linear, 1e-6)
+    return abs(angular) <= max(2.0 * linear, 1e-6)

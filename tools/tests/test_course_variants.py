@@ -76,21 +76,22 @@ class CourseVariantChecks(unittest.TestCase):
         route=self.mission['route']['dense_xy']
         barrels=[o for o in self.course['obstacles'] if o['kind']=='barrel']
         self.assertEqual({o['sector'] for o in barrels},{'east','west','open-ramp'})
-        self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),16)
+        self.assertEqual(sum(o['sector']=='open-ramp' for o in barrels),24)
         open_barrels=[o for o in barrels if o['sector']=='open-ramp']
         center=lane_midpoint_x(self.course)
-        self.assertEqual(sum(o['x']<center-6 for o in open_barrels),8)
-        self.assertEqual(sum(o['x']>center+6 for o in open_barrels),8)
-        for group in ([o for o in open_barrels if o['x']<center-6],
-                      [o for o in open_barrels if o['x']>center+6]):
+        self.assertEqual(sum(o['x']<center for o in open_barrels),12)
+        self.assertEqual(sum(o['x']>center for o in open_barrels),12)
+        for group in ([o for o in open_barrels if o['x']<center],
+                      [o for o in open_barrels if o['x']>center]):
             self.assertTrue(any(o['y']<44.5 for o in group))
             self.assertTrue(any(o['y']>44.5 for o in group))
             self.assertGreater(max(o['x'] for o in group)-min(o['x'] for o in group),3.)
         self.assertGreaterEqual(len({o['color'] for o in barrels}),4)
         for o in barrels:
             self.assertIn(o['color'],('red','orange','blue','green','yellow','white'))
-            self.assertLessEqual(min(segment_distance((o['x'],o['y']),a,b)
-                                     for a,b in zip(lane,lane[1:])),2.5)
+            if o['sector']!='open-ramp':
+                self.assertLessEqual(min(segment_distance((o['x'],o['y']),a,b)
+                                         for a,b in zip(lane,lane[1:])),2.5)
         for side in ('east','west'):
             blockers=[o for o in barrels[:6] if o['sector']==side]
             self.assertEqual(len(blockers),3)
@@ -120,7 +121,7 @@ class CourseVariantChecks(unittest.TestCase):
 
     def test_counts_and_pothole_dimensions(self):
         kinds=[o['kind'] for o in self.course['obstacles']]
-        self.assertEqual(kinds.count('barrel'),36);self.assertEqual(kinds.count('barricade'),8)
+        self.assertEqual(kinds.count('barrel'),44);self.assertEqual(kinds.count('barricade'),8)
         self.assertEqual(kinds.count('pothole'),2)
         for o in self.course['obstacles']:
             if o['kind']=='pothole':
@@ -128,6 +129,53 @@ class CourseVariantChecks(unittest.TestCase):
         easy,_=generate(13,'easy');hard,_=generate(13,'hard')
         self.assertEqual(sum(o['kind']=='pothole' for o in easy['obstacles']),1)
         self.assertEqual(sum(o['kind']=='pothole' for o in hard['obstacles']),3)
+
+    def test_seeded_four_zone_balance_and_clear_lane_mouths(self):
+        for difficulty, count in (('easy',16), ('normal',24), ('hard',28)):
+            for seed in (0, 7, 13, 2027, 2028, 2029):
+                with self.subTest(seed=seed,difficulty=difficulty):
+                    course,_=generate(seed,difficulty)
+                    lane=course['centerline'];center=lane_midpoint_x(course)
+                    left=min(p['x'] for p in lane);right=max(p['x'] for p in lane)
+                    boundary_lines=[]
+                    for side in (-1,1):
+                        line=[]
+                        for i,p in enumerate(lane):
+                            before=lane[i-1] if i else lane[-2]
+                            after=lane[min(i+1,len(lane)-1)]
+                            angle=math.atan2(after['y']-before['y'],after['x']-before['x'])
+                            line.append((p['x']-side*p['half_width']*math.sin(angle),
+                                         p['y']+side*p['half_width']*math.cos(angle)))
+                        boundary_lines.append(line)
+                    painted=[(a,b) for line in boundary_lines
+                             for i,(a,b) in enumerate(zip(line,line[1:])) if lane[i]['painted']]
+                    barrels=[o for o in course['obstacles'] if o.get('sector')=='open-ramp']
+                    self.assertEqual(len(barrels),count)
+                    zones={(approach,flank):0 for approach in (-1,1) for flank in (-1,1)}
+                    for o in barrels:
+                        approach=1 if o['x']>center else -1
+                        flank=1 if o['y']>44.5 else -1
+                        zones[approach,flank]+=1
+                        # Outer bands include the ramp sides, while barrel
+                        # extents leave 7.4 m between them and clear both mouths.
+                        self.assertGreaterEqual(abs(o['y']-44.5),4.)
+                        self.assertLessEqual(abs(o['y']-44.5),5.)
+                        self.assertGreaterEqual(abs(o['y']-44.5)-o['width']/2,3.7-1e-9)
+                        low,high=left+6.,right-6.
+                        self.assertGreaterEqual(o['x']-o['width']/2-low,.7-1e-9)
+                        self.assertGreaterEqual(high-o['x']-o['width']/2,.7-1e-9)
+                        self.assertGreaterEqual(min(segment_distance((o['x'],o['y']),a,b)
+                                                    for a,b in painted)-o['width']/2,.7-1e-9)
+                    self.assertEqual(set(zones.values()),{count//4})
+                    for approach in (-1,1):
+                        for flank in (-1,1):
+                            group=[o for o in barrels if (o['x']-center)*approach>0
+                                   and (o['y']-44.5)*flank>0]
+                            self.assertTrue(any(abs(o['x']-center)<4 for o in group),
+                                            'Each outer band must extend alongside the ramp')
+                            self.assertTrue(any(abs(o['x']-center)>8 for o in group),
+                                            'Each outer band must also extend toward its lane mouth')
+                    self.assertGreaterEqual(course['generation']['obstacle_conservative_clearance_m'],.2)
 
     def test_independent_route_footprint_clearance(self):
         points=self.mission['route']['dense_xy']
