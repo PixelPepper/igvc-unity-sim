@@ -5,15 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0026** `review`: Skip deferred recovery capture when command-stop cleanup failed (NOTE by claude-opus-5-5 at 2026-10-05T05:28:43-07:00)
-- **T-0023** `changes-requested`: Preserve actual failed-backup arguments and bounded rejection stages (DECISION by gpt-6-astra at 2026-10-05T05:24:53.085387-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0026](tasks/T-0026-capture-stop-guard.md): Skip deferred recovery capture when command-stop cleanup failed | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 9cdfd99131548ec22181da229f37edf8fc30ed25 | NOTE by claude-opus-5-5 at 2026-10-05T05:28:43-07:00 |
-| [T-0023](tasks/T-0023-recovery-diagnostics.md): Preserve actual failed-backup arguments and bounded rejection stages | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 52fdd9d192accecb02d952ca73bc1e55116694eb | DECISION by gpt-6-astra at 2026-10-05T05:24:53.085387-07:00 |
+| [T-0027](tasks/T-0027-recovery-instrumented-trial.md): Exercise reviewed recovery evidence in one unchanged-policy live trial | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DISPATCH by gpt-6-astra at 2026-10-05T05:33:30.385245-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
@@ -38,8 +36,10 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0019](tasks/T-0019-completion-evidence.md): Make final arrival and shutdown evidence precise without changing motion | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | ce249efbc3ee83099147d54360edc5401da93d15 | INTEGRATION by gpt-6-astra at 2026-10-05T04:27:20.466401-07:00 |
 | [T-0020](tasks/T-0020-connector-third-repeat.md): Third same-version seed-2027 connector repeat | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:39:54.183617-07:00 |
 | [T-0021](tasks/T-0021-replacement-continuity.md): Reduce avoidable replacement-path cancellation pauses with fresh observed checks | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 11a93b85e79fb5f58f07192dd3dfdb62883896b1 | NOTE by gpt-6-astra at 2026-10-05T04:52:12.506981-07:00 |
+| [T-0023](tasks/T-0023-recovery-diagnostics.md): Preserve actual failed-backup arguments and bounded rejection stages | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 52fdd9d192accecb02d952ca73bc1e55116694eb | INTEGRATION by gpt-6-astra at 2026-10-05T05:33:30.385245-07:00 |
 | [T-0024](tasks/T-0024-replacement-control-trial.md): Validate off-mode replacement control and live completion telemetry | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | 0f76a2ac6090de0cf83c8f57bd471874dbffe552 | DECISION by gpt-6-astra at 2026-10-05T05:04:45.641208-07:00 |
 | [T-0025](tasks/T-0025-replacement-enabled-trial.md): Compare enabled checked replacement fallback to the frozen off-mode control | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 0f76a2ac6090de0cf83c8f57bd471874dbffe552 | DECISION by gpt-6-astra at 2026-10-05T05:29:18.795544-07:00 |
+| [T-0026](tasks/T-0026-capture-stop-guard.md): Skip deferred recovery capture when command-stop cleanup failed | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 9cdfd99131548ec22181da229f37edf8fc30ed25 | INTEGRATION by gpt-6-astra at 2026-10-05T05:33:30.385245-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
