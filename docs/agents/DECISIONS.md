@@ -258,3 +258,26 @@ T-0015 pins commit ad30107c31c06aec8a7d5636e0d1058118604e6f.
 
 T-0015 implements the bundle and tooling with independent code/evidence reviews.
 The coordinator adds entry links and the context-hygiene/template changes here.
+
+## ADR-011: Opus owns complete bounded development tasks
+
+2026-10-05T04:11:53.484766-07:00 · gpt-6-astra · DECISION, relaying the user's explicit approval:
+"yes please, do that to give opus more control in development".
+
+Opus may investigate, choose a design, implement, test, revise and commit within
+one assigned task without requesting approval at each intermediate step. Packets
+define outcomes, owned paths, hard invariants and bounds; they should not split
+ordinary design choices into separate dispatches. The implementer may reject its
+own hypothesis and select another within the same objective, recording the evidence.
+
+ASTRA still assigns the task, owns integration and grants exclusive live trials.
+Independent Sonnet/Sol review remains required before integration. No automatic
+idle queue, self-promotion, shared-file editing, publication, extra provider or
+budget authorization is introduced. Stop at completed handback or a real boundary.
+
+For the frozen-worktree T-0018 repeat, light source authoring in a different assigned
+worktree is allowed. The running checkout, profile and auditor remain immutable.
+Heavy local tests, replays and builds wait until the live lease is released.
+Record overlapping work and retain the uncontrolled-host-load qualification.
+This narrow update supersedes ADR-009's read-only overlap limitation, not its
+exclusive runtime or no-heavy-compute restrictions.

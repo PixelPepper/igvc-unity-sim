@@ -41,6 +41,16 @@ Separation rules:
 - Cursor/Grok remain available for separate bounded tasks per
   [AGENT_WORKFLOW.md](../AGENT_WORKFLOW.md). Grok 4.7 must be verified in the catalog before use.
 
+### Development autonomy
+
+Under [ADR-011](DECISIONS.md#adr-011-opus-owns-complete-bounded-development-tasks),
+Opus owns investigation through implementation, tests, revisions and commit inside
+each assigned task. Intermediate design choices do not require another dispatch.
+ASTRA supplies acceptance criteria and boundaries, then reviews the finished slice.
+Light edits in an isolated worktree may overlap an explicitly granted frozen-source
+trial; heavy tests/replay/builds wait for its lease release. Existing independent
+reviews, exclusive simulator ownership and integration authority remain unchanged.
+
 ### Invariants every reviewer checks
 
 Taken from [AGENTS.md](../../AGENTS.md) and the [handoff](../CLAUDE_HANDOFF.md#mission-and-constraints).
