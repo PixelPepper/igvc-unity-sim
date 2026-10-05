@@ -1,5 +1,6 @@
 """CAD robot in ideal motion mode. Joint states come only from Unity."""
 from pathlib import Path
+import os
 import json
 from igvc_sim_bridge.suspension_description import with_caster_suspension
 from ament_index_python.packages import get_package_share_directory
@@ -15,7 +16,7 @@ def generate_launch_description():
     description = with_caster_suspension(description, suspension['joint_limit_m'])
     return LaunchDescription([
         Node(package='ros_tcp_endpoint', executable='default_server_endpoint',
-             parameters=[{'ROS_IP': '0.0.0.0', 'ROS_TCP_PORT': 10000}], output='screen'),
+             parameters=[{'ROS_IP': '0.0.0.0', 'ROS_TCP_PORT': int(os.environ.get('IGVC_ROS_TCP_PORT', '10000'))}], output='screen'),
         Node(package='igvc_sim_bridge', executable='probe_adapter',
              parameters=[{'r3a_mode': True, 'require_lanes': True, 'require_depth': True}], output='screen'),
         Node(package='robot_state_publisher', executable='robot_state_publisher',

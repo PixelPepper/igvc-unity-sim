@@ -7,17 +7,29 @@ import signal
 import subprocess
 import sys
 import time
+import argparse
+
+from session_paths import log_dir, session_dir
 
 root = Path(__file__).resolve().parent.parent
-action = sys.argv[1]
-mode = sys.argv[2] if len(sys.argv) > 2 else 'probe'
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('action', choices=('start', 'stop', 'status'))
+parser.add_argument('mode', nargs='?', default='probe', choices=('probe', 'r3a', 'nav', 'perception'))
+parser.add_argument('--params-file', type=Path, help='Explicit Nav2 experiment profile')
+args = parser.parse_args()
+action, mode = args.action, args.mode
+launch_args = []
+if args.params_file is not None:
+    if action != 'start' or mode != 'nav' or not args.params_file.is_file():
+        parser.error('--params-file requires start nav and an existing YAML file')
+    launch_args = ['params_file:='+str(args.params_file.resolve())]
 session_name = mode if mode in ('nav', 'perception') else 'ros'
-state = root / f'artifacts/session/{session_name}.json'
+state = session_dir(root) / f'{session_name}.json'
 state.parent.mkdir(parents=True, exist_ok=True)
 # All modes share ownership/exclusivity checks; serialize across terminals.
 session_lock = (state.parent / 'ros-session.lock').open('a')
 fcntl.flock(session_lock, fcntl.LOCK_EX)
-log = root / f'artifacts/logs/{session_name}-session.log'
+log = log_dir(root) / f'{session_name}-session.log'
 log.parent.mkdir(parents=True, exist_ok=True)
 
 
@@ -53,12 +65,12 @@ if mode not in ('probe', 'r3a', 'nav', 'perception'):
 item = running()
 if action == 'start':
     if mode in ('nav', 'perception'):
-        sim_state = root / 'artifacts/session/ros.json'
+        sim_state = session_dir(root) / 'ros.json'
         sim = json.loads(sim_state.read_text()) if sim_state.exists() else {}
         if sim.get('mode') != 'r3a' or identity(sim.get('pid', -1)) != sim.get('start'):
             raise SystemExit('Start the R3-a simulator before navigation or perception')
         other_mode = 'perception' if mode == 'nav' else 'nav'
-        other_state = root / f'artifacts/session/{other_mode}.json'
+        other_state = session_dir(root) / f'{other_mode}.json'
         other = json.loads(other_state.read_text()) if other_state.exists() else {}
         if other.get('start') is not None and (identity(other.get('pid', -1)) == other['start'] or group_running(other.get('pid', -1))):
             raise SystemExit(f'Stop the managed {other_mode} session first; both launch perception publishers')
@@ -73,7 +85,7 @@ if action == 'start':
     }.get(mode, ('igvc_sim_bridge', mode + '.launch.py'))
     with log.open('w') as output:
         child = subprocess.Popen(['bash', str(root / 'tools/run_ros.sh'), 'ros2', 'launch',
-                                  package, launch_file],
+                                  package, launch_file, *launch_args],
                                  stdout=output, stderr=subprocess.STDOUT,
                                  stdin=subprocess.DEVNULL, start_new_session=True)
     state.write_text(json.dumps({'pid': child.pid, 'start': identity(child.pid), 'mode': mode}))

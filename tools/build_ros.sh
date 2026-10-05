@@ -12,10 +12,11 @@ if [[ ! -d "$endpoint/.git" ]]; then
     git -C "$endpoint" checkout "$pin"
 fi
 [[ "$(git -C "$endpoint" rev-parse HEAD)" == "$pin" ]] || { echo 'Endpoint pin mismatch'; exit 1; }
-mkdir -p "$HOME/igvc_ws"
-cd "$HOME/igvc_ws"
-colcon --log-base "$HOME/igvc_ws/log" build \
+igvc_build_workspace="${IGVC_ROS_WORKSPACE:-$HOME/igvc_ws}"
+mkdir -p "$igvc_build_workspace"
+cd "$igvc_build_workspace"
+colcon --log-base "$igvc_build_workspace/log" build \
     --executor sequential \
     --base-paths "$repo_root/ros2/src" "$endpoint" \
-    --build-base "$HOME/igvc_ws/build" --install-base "$HOME/igvc_ws/install" \
+    --build-base "$igvc_build_workspace/build" --install-base "$igvc_build_workspace/install" \
     --event-handlers console_direct+

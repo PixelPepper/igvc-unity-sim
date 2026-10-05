@@ -6,6 +6,8 @@ Panels:
       Expanded: ~
       Splitter Ratio: 0.5
     Tree Height: 314
+  - Class: rviz_common/Views
+    Name: Views
 Visualization Manager:
   Class: ""
   Displays:
@@ -383,7 +385,12 @@ Visualization Manager:
     Fixed Frame: odom
     Frame Rate: 30
   Name: root
-  Tools: ~
+  Tools:
+    - Class: rviz_default_plugins/MoveCamera
+    - Class: rviz_default_plugins/Interact
+      Hide Inactive Objects: true
+    - Class: rviz_default_plugins/Select
+    - Class: rviz_default_plugins/FocusCamera
   Transformation:
     Current:
       Class: rviz_default_plugins/TF
