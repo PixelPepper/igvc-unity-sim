@@ -40,6 +40,75 @@ the user-approved repeatability gate nor physical calibration is established.
 There was no failed/unknown health sample, so live first-failure capture remains
 unexercised. The failed T-0006 result below is retained without reinterpretation.
 
+## Repeat: completed destinations, original audit exception
+
+[T-0010](../agents/tasks/T-0010-repeat-mouth-handoff.md) ran live Unity on
+Windows with ROS 2 Jazzy and Nav2 in an isolated native WSL2 overlay.
+Unity was hidden; RViz and Docker were not used in this trial. Launch commit
+was 70b3566d91dce8b807fee729dbb110c20db3c764. All 16 recorded runtime
+source fingerprints and the player/profile/course/mission matched T-0009.
+
+The robot reached **6/6 in 394.558273 seconds**, with one checked backup
+(0.608 m actual travel), 3948 passing processing-health samples and no failed
+or unknown samples. Return distance was 0.398244 m against the unchanged
+0.4 m bound; swept obstacle clearance lower bound was 0.109255 m.
+
+The original audit **failed 19/20**: topology evaluation raised
+"min() iterable argument is empty" after reaching all 77 ordered gates.
+At a stationary terminal sample, its lower bound selected a vertex rather
+than the last valid segment. Later samples were not assessed, so gate count
+alone cannot establish success. The original failed audit and benchmark row
+are retained. [T-0013](../agents/tasks/T-0013-topology-terminal.md) addresses
+the evaluator separately from navigation changes.
+
+Local evidence: artifacts/iterations/2026-10-05/mouth-repeat-1/.
+Run SHA-256: f7be0831c27ec043b160c46f4016bc9608508aeae93b4d3d6463f88e925d9c98.
+Runner shutdown and exclusive-lease release were independently checked.
+Sonnet and Sol reviewed the evidence. This is not a new passing streak;
+the launch SHA differs from T-0009, and host load was not controlled.
+
+### Corrected evaluation of the preserved lap
+
+The separately reviewed auditor correction was integrated as
+e886abb569b3a811a41d7bd726f1529779fff58b. A new full re-audit of the unchanged
+T-0010 run passes **20/20**, including all 19,727 trajectory samples through the
+terminal tail. No corridor, gate, return, footprint or health thresholds changed.
+The original failed audit and benchmark row remain intact.
+
+Supplemental local artifact: mouth-repeat-1/audit-t0013-reaudit.json under the
+iteration directory above, SHA-256
+ebd6d90e7e2537602a3c4c05267b8c9d86053fdcbf9265f997300fddd3e37f95.
+The source and before/after input hashes are recorded in
+artifacts/agents/T-0013/reaudit-manifest.json.
+This is a corrected evaluation of an existing lap, not another live trial or a
+same-commit promotion streak. The 1.8 mm return margin remains a concern.
+
+## Optimization investigation
+
+[T-0011](../agents/tasks/T-0011-passing-lap-delay-analysis.md) found 70.9 seconds
+across 31 sampled stationary intervals in the passing T-0009 run. A 22.24-second
+interval contained 13 repeated connector rejections from an unchanged pose.
+These are descriptive associations, not measured time that a fix will save.
+
+[T-0012](../agents/tasks/T-0012-connector-admission-probe.md) reproduced one
+rejection from the full-precision observed path and checked pose. Eighty-eight
+candidate joins exceeded the configured curvature limit by only
+3.9968e-15 to 7.0448e-11 relative; later joins exceeded it by at least 0.0112998.
+This supports testing a small numerical allowance in the comparison.
+It does not establish arbitrary-offset behavior or a live improvement.
+The saved grid represents planner submission, not necessarily the latest grid
+at admission. [T-0014](../agents/tasks/T-0014-connector-numerics.md) tests the
+actual comparison and close-boundary rejection controls separately.
+Its reviewed final candidate 57920aa822e0cd02131a0db9ff6b6eef3eb61821 was integrated
+as e33765d and fa8e730. The production comparison adds only a 1e-9 relative
+arithmetic allowance. An observed-plan regression and independent near-boundary
+circle controls pass; excessive curvature and blocked/unknown sweeps still fail.
+The actual configured radius, footprint, pose gates and collision checks remain
+unchanged. All 589 constituent tools/perception/GPS tests pass after regenerating
+the stale task board and repairing the continuation command environment. The
+initial full-script failure is preserved in T-0015 integration evidence; this was
+not a single clean full-script pass. A fresh live comparison remains pending.
+
 ## Outcome
 
 The fresh baseline **stopped at 1/6 destinations and failed the independent audit**.

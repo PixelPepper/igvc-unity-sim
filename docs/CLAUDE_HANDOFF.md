@@ -4,11 +4,18 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
-**October 5 update:** the reviewed lane-mouth correction completed one sensor-led
-6/6 comparison in 399.23 s, with all 20 independent audit checks passing and no
-failed/unknown health samples. It used two checked backups and is not promoted as
-a repeatable or faster baseline. See [current evidence](evidence/navigation-2026-10-05.md)
+**October 5 update:** the reviewed lane-mouth correction completed a sensor-led
+6/6 comparison in 399.23 s with all 20 audit checks passing. A second native
+Unity/ROS lap reached 6/6 in 394.56 s with one backup and no failed/unknown health
+samples. Its original audit failed on a terminal-indexing exception; a separately
+reviewed auditor fix and preserved-run re-audit pass all 20 checks. The original
+failure record remains intact. A numerical connector correction is also integrated
+with all 589 constituent integration tests passing after task-board refresh and
+continuation-command repairs; no new live speed improvement is claimed.
+Neither result promotes a repeatable baseline. See [current evidence](evidence/navigation-2026-10-05.md)
 and the [research-to-implementation status](agents/COMPETITION_CONTEXT.md#implementation-status-october-5).
+Use the [Open Knowledge index](knowledge/index.md) for targeted context and
+[its maintenance workflow](OPEN_KNOWLEDGE.md) for source freshness and sharing.
 The October 1 checkout/session descriptions below are historical; use the
 [task board](agents/BOARD.md) and current Git/runtime state for ongoing work.
 
