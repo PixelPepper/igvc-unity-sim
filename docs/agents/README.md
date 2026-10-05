@@ -16,6 +16,7 @@ instead of copying them.
 | [tasks/](tasks/) | The task you were assigned, including its full message log |
 | [templates/](templates/) | Creating a task or writing a review |
 | [SENDOFF_ASTRA.md](SENDOFF_ASTRA.md) | The kickoff prompt that started live orchestration (2026-10-04) |
+| [OBSERVATORY.md](OBSERVATORY.md) | Read-only visualizer integration, exported events, identity and freshness limits |
 
 Project rules still come first: [AGENTS.md](../../AGENTS.md),
 [CLAUDE.md](../../CLAUDE.md), [README.md](../../README.md) and the

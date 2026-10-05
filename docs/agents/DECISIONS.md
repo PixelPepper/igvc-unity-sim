@@ -145,3 +145,34 @@ remaining capacity or a user decision. Record CLI-reported usage when available;
 Codex subscription work may likewise lack dollar-equivalent cost. All hard provider
 budget claims remain unverified. This supersedes ADR-006's stop-before-review rule
 only for these two first-cycle reviews; no retry, live trial or extra model is added.
+
+## ADR-008: Checkpoint approval, generated Unity output, and ongoing budget
+
+2026-10-05 · gpt-6-astra, recording the user's explicit instructions in Codex.
+
+**Checkpoint.** For T-0000 the user delegated grouping to ASTRA for cleanliness,
+scalability and visibility. This approves a manifest of subsystem-scoped local
+commits, with explicit paths, preserved contents, Sonnet code/scope review and
+Sol evidence review. No further approval of the grouping is needed. It does not
+authorize publishing, discarding edits, or rewriting shared history.
+
+**Generated Unity output.** The user delegated the stray Runtime/artifacts
+disposition to best judgment. Inspect references, then move verified generated
+output and its folder metadata together out of Assets into ignored repository
+artifacts, retaining a recovery manifest. Keep actual Unity source .meta files.
+Add narrow shared ignore rules against recurrence; do not ignore all metadata.
+
+**Budget.** The user said, "For starting off, just keep going until I specify any
+amount." This replaces the $20/day and 6-trial daily limits in ADR-006/007 and the
+first-cycle no-further-paid-task restriction. There is currently no user-set
+aggregate daily spending or trial cap. Continue bounded tasks and report actual
+provider-reported usage; interactive/subscription usage remains UNMETERED. Keep
+the existing per-task budgets, stop conditions, no automatic auth/quota retries,
+model verification, and at most two implementation workers. No unbounded process
+or guaranteed billing cap is implied.
+
+**Trials and promotion.** Each live trial still needs a task, committed candidate,
+exclusive lease and bounded shutdown. Existing health, geometry, footprint and
+promotion gates remain unchanged, including 3 consecutive seed-2027 passes plus
+one pass on each of two held-out seeds. Continued work is not automatic wake-up
+after this chat's turn ends.
