@@ -10,7 +10,7 @@ branch: codex/t0038-timed-2029-diagnosis
 base: 20a18f3
 candidate: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
 claim: none
-lease: gpt-6-astra
+lease: held
 updated: 2026-10-05
 ---
 
