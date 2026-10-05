@@ -27,7 +27,7 @@ igvc_sources:
   - path: docs/SENSOR_AUTONOMY.md
     sha256: 1dd11e27fafbce6866bebc09943c8d2a76d5890cc7bf702803035a091ecf995c
   - path: tools/observed_navigation.py
-    sha256: 1bd13088c92dfacc5dd5a5aa93d56eafba344e52edc8ceb989fd0196fa569c1f
+    sha256: ad93a94721502c6f00422f0598826ec46f7e48a0006ec76aa325aa971ee67ce5
 ---
 
 # Inputs allowed at run time
@@ -49,6 +49,11 @@ and the independent audit only.[^sensor-autonomy]
    checked connector and suffix are submitted; the old geometry is not blindly retained.[^replacement-path]
    Unit checks are separate from live preemption, timing and performance evidence.
 5. **Recovery.** Recovery uses checked backups within a bounded budget.
+   If a far observed gate has no clear lateral target, recovery can try nearer
+   stations in the same observed boundary overlap, at most64 steps. New retreated
+   targets remain ahead of the trap by a nominal front offset. All body/unknown
+   checks and the downstream checked backup/forward continuation remain required.
+   Ordinary planning does not enable this recovery-only target option.[^guidance]
    Failed legacy searches retain bounded rejection stages and fingerprints of the submitted and worker inputs.
    The full observed-input capture is deferred until after attempted command-stop cleanup and health-interval end,
    and skipped if cleanup records errors. Capture/worker mismatch or unavailable binding remains explicit.
