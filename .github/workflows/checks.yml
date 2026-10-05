@@ -1,0 +1,26 @@
+name: Core behavior checks
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: core-checks-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  behavior:
+    runs-on: ubuntu-24.04
+    container: ros:jazzy-ros-base-noble
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - name: Install Ubuntu Python dependencies
+        run: |
+          apt-get update
+          apt-get install -y git python3-numpy python3-opencv python3-pil python3-yaml ros-jazzy-nav2-msgs
+      - name: Check planners, perception, scoring and launcher behavior
+        shell: bash
+        run: bash tools/check_core.sh
+      - name: Check whitespace
+        run: git show --format= --check HEAD
