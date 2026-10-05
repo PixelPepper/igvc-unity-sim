@@ -101,28 +101,53 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
     return None, evidence
 
 
-def _near_mouth_target(corridor, robot_xy, robot_yaw, lookahead):
+def _front_extent(goal_footprint):
+    """Body front (x_max about the axle) from the actual footprint, or None if unusable."""
+    try:
+        x_max = float(goal_footprint[1])
+    except (TypeError, ValueError, IndexError):
+        return None
+    return x_max if math.isfinite(x_max) and x_max >= 0 else None
+
+
+def _near_mouth_target(corridor, robot_xy, robot_yaw, lookahead, goal_footprint=None, membership=None):
     """Advance an entered mouth only into the two observed boundary spans.
 
     This is guidance, never clearance authority. An oblique approach may need
     room inside the corridor to turn; the forward planner checks the full body
     against current costs rather than trying to align at a nearby/aft mouth.
+
+    With the actual ``goal_footprint`` the lower membership gate uses the body's
+    front-center station (axle station + x_max * heading·axis); without it the
+    axle point is used as before. All other gates use the axle unchanged.
+    ``membership`` (optional dict) receives the stations and gate outcome.
     """
+    record = membership if membership is not None else {}
     # Entering is determined by longitudinal/lateral membership below, not
     # distance to the center: an oblique entry may still be far from that point.
     if corridor['diagnostics'].get('entry_mode') != 'visible_mouth':
+        record['result'] = 'not_visible_mouth'
         return None
     direction = corridor['direction']
     normal = (-direction[1], direction[0])
     heading = (math.cos(robot_yaw), math.sin(robot_yaw))
     dot = lambda point, axis: sum(a*b for a,b in zip(point,axis))
-    if dot(direction, heading) < .25:
+    heading_dot = dot(direction, heading)
+    record['heading_dot'] = heading_dot
+    if heading_dot < .25:
+        record['result'] = 'heading_gate'
         return None
     segments = corridor['diagnostics']['segments']
     spans = [sorted(dot(point,direction) for point in segment) for segment in segments]
     lo, hi = max(span[0] for span in spans), min(span[1] for span in spans)
     robot_t = dot(robot_xy,direction)
-    if not lo-1. <= robot_t <= hi:
+    front = _front_extent(goal_footprint) if goal_footprint is not None else None
+    member_t = robot_t if front is None else robot_t+front*heading_dot
+    record.update(shared_span=[lo, hi], axle_station=robot_t, front_station=None if front is None else member_t,
+                  lower_threshold=lo-1., membership_basis='axle' if front is None else 'front_center',
+                  footprint_front_m=front, footprint_supplied=goal_footprint is not None)
+    if not (lo-1. <= member_t and robot_t <= hi):
+        record['result'] = 'longitudinal_gate'
         return None
 
     def lateral(segment, t):
@@ -132,22 +157,30 @@ def _near_mouth_target(corridor, robot_xy, robot_yaw, lookahead):
 
     sides = sorted(lateral(segment,max(lo,robot_t)) for segment in segments)
     if not sides[0]+.25 <= dot(robot_xy,normal) <= sides[1]-.25:
+        record['result'] = 'lateral_gate'
         return None
     t = min(hi,max(lo,robot_t+lookahead))
     if t-robot_t < 1.:
+        record['result'] = 'advance_below_1m'
         return None
     center = sum(lateral(segment,t) for segment in segments)/len(segments)
     target = [direction[k]*t+normal[k]*center for k in range(2)]
     if dot([target[k]-robot_xy[k] for k in range(2)],heading) <= .25:
+        record['result'] = 'target_not_forward'
         return None
+    record.update(result='handoff', target_station=t, target=list(target))
     return target
 
 
 def select_observed_guidance(lane_points, robot_xy, robot_yaw, destination,
                              heading_hint=None, *, entrance_tracking=False,
                              lookahead=3., guidance_diagnostics=None,
-                             corridor_scorer=None, corridor_weight=0., costmap=None):
+                             corridor_scorer=None, corridor_weight=0., costmap=None,
+                             goal_footprint=None):
     """Select intent at the actual pose, independently of collision search.
+
+    ``goal_footprint`` (optional, the actual collision footprint) only lets the
+    mouth-handoff membership test use the body's front; omitted, behavior is unchanged.
 
     The small returned target can be preserved through hypothetical backup
     evaluation. Re-running perception selection at those poses would change
@@ -171,7 +204,10 @@ def select_observed_guidance(lane_points, robot_xy, robot_yaw, destination,
                                          lookahead=lookahead,
                                          diagnostics=lane_diagnostic, **rerank)
     if corridor is not None:
-        interior = _near_mouth_target(corridor, robot_xy, robot_yaw, lookahead)
+        membership = {}
+        interior = _near_mouth_target(corridor, robot_xy, robot_yaw, lookahead,
+                                      goal_footprint=goal_footprint, membership=membership)
+        diagnostic['mouth_membership'] = membership
         if interior is not None:
             diagnostic['entrance_state'] = 'observed_mouth_handoff'
             # Leave detector evidence unchanged; record the guidance handoff
@@ -227,7 +263,8 @@ def plan_observed_navigation(origin, resolution, width, height, costs,
             heading_hint, entrance_tracking=entrance_tracking,
             lookahead=planner_options.get('lookahead', 3.), guidance_diagnostics=diagnostic,
             corridor_scorer=corridor_scorer, corridor_weight=corridor_weight,
-            costmap=(origin, resolution, width, height, costs))
+            costmap=(origin, resolution, width, height, costs),
+            goal_footprint=planner_options.get('goal_footprint'))
         if diagnostic['corridor'] is not None:
             refined, refinement = refine_corridor_guidance(selected, diagnostic['corridor'],
                 origin,resolution,width,height,costs,planner_options.get('goal_footprint'))

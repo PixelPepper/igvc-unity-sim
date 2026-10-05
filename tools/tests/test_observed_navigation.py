@@ -1,11 +1,13 @@
 """Lane guidance must still obey observed collision geometry."""
+import gzip
+import json
 from pathlib import Path
 import math
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from observed_navigation import (plan_observed_navigation, select_observed_guidance,
-                                 refine_corridor_guidance)
+                                 refine_corridor_guidance, _near_mouth_target)
 from sensor_route_policy import _rectangle_clear
 
 
@@ -290,6 +292,118 @@ class ObservedNavigationTests(unittest.TestCase):
         if plan is not None:
             self.assertEqual(plan['diagnostics']['guidance'], 'observed_lane_corridor')
             self.assertTrue(all(x < 3.6 for x, _ in plan['path']))
+
+
+class FrontMembershipHandoffTests(unittest.TestCase):
+    """T-0008: recorded T-0006 stall (decision 80); observation-only fixture."""
+
+    @classmethod
+    def setUpClass(cls):
+        with gzip.open(Path(__file__).with_name('fixtures')/'observed_mouth_20261005.json.gz', 'rt') as stream:
+            cls.inputs = json.load(stream)['input']
+        cls.footprint = tuple(cls.inputs['planner_options']['goal_footprint'])
+        point = {}
+        select_observed_guidance(cls.inputs['lane_points'], cls.inputs['robot_xy'], cls.inputs['robot_yaw'],
+            cls.inputs['destination'], cls.inputs['heading_hint'], lookahead=7., guidance_diagnostics=point)
+        cls.point = point
+        cls.mouth = point['corridor']  # recorded visible_mouth corridor at the actual pose
+
+    def select(self, footprint):
+        diagnostic = {}
+        selected = select_observed_guidance(self.inputs['lane_points'], self.inputs['robot_xy'],
+            self.inputs['robot_yaw'], self.inputs['destination'], self.inputs['heading_hint'],
+            lookahead=7., guidance_diagnostics=diagnostic, goal_footprint=footprint)
+        return selected, diagnostic
+
+    def shifted(self, along=0., across=0.):
+        d = self.mouth['direction']
+        x, y = self.inputs['robot_xy']
+        return (x+along*d[0]-across*d[1], y+along*d[1]+across*d[0])
+
+    def test_recorded_stall_front_hands_off_into_shared_span_point_mode_unchanged(self):
+        selected, diagnostic = self.select(self.footprint)
+        membership = diagnostic['mouth_membership']
+        self.assertEqual((membership['result'], membership['membership_basis']), ('handoff', 'front_center'))
+        self.assertAlmostEqual(membership['axle_station'], 19.870, places=3)
+        self.assertAlmostEqual(membership['front_station'], 20.363, places=3)
+        lo, hi = membership['shared_span']
+        self.assertLessEqual(lo, membership['target_station'])
+        self.assertLessEqual(membership['target_station'], hi)
+        self.assertEqual(diagnostic['entrance_state'], 'observed_mouth_handoff')
+        self.assertAlmostEqual(selected['target'][0], 28.986133, places=4)
+        self.assertAlmostEqual(selected['target'][1], 24.446254, places=4)
+        # Without a footprint the old axle test still keeps the visible mouth.
+        self.assertEqual(self.point['mouth_membership']['result'], 'longitudinal_gate')
+        self.assertEqual(self.point['mouth_membership']['membership_basis'], 'axle')
+        self.assertNotIn('entrance_state', self.point)
+        self.assertEqual(self.mouth['diagnostics']['entry_mode'], 'visible_mouth')
+
+    def plan(self, costs):
+        # Exact recorded options (0.5 s wall budget). Whether a route completes in
+        # that budget is machine-dependent, so tests assert only timing-independent
+        # properties; the recorded-budget route outcome is replay evidence.
+        options = dict(self.inputs['planner_options'])
+        diagnostic = {}
+        plan = plan_observed_navigation(tuple(self.inputs['origin']), self.inputs['resolution'],
+            self.inputs['width'], self.inputs['height'], costs, self.inputs['robot_xy'],
+            self.inputs['robot_yaw'], self.inputs['destination'], self.inputs['lane_points'],
+            heading_hint=self.inputs['heading_hint'], guidance_diagnostics=diagnostic, **options)
+        return plan, diagnostic
+
+    def assert_path_clear(self, plan, costs):
+        for (x, y), yaw in zip(plan['path'], plan['path_yaws']):
+            self.assertTrue(_rectangle_clear(x, y, yaw, self.footprint, costs, self.inputs['width'],
+                self.inputs['height'], self.inputs['resolution'], tuple(self.inputs['origin'])))
+
+    def test_recorded_stall_plans_toward_the_handoff_only_through_checked_poses(self):
+        plan, diagnostic = self.plan(self.inputs['costs'])
+        self.assertEqual(diagnostic['mouth_membership']['result'], 'handoff')
+        self.assertAlmostEqual(diagnostic['guidance_target'][1], 24.446254, places=4)
+        if plan is not None:
+            self.assertTrue(plan['diagnostics']['full_footprint_sweep'])
+            self.assert_path_clear(plan, self.inputs['costs'])
+
+    def test_blocked_or_unknown_corridor_cannot_be_crossed_by_handoff(self):
+        ox, oy = self.inputs['origin']
+        res, width = self.inputs['resolution'], self.inputs['width']
+        for value in (100, -1):
+            with self.subTest(value=value):
+                costs = list(self.inputs['costs'])
+                for j in range(self.inputs['height']):
+                    if oy+(j+.5)*res > 22.:
+                        costs[j*width:(j+1)*width] = [value]*width
+                plan, diagnostic = self.plan(costs)
+                self.assertEqual(diagnostic['mouth_membership']['result'], 'handoff')
+                if plan is not None:
+                    self.assertTrue(all(y < 22. for _, y in plan['path']))
+                    self.assert_path_clear(plan, costs)
+
+    def test_gates_other_than_front_membership_still_reject(self):
+        base_yaw = self.inputs['robot_yaw']
+        axis_yaw = math.atan2(self.mouth['direction'][1], self.mouth['direction'][0])
+        cases = {'front_short_of_threshold': (self.shifted(along=-.4), base_yaw, 'longitudinal_gate'),
+                 'beyond_shared_span': (self.shifted(along=4.5), base_yaw, 'longitudinal_gate'),
+                 'outside_lateral_sides': (self.shifted(across=-2.), base_yaw, 'lateral_gate'),
+                 'wrong_heading': (self.inputs['robot_xy'], axis_yaw+1.4, 'heading_gate')}
+        for name, (pose, yaw, reason) in cases.items():
+            with self.subTest(name):
+                membership = {}
+                self.assertIsNone(_near_mouth_target(self.mouth, pose, yaw, 7., goal_footprint=self.footprint,
+                                                     membership=membership))
+                self.assertEqual(membership['result'], reason)
+        for bad in ('x', (), (0., 'nan'), (-1., float('nan'), 0., 0.), (-1., -.5, 0., 0.)):
+            with self.subTest(footprint=bad):
+                membership = {}
+                self.assertIsNone(_near_mouth_target(self.mouth, self.inputs['robot_xy'], base_yaw, 7.,
+                                                     goal_footprint=bad, membership=membership))
+                self.assertEqual(membership['membership_basis'], 'axle')
+
+    def test_already_eligible_axle_keeps_the_same_target_with_or_without_footprint(self):
+        pose = self.shifted(along=.4)
+        targets = [_near_mouth_target(self.mouth, pose, self.inputs['robot_yaw'], 7., goal_footprint=footprint)
+                   for footprint in (None, self.footprint)]
+        self.assertIsNotNone(targets[0])
+        self.assertEqual(targets[0], targets[1])
 
 
 if __name__ == '__main__':

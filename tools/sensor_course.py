@@ -568,7 +568,7 @@ def run(args):
                             (rx,ry), ryaw, (gx,gy),
                             heading_memory.propose((rx,ry),ryaw,time.monotonic(),lookahead=7.),
                             entrance_tracking=entrance_tracking, lookahead=7.,
-                            guidance_diagnostics=selection_diagnostics)
+                            guidance_diagnostics=selection_diagnostics, goal_footprint=goal_footprint)
                         selected, gate_selection = refine_corridor_guidance(selected,
                             selection_diagnostics.get('corridor'),
                             (recovery_grid.info.origin.position.x,recovery_grid.info.origin.position.y),
