@@ -16,7 +16,8 @@ The earlier terminal audit failure is preserved alongside its separate corrected
 20/20 re-audit. Completion instrumentation is integrated at 02cea95 with all
 598 combined tests passing. The opt-in replacement-path fallback is now integrated
 at 0f76a2a with 610 combined tests passing; it sends checked geometry and remains
-off by default. T0024 is testing off-mode and completion telemetry; enabled live
+off by default. T0024 passed6/6 and20/20 in368.77s with zero charged backups,
+validating the off-mode control and normal completion telemetry. Enabled live
 benefit remains unverified. Failed recovery diagnostics are being added separately
 under T0023, without changing recovery behavior. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive

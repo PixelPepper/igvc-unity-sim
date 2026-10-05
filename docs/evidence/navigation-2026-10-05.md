@@ -1,6 +1,33 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
-## Latest reliability result: two passes, then a failed repeat
+## Default-off control after instrumentation: one audited pass
+
+[T-0024](../agents/tasks/T-0024-replacement-control-trial.md) ran at
+0f76a2ac6090de0cf83c8f57bd471874dbffe552, with the reviewed replacement fallback
+explicitly disabled and completion telemetry enabled. It completed **6/6 with
+20/20 audit checks passing in 368.772596 s**. There were zero charged recovery
+attempts, 3690 passing processing-health samples and no failed/unknown samples.
+All 18 runtime hashes match the frozen checkout; player, profile, course and
+mission match the preceding trials. Load was uncontrolled.
+
+The return distance was 0.392415454 m (7.585 mm inside the existing bound);
+conservative swept obstacle clearance was 0.109986430 m, with zero collision
+poses across 18,438 recorded samples. Both independent reviewers accepted the
+evidence. Runner shutdown and an independent player/port/lease check passed.
+
+The new recorder reports six arrivals and five successful cleanup phases.
+Final arrival and endpoint refer to the same odometry sample at trajectory index
+18437. No new odometry arrived in the approximately 40.55 ms cleanup interval;
+reported zero endpoint displacement is **not proof of physical stationarity**.
+The 64 retained loop evaluations are only the end of the run, not sensor-rate data.
+
+This validates one normal off-mode run and the recorder's live wiring. The enabled
+fallback has no live result yet, failed-recovery capture is a separate pending
+change, and the repeatability/held-out promotion gate remains unmet.
+Local artifacts: artifacts/iterations/2026-10-05/replacement-control-1.
+Run SHA256: d31e3a1ad4489895cae341be6707961c02b689647edde1c008add72d4d29e2a4.
+
+## Preceding reliability result: two passes, then a failed repeat
 
 Three runs used immutable commit `a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7`,
 seed 2027, the same 16 runtime source fingerprints, player, profile, course and
@@ -36,9 +63,9 @@ T-0020 run SHA-256:
 
 Completion telemetry from [T-0019](../agents/tasks/T-0019-completion-evidence.md)
 was integrated separately at `02cea958ccc9cd051241170c58ed1cbcd929a697`.
-Its 598 combined tests passed; these three frozen runs do **not** exercise that
-new recorder. Opt-in replacement-path experiment T-0021 remains under review,
-and is not a demonstrated fix for T-0020.
+Its 598 combined tests passed; these three older frozen runs do **not** exercise
+that new recorder. T-0021 subsequently integrated at 0f76a2a with 610 tests passing;
+it remains default-off and is not a demonstrated fix for T-0020.
 
 ## Follow-up: one audited full loop
 
