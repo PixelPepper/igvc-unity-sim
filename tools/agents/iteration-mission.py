@@ -22,19 +22,38 @@ def finish(child, grace):
             return child.wait(timeout=5)
 
 
-def main():
+def seed_value(text):
+    """A nonnegative int32 course seed, as accepted by the managed runner."""
+    if not (text.isascii() and text.isdigit()) or int(text) > 2147483647:
+        raise argparse.ArgumentTypeError('seed must be an integer in 0..2147483647')
+    return int(text)
+
+
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('workspace', type=Path)
     parser.add_argument('job', type=Path)
-    args = parser.parse_args()
-    script = args.workspace/'tools'
+    parser.add_argument('--seed', type=seed_value, default=2027,
+                        help='Course seed whose generated autonomy.json is run (default 2027)')
+    return parser
+
+
+def commands(workspace, job, seed):
+    """(recorder, mission) argument lists; only the mission's course folder depends on the seed."""
+    script = workspace/'tools'
     record = [sys.executable, str(script/'record_navigation_episode.py'),
-              '--output', str(args.job/'episode'), '--duration', '660', '--image-hz', '2']
+              '--output', str(job/'episode'), '--duration', '660', '--image-hz', '2']
     mission = [sys.executable, str(script/'sensor_course.py'),
-               '--mission', str(args.workspace/'artifacts/courses/seed-2027/autonomy.json'),
-               '--report', str(args.job/'run.json'), '--capture-dir', str(args.job/'decisions'),
+               '--mission', str(workspace/f'artifacts/courses/seed-{seed}/autonomy.json'),
+               '--report', str(job/'run.json'), '--capture-dir', str(job/'decisions'),
                '--timeout', '600', '--speed', '0.6', '--planning-budget', '0.5',
                '--path-execution', 'checked-path']
+    return record, mission
+
+
+def main():
+    args = build_parser().parse_args()
+    record, mission = commands(args.workspace, args.job, args.seed)
     result = {'mission_exit': None, 'recorder_exit': None, 'mission_timed_out': False}
     running = None
     with (args.job/'recorder.log').open('x') as log:

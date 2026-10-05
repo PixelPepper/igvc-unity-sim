@@ -8,8 +8,11 @@ if($null -ne $cfg.PSObject.Properties['revalidate_active_path']){
  $revalidateActivePath=$cfg.revalidate_active_path
  if($revalidateActivePath -and $cfg.record_episode){throw 'revalidate_active_path is not supported with record_episode'}
 }
+. (Join-Path $PSScriptRoot 'iteration-options.ps1')
+# Optional (T-0029): absent means 2027; validated before any lease or runtime work.
+$seed=Get-TrialSeed $cfg
 $job=$cfg.job
-$state=@{status='running';stage='waiting_for_lease';role=$cfg.role;started_utc=[DateTime]::UtcNow.ToString('o')}
+$state=@{status='running';stage='waiting_for_lease';role=$cfg.role;seed=$seed;started_utc=[DateTime]::UtcNow.ToString('o')}
 function Save-State { $state | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $job 'live.json') }
 function Stage([string]$Value) { $state.stage=$Value; Save-State }
 function Wsl-Step([string]$Name,[string[]]$Arguments,[switch]$AllowFailure) {
@@ -51,26 +54,26 @@ try {
  $env:IGVC_ROS_WORKSPACE=$cfg.ros_workspace
  $env:WSLENV=if($env:WSLENV){$env:WSLENV+':IGVC_ROS_WORKSPACE'}else{'IGVC_ROS_WORKSPACE'}
  $linuxCoordinator=(& wsl -d Ubuntu-24.04 -- wslpath -a $cfg.coordinator).Trim()
+ $commands=Get-TrialCommands -Seed $seed -Workspace $cfg.workspace -LinuxRoot $linuxRoot -LinuxJob $linuxJob `
+  -LinuxCoordinator $linuxCoordinator -BodyClearanceWeight $cfg.body_clearance_weight `
+  -RevalidateActivePath $revalidateActivePath -RecordEpisode ([bool]$cfg.record_episode)
  Stage 'building_ros'
  Wsl-Step 'build' @('bash',"$linuxCoordinator/tools/agents/iteration-build.sh",$linuxRoot) | Out-Null
  Wsl-Step 'verify-overlay' @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxCoordinator/tools/agents/verify_iteration_overlay.py",$linuxRoot,$cfg.ros_workspace) | Out-Null
  Stage 'starting_simulator'
  $ownsRuntime=$true
- & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $cfg.workspace 'tools/igvc.ps1') variant-start -Seed 2027 *> (Join-Path $job 'start.log')
+ & powershell -NoProfile -ExecutionPolicy Bypass -File (Join-Path $cfg.workspace 'tools/igvc.ps1') variant-start -Seed $commands.start_seed *> (Join-Path $job 'start.log')
  if($LASTEXITCODE -ne 0){throw 'Simulator start failed'}
+ # The generated course/mission must identify this seed before any mission runs.
+ $state.inputs=Test-SeedInputs $cfg.workspace $seed
+ Save-State
  Wsl-Step 'nav-start' @('python3',"$linuxRoot/tools/ros_session.py",'start','nav','--params-file',"$linuxJob/profile.yaml") | Out-Null
  Stage 'mission'
- if($cfg.record_episode) {
-  $state.mission_exit=Wsl-Step 'mission' @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxCoordinator/tools/agents/iteration-mission.py",$linuxRoot,$linuxJob) -AllowFailure
- } else {
- $missionArgs=@('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/sensor_course.py",'--mission',"$linuxRoot/artifacts/courses/seed-2027/autonomy.json",'--report',"$linuxJob/run.json",'--capture-dir',"$linuxJob/decisions",'--timeout','600','--speed','0.6','--planning-budget','0.5','--path-execution','checked-path')
- if($null -ne $cfg.body_clearance_weight){$missionArgs+=@('--body-clearance-weight',[string]$cfg.body_clearance_weight)}
- if($revalidateActivePath){$missionArgs+='--revalidate-active-path'}
- $state.mission_exit=Wsl-Step 'mission' $missionArgs -AllowFailure
- }
+ # Recording mode receives the same seed; body clearance and revalidation stay normal-mode only, as before.
+ $state.mission_exit=Wsl-Step 'mission' $commands.mission -AllowFailure
  Stage 'audit'
  if(Test-Path -LiteralPath (Join-Path $job 'run.json')) {
-  $state.audit_exit=Wsl-Step 'audit' @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/audit_sensor_run.py",'--run',"$linuxJob/run.json",'--course',"$linuxRoot/artifacts/courses/seed-2027/course.json",'--mission',"$linuxRoot/artifacts/courses/seed-2027/autonomy.json",'--output',"$linuxJob/audit.json") -AllowFailure
+  $state.audit_exit=Wsl-Step 'audit' $commands.audit -AllowFailure
   $result=Get-Content (Join-Path $job 'run.json') -Raw | ConvertFrom-Json
   $state.result=@{status=$result.status;reason=$result.reason;completed_destinations=$result.completed_destinations;elapsed_wall_s=$result.elapsed_wall_s}
  }
@@ -88,7 +91,7 @@ finally {
    catch {$state.log_capture_error=$_.Exception.Message}
   }
   try {
-   $unityLog=Join-Path $cfg.workspace 'artifacts/courses/seed-2027/unity.log'
+   $unityLog=$commands.unity_log
    if(Test-Path -LiteralPath $unityLog){Copy-Item -LiteralPath $unityLog -Destination (Join-Path $job 'unity.log')}
   } catch {$state.log_capture_error=$_.Exception.Message}
  }
