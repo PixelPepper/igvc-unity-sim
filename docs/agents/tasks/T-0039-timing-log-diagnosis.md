@@ -1,14 +1,14 @@
 ---
 id: T-0039
 title: Summarize bounded Unity timing captures without inferring a cause
-status: changes-requested
+status: integrated
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0039-timing-log-diagnosis
 base: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
-candidate: 634697112fcb9208186d193020d11209e49eb1ab
+candidate: e606abfdca958bdfcb3ab577a39b9da3bfb2d935
 claim: tested
 lease: none
 updated: 2026-10-05
@@ -262,3 +262,60 @@ relayed-from: artifacts/agents/T-0039/sonnet-review-r2.md
 ### 2026-10-05T08:35:25.721706-07:00 · gpt-6-astra → claude-opus-5-5 · REVISION
 
 Root explicitly extends packet by ONE final targeted revision,10min active/2 focused test+real-log application commands, same2paths, no runtime. Sonnet0.1358614USD API-equivalent; Sol UNMETERED. Fix two newly identified consistency defects: ordered local Stopwatch UTC brackets fromheader and first frame after header; prevent negative derived span. Add mathematically necessary maximum-gap lower bound across n gaps (first window n-1), tolerating floating summation rounding, and periodic-window minimum report_interval. Header+stop before any frame valid; partial final windows not required fullinterval. Do not infer actual cause from missing-final wording. Label unsampled_tail_s as lowerendpoint to BEFORE-UTC read (not exactread). C# ToString R roundtrips double losslessly, existing exactcopied comparisons are intentional. Sim_time fields unused inreport not priority. Oversize unrelated-line conservative incompleteness documented; output path error polish optional only narrow IO handling. Add focused contradictory-case regressions plus apply actual3logs withnew r3names. Preserve failed/reviewed revisions. Complete source/report commit, stop for final delta reviews. If remaining acceptance blocker, leave unintegrated rather than indefinite revision loop.
+
+### 2026-10-05T08:37:34-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+Final targeted revision 3: candidate e606abfdca958bdfcb3ab577a39b9da3bfb2d935 (parent 6346971; same 2 files).
+- Max-gap lower bound: S/n, or S/(n-1) for the first window, with rounding tolerance.
+- Periodic records span at least report_interval_s (partial stopped and pre-frame stop still valid).
+- Ordered UTC brackets from the header, first frame after the header bracket, so the span is never negative.
+- Wording: "missing final: cause not determined"; the tail is measured to the bracket START (lower endpoint).
+- Narrow output-path errors; docstring covers the oversize conservatism and the lossless C# "R" round trip.
+Tests: 18/18 OK, including the six new contradiction regressions plus valid edge cases.
+Real logs (*-r3.json; earlier outputs preserved): T38 incomplete only for the missing final record (no new check
+fired on 378 real windows); smoke-on complete; smoke-off unavailable.
+Report: REPORT.md "Revision 3" (earlier versions preserved). Stopping for the final delta reviews.
+
+
+relayed-from: artifacts/agents/T-0039/sol-review-r3.md
+
+### 2026-10-05T15:39:30+00:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+Task: T-0039   Candidate: e606abfdca958bdfcb3ab577a39b9da3bfb2d935   Scope: evidence
+Verdict: approve
+
+Findings (ranked, ≤ 5):
+1. No blocking defect found in the targeted delta. Prior tail-wording nit is closed: unsampled_tail_s explicitly denotes the lower endpoint at mono_before_utc_s. Missing terminal records now carry “cause not determined.”
+
+Evidence: Clean exact candidate; only the two owned files changed (+81/−9). Inspected the gap lower bound using n−1 intervals for the first window and n thereafter, periodic interval floor, ordered Stopwatch brackets, and first-frame/header ordering. Partial stopped windows and a stop before any frame remain valid. Incomplete evidence continues to withhold derived spans; no UTC clock accuracy or cross-host alignment is inferred.
+
+One independent focused invocation ran the two new tests: test_lower_bounds_ordering_and_interval_reject_remaining_false_completes and test_unwritable_output_path_is_reported_narrowly; 2 pass, zero failures/errors in 0.004 s. It also recomputed all three *-r3.json reports using this candidate: exact equality, original byte-count and SHA-256 matches for every input. T38 remains incomplete solely for missing_final_record, with null derived coverage/tail; smoke-on is complete and smoke-off unavailable. Parser raw SHA-256: c9b46de268f4d79e2aab33544288421426516780bb09bc722ee0c22a36e48579.
+
+Invariants checked: 1 ✓ 2 ✓ 3 ✓ 4 ✓ 5 ✓ 6 ✓.
+Tests run: Targeted delta checks and source/output comparisons above; earlier suite not repeated. Worker reports 18 tests passing; final native Windows suite remains integrator-owned.
+Missing acceptance coverage: Unused sim_time fields are expressly unverified. Graceful live shutdown and exact missing-terminal cause remain unestablished. T38 non-reproduction proves no root-cause fix, overhead benefit, replacement qualification or promotion; original failure preserved.
+Usage: UNMETERED.
+
+
+relayed-from: artifacts/agents/T-0039/sonnet-review-r3.md
+
+**Verdict: no blockers in the delta logic as shown, with two items to confirm that this diff cannot show.**
+
+**Checked and sound**
+- **Lower bound:** `gaps = frames` for later windows and `frames - 1` for the first matches the producer's boundary semantics. `window_gap * gaps >= span` holds mathematically, and the relative tolerance covers summation rounding. Because `mono < start` is flagged by the earlier branch chain, the `mono >= start` guard leaves no hole.
+- **Ordering:** the header-bracket, first-frame and bracket-chain checks assume single-threaded Stopwatch reads. Warning count and time are the only asynchronous fields, and no ordering is asserted on them (only `>= 0` and count monotonicity), so the assumption is consistent.
+- **Periodic check:** it applies only to `window` and `exhausted`. Partial final windows and stop-before-any-frame stay complete, which the tests cover.
+- **Tail wording:** it now correctly says the tail is measured to the bracket start.
+
+**Confirm before accepting**
+1. **Oversized `frames`:** `window_gap * gaps` raises `OverflowError` if `frames` is a huge JSON integer such as `10**400` and `_int` has no upper bound. That would crash on a corrupt log instead of reporting incomplete. Either `_int` bounds the value or `summarize` catches it. If neither does, add a small bound or guard, which is a one-line fix.
+2. **IO handler scope:** the new `except (FileNotFoundError, PermissionError, IsADirectoryError)` is narrow only if the `try` body contains just the exclusive-create and write of the output. If it also wraps reading `--unity-log`, a missing input log would be reported as "cannot create report". The test only exercises a missing output directory.
+
+**Optional, not blocking**
+- `span < interval` has no tolerance, unlike the other checks. If the producer compares in a different arithmetic form (ticks rather than doubles), an exact-boundary window could be off by one ulp and be flagged incomplete. This fails closed and is very unlikely, but `span < interval - tolerance` is cheap.
+- The new subtests assert only `status == 'incomplete'`. Several corruptions could trip a different check, such as `frame_gap_contradiction` for the first-window case. Asserting the specific issue prefix would prove each new check fires.
+- A write failure after the file is created, such as disk full, is not covered by the narrow handler.
+
+I made no runtime, causality or qualification claims, and I could not run the tests.
+
+### 2026-10-05T08:41:29.121092-07:00 · gpt-6-astra → all · INTEGRATION
+
+Accepted final candidate e606abf and integrated ONLY two owned files as7947325. Sonnet finaldelta no blocker conditional on two source checks: _int is bounded signed-int64, so huge frames never enter multiplication; output try covers exclusive-create/write only, separate frominput handling. Both confirmed by root source inspection. Producer uses same double span comparison for interval; no extra tolerance needed to accept actual output. Sol approves and independently reproduced three real-log reports with source/input hashes. Root final nativeWindows18focused tests passed1.580s (primary-tests-r3.log), primary parser exactworker content. Sonnet actualmodel claude-sonnet-5-5 API-equivalent0.0881354USD; Sol/Opus UNMETERED. Earlier failures/revisions/rawlogs retained. Unused sim_time fields unverified and unused in summary; output disk-full may leave partial exclusive-created file rather than overwrite, documented limit. No runtime/player/health/auditor change, no root-cause fix or promotion. All workers may stop; no live grant. T0040 bounded reproduction packet remains backlog for next authorized iteration, not running.

@@ -5,13 +5,12 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0039** `changes-requested`: Summarize bounded Unity timing captures without inferring a cause (REVISION by gpt-6-astra at 2026-10-05T08:35:25.721706-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 634697112fcb9208186d193020d11209e49eb1ab | REVISION by gpt-6-astra at 2026-10-05T08:35:25.721706-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0040](tasks/T-0040-freshness-reproduction.md): Seek a bounded reproduction of intermittent freshness expiry | `backlog` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef |  |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
@@ -56,4 +55,5 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
 | [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 8be795c7313f6537e93bbb09368445289ec21b33 | INTEGRATION by gpt-6-astra at 2026-10-05T06:12:06.981007-07:00 |
+| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e606abfdca958bdfcb3ab577a39b9da3bfb2d935 | INTEGRATION by gpt-6-astra at 2026-10-05T08:41:29.121092-07:00 |
 | [T-0017](tasks/T-0017-finish-margin-analysis.md): Explain finish margin and propose bounded observed-only completion improvement | `rejected` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:11:53.484766-07:00 |
