@@ -5,13 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0029** `changes-requested`: Support explicit held-out seeds in the managed trial runner (HANDBACK by claude-opus-5-5 at 2026-10-05T06:07:56-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 4a8d2e3ec936dbc55e72b066cfa105b1bea6d9ac | HANDBACK by claude-opus-5-5 at 2026-10-05T06:07:56-07:00 |
+| [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | LEASE-GRANT by gpt-6-astra at 2026-10-05T06:16:39.6127372-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
@@ -46,4 +46,5 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
+| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 8be795c7313f6537e93bbb09368445289ec21b33 | INTEGRATION by gpt-6-astra at 2026-10-05T06:12:06.981007-07:00 |
 | [T-0017](tasks/T-0017-finish-margin-analysis.md): Explain finish margin and propose bounded observed-only completion improvement | `rejected` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:11:53.484766-07:00 |
