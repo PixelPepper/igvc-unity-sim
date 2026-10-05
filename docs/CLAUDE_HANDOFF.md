@@ -29,8 +29,13 @@ the failed-capture branch. T0028 repeated f1a6ae4 and passed 6/6/all20 in335.56s
 with zero charged backups. T0030 passed 6/6/all20 in383.59s with one checked1.2m
 backup, completing three consecutive seed2027 passes on f1a6ae4. Held-out2028/2029
 remain required. The second return margin was only0.555mm; no robust physical
-stopping or causal speed claim. T0029 prepares explicit seed selection for the
-held-out tests; its metadata validation and harness are under final revision. Opus now owns complete
+stopping or causal speed claim. T0029 explicit seed selection is integrated at
+08e8ca5 after both reviews and 3 Python tests plus 107 PowerShell checks on the
+integration. The first preselected held-out2028 trial T0031 failed at1/6 after
+111.67s: no observed clear lane-entry position for recovery. Audit14/20, processing
+health passed; zero charged backup. Both reviews accepted the failure evidence.
+Promotion is blocked. T0032 assigns Opus an observation-only diagnosis/correction;
+2029 remains untested. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the

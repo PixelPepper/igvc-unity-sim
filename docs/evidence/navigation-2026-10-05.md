@@ -1,5 +1,34 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Held-out2028 failed: promotion blocked
+
+[T0031](../agents/tasks/T-0031-heldout-2028.md) ran the first preselected2028
+attempt on unchanged runtime f1a6ae4, same profile/player and all19 source hashes.
+The reviewed coordinator seed runner changed separately at08e8ca5. Preserved course,
+mission and autonomy hashes matched generated startup inputs; course/mission seed
+metadata and the course binding passed before navigation.
+
+The robot stopped at **1/6 after111.666446s**, with **14/20 audit checks passing**.
+Reason: `No observed clear lane-entry position for recovery`. The final gate
+selection checked24 candidate targets and reported `observed_gate_blocked`.
+This occurs before backup search: the budget records zero charged attempts, and
+the failed-search capture branch remains unexercised. The75 saved planner inputs
+do not establish exact identity with the later recovery snapshot.
+
+All1118 processing-health samples passed; maximum gap0.122466153s. The partial
+trajectory passed collision, paint and speed checks, with0.210571915m conservative
+swept obstacle clearance. Completion, return, both ramp checks, full loop and
+ordered visits failed. Runner lifecycle `completed` does not mean mission success.
+Both reviewers accepted the failed evidence; independent cleanup checks passed.
+
+**The held-out failure blocks promotion.** No retry or course resampling is used
+to replace it. T0032 investigates observed target selection without course geometry.
+Seed2029 remains untested. Source fixes need fresh qualification, not a transfer of
+the three earlier passes. No causal speed or calibrated hardware claim is made.
+
+Artifacts: artifacts/iterations/2026-10-05/heldout-2028.
+Run SHA256: 5ba436d86891bbbcca8bb3320a44c0c6596050880b7466061d2f9ac9bb46b853.
+
 ## Reviewed diagnostic build: three consecutive passing laps
 
 [T-0027](../agents/tasks/T-0027-recovery-instrumented-trial.md) ran the integrated
