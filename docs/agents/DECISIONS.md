@@ -130,3 +130,18 @@ at kickoff. The broader dirty-tree checkpoint remains a separate reviewed task.
 **Snapshot exclusions.** Three generated folder .meta files under Runtime/artifacts
 are excluded with repository-local .git/info/exclude, leaving the files and shared
 .gitignore unchanged. They are not source assets and are not removed from disk.
+
+## ADR-007: Conservative reservation for unmetered interactive work
+
+2026-10-04 · gpt-6-astra, under the user's delegated setup/budget choices.
+
+T-0001 finished in the existing interactive session with usage UNMETERED. Actual
+spend cannot be reconciled, so ADR-006's hard daily-cap interpretation cannot be
+enforced. For the first complete coordination cycle, reserve the full $10 task
+allowance (not $0) and allow only the already reserved $5 Sonnet and $5 Sol reviews.
+These reservations total $20; they are a workflow allowance, not a claim about
+actual charges. No further paid task is dispatched this budget day without known
+remaining capacity or a user decision. Record CLI-reported usage when available;
+Codex subscription work may likewise lack dollar-equivalent cost. All hard provider
+budget claims remain unverified. This supersedes ADR-006's stop-before-review rule
+only for these two first-cycle reviews; no retry, live trial or extra model is added.
