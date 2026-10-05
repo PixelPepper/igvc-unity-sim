@@ -9,14 +9,15 @@ import multiprocessing
 from pathlib import Path
 import sys
 import tempfile
+import time
 import unittest
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from observed_navigation import plan_observed_navigation, select_observed_guidance  # noqa: E402
 import recovery_evidence  # noqa: E402
-from recovery_evidence import (describe_search_inputs, diagnose_backup_recovery, json_safe,  # noqa: E402
-                               load_capture_inputs, write_recovery_capture)
+from recovery_evidence import (MAX_CAPTURES, DeferredCapture, describe_search_inputs,  # noqa: E402
+                               diagnose_backup_recovery, json_safe, load_capture_inputs, write_recovery_capture)
 from recovery_policy import select_backup_recovery  # noqa: E402
 
 SIZE = 160
@@ -369,6 +370,77 @@ class RecoveryEvidenceTest(unittest.TestCase):
         self.assertEqual(escape['distance_m'], .9)
         self.assertEqual((evidence['input_binding']['digest'], evidence['input_binding']['error']),
                          (None, 'RuntimeError: boom'))
+
+
+def slow_writer(seconds):
+    def write(path, args, kwargs, context):
+        time.sleep(seconds)  # stands in for the measured 425 ms encode/compress/write
+        return write_recovery_capture(path, args, kwargs, context)
+    return write
+
+
+class DeferredCaptureTest(unittest.TestCase):
+    """The capture write cannot run inside the live health interval; it still lands in the saved report."""
+
+    def failed_search(self):
+        costs = grid((37, 38, 0, 160, -1))
+        escape, evidence = diagnose_backup_recovery(*search_args(costs), **mission_kwargs())
+        self.assertIsNone(escape)
+        return costs, evidence['input_binding']['digest']
+
+    def test_slow_capture_never_delays_the_live_health_cadence(self):
+        costs, worker_digest = self.failed_search()
+        captures = DeferredCapture(writer=slow_writer(.45))
+        report = {'recovery_failures': []}
+        samples, deferred_at = [], None
+        with tempfile.TemporaryDirectory() as directory:
+            start = time.monotonic()
+            # Mission-like loop: health sampled every 0.1 s; the search fails at ~0.2 s.
+            while time.monotonic()-start < .6:
+                samples.append(time.monotonic())
+                if deferred_at is None and samples[-1]-start >= .2:
+                    failure = {'reason': 'search_ended_without_escape', 'capture': 'unavailable'}
+                    before = time.monotonic()
+                    captures.defer(Path(directory)/'recovery-00149.json.gz', search_args(costs),
+                                   mission_kwargs(), {'grid_stamp_ns': 1}, worker_digest, failure)
+                    deferred_at = time.monotonic()
+                    self.assertLess(deferred_at-before, .01)  # O(1): no encoding on the live path
+                    report['recovery_failures'].append(failure)
+                    self.assertEqual(failure['capture'], 'deferred_until_cleanup')
+                time.sleep(.1)
+            health_end = time.monotonic()  # command authority released, interval closed
+            gaps = [b-a for a, b in zip(samples, samples[1:])]
+            self.assertLess(max(gaps), .25)  # the 0.25 s health coverage bound is never exceeded
+            self.assertFalse(Path(directory, 'recovery-00149.json.gz').exists())
+            captures.flush()
+            saved = json.loads(json.dumps(report, allow_nan=False))  # the final run.json write
+            capture = saved['recovery_failures'][0]['capture']
+            self.assertGreaterEqual(capture['write_wall_s'], .45)
+            self.assertTrue(capture['deferred'] and capture['matches_worker_digest'])
+            self.assertEqual(capture['digest'], worker_digest)
+            payload = json.loads(gzip.decompress(Path(directory, capture['file']).read_bytes()))
+            self.assertEqual(describe_search_inputs(*load_capture_inputs(payload))['digest'], worker_digest)
+        self.assertGreater(time.monotonic(), health_end)
+
+    def test_inputs_changed_before_flush_are_reported_not_hidden(self):
+        costs, worker_digest = self.failed_search()
+        captures = DeferredCapture()
+        record = {}
+        with tempfile.TemporaryDirectory() as directory:
+            captures.defer(Path(directory)/'a.json.gz', search_args(costs), mission_kwargs(), {}, worker_digest, record)
+            costs[0] = 100  # a live object mutated after the search would no longer match
+            captures.flush()
+        self.assertFalse(record['capture']['matches_worker_digest'])
+
+    def test_capture_failures_and_cap_are_recorded(self):
+        records = [{} for _ in range(MAX_CAPTURES+1)]
+        captures = DeferredCapture(writer=Mock(side_effect=OSError('disk full')))
+        for record in records:
+            captures.defer('x.json.gz', search_args(grid()), kwargs(), {}, None, record)
+        self.assertEqual(records[-1]['capture'], 'unavailable: capture cap reached')
+        captures.flush()
+        self.assertEqual({r['capture'] for r in records[:-1]}, {'failed: OSError: disk full'})
+        self.assertEqual(captures.pending, [])
 
 
 if __name__ == '__main__':

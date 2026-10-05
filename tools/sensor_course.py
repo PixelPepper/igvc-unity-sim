@@ -21,8 +21,8 @@ from entrance_memory import ObservedEntranceMemory
 from entrance_support import corridor_fresh_support
 from navigation_decisions import DecisionRecorder, DecisionOutcomes, compact_event_metadata
 from recovery_policy import select_trap_escape
-from recovery_evidence import (MAX_CAPTURES, describe_search_inputs, diagnose_backup_recovery, json_safe,
-                               write_recovery_capture)
+from recovery_evidence import (MAX_CAPTURES, DeferredCapture, describe_search_inputs, diagnose_backup_recovery,
+                               json_safe)
 from trap_memory import (TrapMemory, entry_heading, evaluate_with_trap_memory,
                          exclude_trapped_guidance, recent_path)
 from recovery_budget import RecoveryBudget
@@ -220,6 +220,7 @@ def run(args):
     active_goal_id = None
     # Opt-in replacement continuity (tools/replacement_path.py); off reproduces the old behavior.
     active_path_record = None
+    recovery_captures = DeferredCapture()  # failed-backup inputs, written only at cleanup
     revalidate_active_path = getattr(args, 'revalidate_active_path', False) is True
     state['replacement_fallback'] = {'mode': 'on' if revalidate_active_path else 'off',
                                      'evaluated': 0, 'sent': 0, 'reasons': {}}
@@ -694,15 +695,14 @@ def run(args):
                         # Evidence only, between the unchanged check and the unconditional stop below.
                         failures_recorded = state.setdefault('recovery_failures', [])
                         failure = dict(json_safe(recovery_context), evidence=search_evidence,
-                                       capture='unavailable: no capture directory or cap reached')
+                                       capture='unavailable: no capture directory')
                         try:
-                            if args.capture_dir and len(failures_recorded) < MAX_CAPTURES:
-                                capture_path = Path(args.capture_dir)/f'recovery-{decision_sequence:05d}.json.gz'
-                                capture_digest, capture_bytes = write_recovery_capture(capture_path,
-                                    recovery_args, search_kwargs, recovery_context)
-                                failure['capture'] = dict(file=capture_path.name, digest=capture_digest,
-                                    uncompressed_bytes=capture_bytes,
-                                    matches_worker_digest=capture_digest == worker_digest)
+                            # Only references are kept here (O(1)); the measured ~0.4 s encode/compress/write
+                            # runs at cleanup, after command authority and the health interval have ended.
+                            if args.capture_dir:
+                                recovery_captures.defer(
+                                    Path(args.capture_dir)/f'recovery-{decision_sequence:05d}.json.gz',
+                                    recovery_args, search_kwargs, recovery_context, worker_digest, failure)
                         except Exception as exc:  # noqa: BLE001
                             failure['capture'] = f'failed: {type(exc).__name__}: {exc}'[:200]
                         try:
@@ -889,6 +889,12 @@ def run(args):
             state['elapsed_wall_s'] = stopped_at-armed_at
             state['sensor_health'] = telemetry.report()
         node.destroy_timer(health_timer)
+        # Deferred recovery captures: autonomy is disabled, the action cancelled and the
+        # health interval closed above, so the slow write cannot open a live health gap.
+        try:
+            recovery_captures.flush()
+        except Exception as exc:  # noqa: BLE001 - never blocks saving the run
+            state['recovery_evidence_error'] = f'capture flush: {type(exc).__name__}: {exc}'[:200]
         try:
             if 'stop_reason' in latest:
                 state['stop_reason'] = latest['stop_reason'][1].data

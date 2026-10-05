@@ -6,12 +6,13 @@ the worker it fingerprints the arguments it actually received (after pickling),
 runs the unchanged search with a stage trace, and returns ``(escape, evidence)``;
 the escape object is returned as is. The mission fingerprints what it submitted
 with the same function, so equal digests bind the trace to the exact search
-inputs. On a failed search the mission may write the full inputs once with
-`write_recovery_capture` (never into run.json). Nothing here moves the robot,
-reads WORLD/course data or changes a safety gate.
+inputs. On a failed search the mission defers the full inputs with
+`DeferredCapture` and writes them once at cleanup (never into run.json).
+Nothing here moves the robot, reads WORLD/course data or changes a safety gate.
 """
 import array
 from functools import partial
+from pathlib import Path
 import gzip
 import hashlib
 import importlib
@@ -229,6 +230,41 @@ def diagnose_backup_recovery(*args, **kwargs):
     except Exception as exc:  # noqa: BLE001
         evidence = {'schema_version': SCHEMA_VERSION, 'error': f'{type(exc).__name__}: {exc}'[:MAX_STRING]}
     return escape, evidence
+
+
+class DeferredCapture:
+    """Holds a failed search's exact inputs so the slow capture write runs only at cleanup.
+
+    `defer` is O(1): it keeps references to the frozen argument objects and marks
+    the report record deferred, so a failure never blocks the mission's live
+    callbacks. `flush` (called once command authority is released and the health
+    interval has ended, before the report is saved) writes the capture and updates
+    the same report record, including whether the inputs still match the worker's
+    digest. Errors are recorded in the record, never raised.
+    """
+
+    def __init__(self, writer=None):
+        self.writer = writer or write_recovery_capture
+        self.pending = []
+
+    def defer(self, path, args, kwargs, context, worker_digest, record):
+        if len(self.pending) < MAX_CAPTURES:
+            record['capture'] = 'deferred_until_cleanup'
+            self.pending.append((path, args, kwargs, context, worker_digest, record))
+        else:
+            record['capture'] = 'unavailable: capture cap reached'
+
+    def flush(self, clock=time.monotonic):
+        pending, self.pending = self.pending, []
+        for path, args, kwargs, context, worker_digest, record in pending:
+            started = clock()
+            try:
+                digest, size = self.writer(path, args, kwargs, context)
+                record['capture'] = {'file': Path(path).name, 'digest': digest, 'uncompressed_bytes': size,
+                                     'matches_worker_digest': digest == worker_digest,
+                                     'deferred': True, 'write_wall_s': clock()-started}
+            except Exception as exc:  # noqa: BLE001 - recorded in the saved report
+                record['capture'] = f'failed: {type(exc).__name__}: {exc}'[:MAX_STRING]
 
 
 _POSITIONAL = ('origin_xy', 'resolution', 'width', 'height', 'costs', 'robot_xy', 'robot_yaw', 'destination_xy')
