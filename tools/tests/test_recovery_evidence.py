@@ -13,10 +13,10 @@ import unittest
 from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from observed_navigation import plan_observed_navigation  # noqa: E402
+from observed_navigation import plan_observed_navigation, select_observed_guidance  # noqa: E402
 import recovery_evidence  # noqa: E402
 from recovery_evidence import (describe_search_inputs, diagnose_backup_recovery, json_safe,  # noqa: E402
-                               write_recovery_capture)
+                               load_capture_inputs, write_recovery_capture)
 from recovery_policy import select_backup_recovery  # noqa: E402
 
 SIZE = 160
@@ -34,6 +34,22 @@ def grid(*walls):
 
 
 CORNER = (60, 63, 0, 60, 100)  # existing corner case: 0.6 m fails, 0.9 m escapes
+
+
+def scaled_planner(scale, *args, **settings):
+    """Module-level planner with a partial positional argument (importable by name)."""
+    return None
+
+
+# A real frozen guidance selection, built the way the mission builds it for recovery.
+GUIDANCE_SELECTION = select_observed_guidance([], (5., 3.5), 0., (9., 8.), None)
+
+
+def mission_kwargs(selection=GUIDANCE_SELECTION, entrance_tracking=False, **overrides):
+    planner = partial(plan_observed_navigation, lane_points=[], frozen_guidance=selection,
+                      entrance_tracking=entrance_tracking)
+    return {'goal_footprint': FOOTPRINT, 'forward_planner': planner, 'max_search_seconds': 5.,
+            'forward_options': OPTIONS, **overrides}
 
 
 def search_args(costs, robot=(5., 3.5), yaw=0.):
@@ -179,6 +195,19 @@ class RecoveryEvidenceTest(unittest.TestCase):
                     self.assertEqual((evidence['result'], evidence['returned_stage']), (outcome, stage))
                     self.assertEqual(evidence['input_binding']['digest'], submitted)
                     json.dumps(evidence, allow_nan=False)
+            # The mission's own planner form: plan_observed_navigation with real frozen guidance.
+            for name, costs in {'mission corner': grid(CORNER), 'mission rear blocked': grid((37, 38, 0, 160, -1))}.items():
+                with self.subTest(name):
+                    submitted = describe_search_inputs(search_args(costs), mission_kwargs())
+                    self.assertIsNotNone(submitted['digest'])
+                    escape, evidence = pool.submit(diagnose_backup_recovery, *search_args(costs),
+                                                   **mission_kwargs()).result(timeout=20.)
+                    direct = select_backup_recovery(*search_args(costs), **mission_kwargs())
+                    self.assertEqual(comparable(escape), comparable(direct))
+                    self.assertEqual(evidence['result'], 'escape' if direct is not None else 'none')
+                    self.assertEqual(evidence['input_binding']['digest'], submitted['digest'])
+                    self.assertEqual(evidence['input_binding']['inputs']['frozen_guidance'],
+                                     json_safe(GUIDANCE_SELECTION))
             # Any change to a search input changes the digest.
             changed = grid(CORNER)
             changed[0] = 1
@@ -186,6 +215,109 @@ class RecoveryEvidenceTest(unittest.TestCase):
                                 describe_search_inputs(search_args(grid(CORNER)), kwargs())['digest'])
             self.assertNotEqual(describe_search_inputs(search_args(grid()), kwargs(max_expansions=2))['digest'],
                                 describe_search_inputs(search_args(grid()), kwargs())['digest'])
+
+    def test_distinct_unconventional_grids_never_share_a_digest(self):
+        # Root review reproduction: float cells must not collapse to one shared placeholder digest.
+        small = ((0, 0), .1, 2, 2)
+        pose = ((.1, .1), 0., (1., 1.))
+        base = dict(goal_footprint=(-.1, .1, -.1, .1))
+        first, second = [0., 0., 0., 1.25], [0., 0., 0., 2.25]
+        a = describe_search_inputs((*small, first, *pose), base)
+        b = describe_search_inputs((*small, second, *pose), base)
+        self.assertIsNotNone(a['digest'])
+        self.assertNotEqual(a['digest'], b['digest'])
+        self.assertEqual(a['inputs']['grids']['costs']['encoding'], 'typed_repr')
+        ints = describe_search_inputs((*small, [0, 0, 0, 1], *pose), base)
+        self.assertNotEqual(ints['digest'], describe_search_inputs((*small, [0., 0., 0., 1.], *pose), base)['digest'])
+        self.assertEqual(ints['inputs']['grids']['costs']['encoding'], 'int8')
+        # The continuation grid is bound independently of the observed grid.
+        c = describe_search_inputs((*small, [0]*4, *pose), dict(base, continuation_costs=first))
+        d = describe_search_inputs((*small, [0]*4, *pose), dict(base, continuation_costs=second))
+        self.assertNotEqual(c['digest'], d['digest'])
+        self.assertNotEqual(c['digest'], describe_search_inputs((*small, [0]*4, *pose), base)['digest'])
+        # Int8 binding is unchanged: a list and the ROS array of the same cells agree.
+        self.assertEqual(describe_search_inputs(search_args(list(grid(CORNER))), kwargs())['digest'],
+                         describe_search_inputs(search_args(grid(CORNER)), kwargs())['digest'])
+
+    def test_every_search_input_including_real_frozen_guidance_changes_the_digest(self):
+        base = describe_search_inputs(search_args(grid(CORNER)), mission_kwargs())['digest']
+        moved = dict(GUIDANCE_SELECTION, target=(GUIDANCE_SELECTION['target'][0]+.01, GUIDANCE_SELECTION['target'][1]))
+        variants = {
+            'frozen guidance target': mission_kwargs(selection=moved),
+            'planner keyword': mission_kwargs(entrance_tracking=True),
+            'continuation grid': mission_kwargs(continuation_costs=grid()),
+            'trap regions': mission_kwargs(trap_regions=[{'center': (1., 1.), 'radius': .5}]),
+            'footprint': mission_kwargs(goal_footprint=(-1.12, .62, -.52, .53)),
+            'forward option': mission_kwargs(forward_options={**OPTIONS, 'lookahead': 4.5}),
+            'max search seconds': mission_kwargs(max_search_seconds=4.),
+        }
+        digests = {name: describe_search_inputs(search_args(grid(CORNER)), kw)['digest'] for name, kw in variants.items()}
+        self.assertNotIn(None, digests.values())
+        self.assertEqual(len(set(digests.values()) | {base}), len(variants)+1)
+        self.assertNotEqual(describe_search_inputs(search_args(grid(CORNER), robot=[5., 3.5]), mission_kwargs())['digest'],
+                            base)  # a list is not silently equal to the tuple the search received
+
+    def test_terminal_stage_survives_the_trace_cap(self):
+        many = tuple(round(.04*i, 2) for i in range(1, 46))  # 45 candidates, all searched
+        forward = Mock(return_value=None)
+        escape, evidence = diagnose_backup_recovery(*search_args(grid()), **kwargs(distances=many, forward_planner=forward))
+        self.assertIsNone(escape)
+        self.assertEqual(forward.call_count, 45)
+        self.assertEqual((evidence['returned_stage'], evidence['returned_reason']),
+                         ('search_ended_without_escape', 'all_candidates_searched'))
+        trace = evidence['trace']
+        self.assertTrue(trace[-1]['returned_here'])
+        self.assertEqual(len(trace[-1]['attempted_m']), 25)  # json_safe list bound (24 + omitted marker)
+        self.assertIn('trace_limit', [r['stage'] for r in trace])
+        self.assertEqual(trace[-1]['dropped_records'], 46-31)
+        _, evidence = diagnose_backup_recovery(*search_args(grid()), **kwargs(forward_planner=forward,
+                                                                              max_search_seconds=1e-9))
+        self.assertEqual(evidence['returned_reason'], 'time_budget')
+
+    def test_unencodable_inputs_report_no_digest_instead_of_a_false_match(self):
+        cases = {'non-number cell': (dict(), [0, 0, 0, None]),
+                 'non-number continuation cell': (dict(continuation_costs=[0, 'x', 0, 0]), [0]*4),
+                 'mock planner': (dict(forward_planner=Mock()), [0]*4),
+                 'lambda planner': (dict(forward_planner=lambda *a, **k: None), [0]*4),
+                 'non-string option key': (dict(forward_options={1: 2}), [0]*4)}
+        for name, (overrides, costs) in cases.items():
+            with self.subTest(name):
+                result = describe_search_inputs(((0, 0), .1, 2, 2, costs, (.1, .1), 0., (1., 1.)),
+                                                dict(goal_footprint=(-.1, .1, -.1, .1), **overrides))
+                self.assertIsNone(result['digest'])
+                self.assertTrue(result['unavailable'])
+        # The worker still runs the unchanged search and reports the missing binding.
+        escape, evidence = diagnose_backup_recovery(*search_args(grid(CORNER)),
+                                                    **kwargs(forward_planner=lambda *a, **k: None))
+        self.assertIsNone(escape)
+        self.assertIsNone(evidence['input_binding']['digest'])
+        self.assertIn('not importable', evidence['input_binding']['unavailable'])
+
+    def test_capture_refuses_inputs_it_cannot_reproduce(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory)/'mock.json.gz'
+            with self.assertRaises(ValueError):  # Unrepresentable is a ValueError
+                write_recovery_capture(path, search_args(grid()), kwargs(forward_planner=Mock()), {})
+            self.assertFalse(path.exists())
+            # The invalid inputs a failure most needs are captured exactly (nonfinite pose and option).
+            path = Path(directory)/'nonfinite.json.gz'
+            bad = (search_args(grid(), yaw=math.nan), kwargs(forward_options={**OPTIONS, 'lookahead': math.inf}))
+            digest, _ = write_recovery_capture(path, *bad, {})
+            replay_args, replay_kwargs = load_capture_inputs(json.loads(gzip.decompress(path.read_bytes())))
+            self.assertTrue(math.isnan(replay_args[6]))
+            self.assertEqual(describe_search_inputs(replay_args, replay_kwargs)['digest'], digest)
+            self.assertEqual(diagnose_backup_recovery(*replay_args, **replay_kwargs)[1]['returned_reason'],
+                             'invalid_inputs')
+            # Partial positional arguments are stored and reproduce the digest.
+            positional = partial(scaled_planner, 2.)
+            path = Path(directory)/'positional.json.gz'
+            digest, _ = write_recovery_capture(path, search_args(grid()), kwargs(forward_planner=positional), {})
+            payload = json.loads(gzip.decompress(path.read_bytes()))
+            self.assertEqual((payload['forward_planner']['partial'], payload['forward_planner']['args']), (True, [2.]))
+            replay_args, replay_kwargs = load_capture_inputs(payload)
+            self.assertEqual(describe_search_inputs(replay_args, replay_kwargs)['digest'], digest)
+            self.assertNotEqual(digest, describe_search_inputs(search_args(grid()),
+                                kwargs(forward_planner=partial(scaled_planner, 3.)))['digest'])
 
     def test_capture_reproduces_the_exact_search_and_its_trace(self):
         costs = grid((37, 38, 0, 160, -1), (100, 101, 5, 6, 100))
@@ -198,19 +330,14 @@ class RecoveryEvidenceTest(unittest.TestCase):
             payload = json.loads(gzip.decompress(path.read_bytes()))
         self.assertEqual(payload['context']['grid_age_wall_s'], {'nonfinite': 'inf'})
         self.assertEqual(payload['forward_planner']['function'], 'observed_navigation.plan_observed_navigation')
-        replay_kwargs = {name: payload['arguments'][name] for name in payload['arguments']
-                         if name not in ('origin_xy', 'resolution', 'width', 'height', 'costs', 'robot_xy',
-                                         'robot_yaw', 'destination_xy')}
-        replay_kwargs['forward_planner'] = partial(plan_observed_navigation, **payload['forward_planner']['keywords'])
-        replay_args = tuple(payload['arguments'][name] for name in (
-            'origin_xy', 'resolution', 'width', 'height', 'costs', 'robot_xy', 'robot_yaw', 'destination_xy'))
+        replay_args, replay_kwargs = load_capture_inputs(payload)
         self.assertEqual(describe_search_inputs(replay_args, replay_kwargs)['digest'], digest)
         self.assertEqual(digest, describe_search_inputs(search_args(costs), kwargs())['digest'])
         original = diagnose_backup_recovery(*search_args(costs), **kwargs())[1]
         replayed = diagnose_backup_recovery(*replay_args, **replay_kwargs)[1]
         strip = [{k: v for k, v in r.items() if k != 'elapsed_s'} for r in original['trace']]
         self.assertEqual([{k: v for k, v in r.items() if k != 'elapsed_s'} for r in replayed['trace']], strip)
-        self.assertEqual(payload['arguments']['distances'], [.6, .9, 1.2, 1.5, 1.8])
+        self.assertEqual(payload['arguments']['distances'], {'__tuple__': [.6, .9, 1.2, 1.5, 1.8]})
         self.assertGreater(size, SIZE*SIZE)
 
     def test_json_safety_and_size_bounds(self):

@@ -64,10 +64,27 @@ def _continuation_verdict(plan, trap_xy, start_xy, destination_xy, resolution, r
     return (trap_progress, terminal, tolerance), 'accepted', metrics
 
 
-def _note(trace, started, **record):
-    """Append one bounded stage record when a caller asked for a trace; never changes a result."""
-    if trace is not None and len(trace) < 32:
+TRACE_LIMIT = 32
+
+
+def _note(trace, started, returned_here_=False, /, **record):
+    """Append one stage record when a caller asked for a trace; never changes a result.
+
+    Non-terminal records stop at TRACE_LIMIT; the single terminal record (the
+    stage the search returned from) is always kept, with the dropped count.
+    """
+    if trace is None:
+        return
+    if returned_here_:
+        dropped = sum(r.get('dropped_records', 0) for r in trace if r.get('stage') == 'trace_limit')
+        trace.append({**record, 'returned_here': True, 'dropped_records': dropped,
+                      'elapsed_s': time.monotonic()-started})
+    elif len(trace) < TRACE_LIMIT:
         trace.append({**record, 'elapsed_s': time.monotonic()-started})
+    elif trace[-1].get('stage') == 'trace_limit':
+        trace[-1]['dropped_records'] += 1
+    else:
+        trace[-1] = {'stage': 'trace_limit', 'dropped_records': 2}  # replaced record and this one
 
 
 def select_backup_recovery(origin_xy, resolution, width, height, costs,
@@ -116,20 +133,20 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                 or goal_footprint[0] >= goal_footprint[1]
                 or goal_footprint[2] >= goal_footprint[3]
                 or any(d <= 0 or d > 2. for d in distances)):
-            _note(trace, started, stage='input_validation', reason='invalid_inputs')
+            _note(trace, started, True, stage='input_validation', reason='invalid_inputs')
             return None
         candidates = sorted(set(d for d in distances if d <= max_backup_distance))
         options = dict(forward_options or {})
         continuation_grid = costs if continuation_costs is None else continuation_costs
         if len(continuation_grid) != width*height:
-            _note(trace, started, stage='input_validation', reason='continuation_grid_size')
+            _note(trace, started, True, stage='input_validation', reason='continuation_grid_size')
             return None
         trap_regions = _valid_regions(trap_regions)
     except (TypeError, ValueError, OverflowError) as exc:
-        _note(trace, started, stage='input_validation', reason='exception', exception=type(exc).__name__)
+        _note(trace, started, True, stage='input_validation', reason='exception', exception=type(exc).__name__)
         return None
     if not candidates:
-        _note(trace, started, stage='input_validation', reason='no_candidate_within_max_backup_distance')
+        _note(trace, started, True, stage='input_validation', reason='no_candidate_within_max_backup_distance')
         return None
     _note(trace, started, stage='inputs_valid', candidates_m=candidates)
 
@@ -160,14 +177,16 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
 
     reason = blocked(0.)
     if reason is not None:
-        _note(trace, started, stage='initial_clearance', reason=reason)
+        _note(trace, started, True, stage='initial_clearance', reason=reason)
         return None
     checked_distance = 0.
     charged_expansions = 0
     attempts = []
+    ended_by = 'all_candidates_searched'
     for i, distance in enumerate(candidates):
         remaining = max_search_seconds-(time.monotonic()-started)
         if remaining <= 0 or charged_expansions >= max_expansions:
+            ended_by = 'time_budget' if remaining <= 0 else 'expansion_budget'
             _note(trace, started, stage='budget_exhausted', before_candidate_m=distance,
                   reason='time' if remaining <= 0 else 'expansions', charged_expansions=charged_expansions)
             break
@@ -178,7 +197,7 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
             reason = blocked(current, previous)
             if reason is not None:
                 # Farther candidates must cross this same blocked rear sweep.
-                _note(trace, started, stage='rear_sweep_blocked', candidate_m=distance,
+                _note(trace, started, True, stage='rear_sweep_blocked', candidate_m=distance,
                       blocked_from_m=previous, blocked_at_m=current, reason=reason,
                       unattempted_candidates_m=candidates[i:])
                 return None
@@ -186,6 +205,7 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
         checked_distance = distance
         remaining = max_search_seconds-(time.monotonic()-started)
         if remaining <= 0:
+            ended_by = 'time_budget'
             _note(trace, started, stage='budget_exhausted', after_rear_sweep_m=distance, reason='time',
                   charged_expansions=charged_expansions)
             break
@@ -212,7 +232,7 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
             continue
         accepted, verdict, metrics = _continuation_verdict(plan, robot_xy, pose(distance), destination_xy,
                                                            resolution, trap_regions)
-        _note(trace, started, stage='candidate', verdict=verdict, **attempts[-1], **metrics)
+        _note(trace, started, accepted is not None, stage='candidate', verdict=verdict, **attempts[-1], **metrics)
         if accepted is None:
             continue
         trap_progress, terminal, tolerance = accepted
@@ -226,7 +246,7 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                     'elapsed_seconds': time.monotonic()-started,
                     'charged_expansions': charged_expansions, 'attempts': attempts,
                     'unknown_is_blocked': True, 'straight_backup_only': True}}
-    _note(trace, started, stage='search_ended_without_escape',
+    _note(trace, started, True, stage='search_ended_without_escape', ended_by=ended_by,
           attempted_m=[a['distance_m'] for a in attempts], charged_expansions=charged_expansions)
     return None
 

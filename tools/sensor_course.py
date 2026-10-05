@@ -21,7 +21,7 @@ from entrance_memory import ObservedEntranceMemory
 from entrance_support import corridor_fresh_support
 from navigation_decisions import DecisionRecorder, DecisionOutcomes, compact_event_metadata
 from recovery_policy import select_trap_escape
-from recovery_evidence import (MAX_CAPTURES, describe_search_inputs, diagnose_backup_recovery,
+from recovery_evidence import (MAX_CAPTURES, describe_search_inputs, diagnose_backup_recovery, json_safe,
                                write_recovery_capture)
 from trap_memory import (TrapMemory, entry_heading, evaluate_with_trap_memory,
                          exclude_trapped_guidance, recent_path)
@@ -623,19 +623,30 @@ def run(args):
                             max_search_seconds=5., forward_options=recovery_options)
                         # Provenance of the exact submitted inputs; the worker fingerprints what it
                         # received with the same function, so equal digests bind its stage trace.
+                        # Evidence only: any error is recorded and never changes the search or the stop.
                         recovery_submitted_at = time.monotonic()
-                        recovery_context = dict(decision_sequence=decision_sequence, destination_index=cursor,
-                            goal_radius_m=radius, grid_stamp_ns=stamps.get('grid'),
-                            odom_stamp_ns=stamps.get('odom'), grid_frame=recovery_grid.header.frame_id,
-                            odom_frame=latest['odom'][1].header.frame_id,
-                            grid_age_wall_s=recovery_submitted_at-latest['grid'][0],
-                            odom_age_wall_s=recovery_submitted_at-latest['odom'][0],
-                            guidance_preserved_from_intent=selection_preserved,
-                            budget=recovery_budget.report())
+                        submitted_digest = None
                         try:
-                            submitted_digest = describe_search_inputs(recovery_args, search_kwargs)['digest']
-                        except Exception as exc:  # noqa: BLE001 - reported; never skips a gate
-                            submitted_digest = None
+                            grid_stamp = recovery_grid.header.stamp
+                            # Receipt age is attributable only if the searched grid is still the latest one.
+                            same_grid = latest['grid'][1] is recovery_grid
+                            recovery_context = dict(decision_sequence=decision_sequence, destination_index=cursor,
+                                goal_radius_m=radius, grid_stamp_ns=grid_stamp.sec*1000000000+grid_stamp.nanosec,
+                                grid_frame=recovery_grid.header.frame_id,
+                                grid_age_wall_s=recovery_submitted_at-latest['grid'][0] if same_grid else None,
+                                odom_stamp_ns_at_submit=stamps.get('odom'),
+                                odom_frame=latest['odom'][1].header.frame_id,
+                                odom_age_wall_s_at_submit=recovery_submitted_at-latest['odom'][0],
+                                guidance_preserved_from_intent=selection_preserved,
+                                budget=recovery_budget.report())
+                        except Exception as exc:  # noqa: BLE001
+                            recovery_context = dict(context_error=f'{type(exc).__name__}: {exc}'[:200])
+                        try:
+                            binding = describe_search_inputs(recovery_args, search_kwargs)
+                            submitted_digest = binding['digest']
+                            if submitted_digest is None:
+                                recovery_context['submitted_digest_unavailable'] = binding.get('unavailable')
+                        except Exception as exc:  # noqa: BLE001
                             recovery_context['submitted_digest_error'] = f'{type(exc).__name__}: {exc}'[:200]
                         recovery_context['submitted_digest_wall_s'] = time.monotonic()-recovery_submitted_at
                         search = planner.submit(diagnose_backup_recovery, *recovery_args, **search_kwargs)
@@ -673,14 +684,16 @@ def run(args):
                     escape=search.result()
                     if trap_memory is None:
                         escape, search_evidence = escape
+                        worker_digest = search_evidence.get('input_binding', {}).get('digest')
                         search_evidence = dict(search_evidence, submitted_digest=submitted_digest,
-                            binding_matches=submitted_digest is not None and submitted_digest
-                                == search_evidence.get('input_binding', {}).get('digest'),
+                            binding_matches=submitted_digest is not None and submitted_digest == worker_digest,
                             search_wall_s=time.monotonic()-recovery_submitted_at)
+                    # Original order: liveness check immediately after the result, then the stop.
+                    check_live(time.monotonic(),armed_at,initial_run)
                     if escape is None and search_evidence is not None:
-                        # Evidence only: any error here is recorded, and the stop below is unconditional.
+                        # Evidence only, between the unchanged check and the unconditional stop below.
                         failures_recorded = state.setdefault('recovery_failures', [])
-                        failure = dict(recovery_context, evidence=search_evidence,
+                        failure = dict(json_safe(recovery_context), evidence=search_evidence,
                                        capture='unavailable: no capture directory or cap reached')
                         try:
                             if args.capture_dir and len(failures_recorded) < MAX_CAPTURES:
@@ -688,19 +701,20 @@ def run(args):
                                 capture_digest, capture_bytes = write_recovery_capture(capture_path,
                                     recovery_args, search_kwargs, recovery_context)
                                 failure['capture'] = dict(file=capture_path.name, digest=capture_digest,
-                                                          uncompressed_bytes=capture_bytes)
+                                    uncompressed_bytes=capture_bytes,
+                                    matches_worker_digest=capture_digest == worker_digest)
                         except Exception as exc:  # noqa: BLE001
                             failure['capture'] = f'failed: {type(exc).__name__}: {exc}'[:200]
-                        if len(failures_recorded) < MAX_CAPTURES:
-                            failures_recorded.append(failure)
                         try:
+                            if len(failures_recorded) < MAX_CAPTURES:
+                                failures_recorded.append(failure)
                             decision_event('recovery_search_failed',
                                            returned_stage=search_evidence.get('returned_stage'),
+                                           returned_reason=search_evidence.get('returned_reason'),
                                            binding_matches=search_evidence['binding_matches'],
-                                           capture=failure['capture'])
+                                           capture=json_safe(failure['capture']))
                         except Exception as exc:  # noqa: BLE001
-                            failure['event_error'] = f'{type(exc).__name__}: {exc}'[:200]
-                    check_live(time.monotonic(),armed_at,initial_run)
+                            state['recovery_evidence_error'] = f'{type(exc).__name__}: {exc}'[:200]
                     if escape is None:
                         raise RuntimeError('No observed collision-free backup with useful forward clearance')
                     backup_distance=escape['distance_m']
