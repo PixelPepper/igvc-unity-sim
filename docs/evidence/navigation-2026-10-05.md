@@ -18,8 +18,11 @@ clearance.” Completion, return, ramp and ordered-loop checks failed. Processin
 health passed throughout (2265 passing samples, zero failed/unknown, maximum gap
 0.130315 s), and obstacle, footprint-paint and speed checks passed on the partial
 trajectory. No collision was recorded. Refusing recovery does not establish that
-no possible safe route existed. The observed gate reports unavailable fresh
-corridor/footprint prerequisites; the terminal backup choice needs separate diagnosis.
+no possible safe route existed. Follow-up diagnosis found that the corridor gate
+was skipped because broad GPS guidance was selected. Its reason string does not
+prove stale sensors or missing footprint data. The terminal backup chooser returns
+no detailed rejection stage on failure, so whether rear sweeps or forward
+continuation failed remains undetermined.
 
 **The consecutive-pass streak is broken.** Neither speed improvement nor promotion
 is established. Passing-run return margins are small (7.406 mm and 1.094 mm);
