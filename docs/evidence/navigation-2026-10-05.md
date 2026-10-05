@@ -35,8 +35,25 @@ and instant from the adapter's0.907s latch report; final telemetry tail0.926s is
 also separate. Both reviewers accepted the report change, integrated asb1aada7,
 and36 focused tests passed in the primary checkout. This repairs evidence
 presentation, not runtime delivery. Unity/connector/network/subscriber scheduling
-remain unresolved alternatives. T0037 prepares bounded opt-in Unity timing capture;
-it has not been built or tested live.
+remain unresolved alternatives.
+
+T0037 integrated opt-in frame/connector-warning capture as20a18f3. Final19 Editor
+checks and rendered Win64 build passed. A stopped-player smoke test produced zero
+trace records with the environment variable absent, and11 records when enabled
+(header,9 windows,terminal stopped). Shutdown triggered the component's disable
+handler. No ROS endpoint ran in those smoke tests; expected connection refusals
+are retained. Threaded connector warning capture and overhead are still unverified.
+Set `IGVC_TRANSPORT_TIMING_TRACE=1` only in the intended player process environment
+to enable the bounded schema2 records in its Unity log; ordinary launches stay off.
+The header documents local UTC brackets, unsynchronized host clocks, asynchronous
+warning observations, frame-gap ambiguity and finite coverage. No queue-depth or
+wire-delivery measurement is claimed.
+
+T0038 now runs one diagnostic2029 repeat with the same19 policy files, profile
+and course/mission/autonomy bytes. Its new player assembly hash is
+`cf8f4a64b4847bd1d6156d679c0af19ea8f7219b7b4d53458b0f87bf9fa426c3`.
+The old d6519e1 player is preserved separately. No result or causal fix is yet
+claimed, and this repeat cannot replace the original failed first2029 attempt.
 
 ## Three verified seed2027 passes
 
