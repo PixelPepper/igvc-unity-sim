@@ -42,18 +42,36 @@ checks and rendered Win64 build passed. A stopped-player smoke test produced zer
 trace records with the environment variable absent, and11 records when enabled
 (header,9 windows,terminal stopped). Shutdown triggered the component's disable
 handler. No ROS endpoint ran in those smoke tests; expected connection refusals
-are retained. Threaded connector warning capture and overhead are still unverified.
+are retained. Threaded warning capture was subsequently exercised by T0038; overhead remains unmeasured.
 Set `IGVC_TRANSPORT_TIMING_TRACE=1` only in the intended player process environment
 to enable the bounded schema2 records in its Unity log; ordinary launches stay off.
 The header documents local UTC brackets, unsynchronized host clocks, asynchronous
 warning observations, frame-gap ambiguity and finite coverage. No queue-depth or
 wire-delivery measurement is claimed.
 
-T0038 now runs one diagnostic2029 repeat with the same19 policy files, profile
-and course/mission/autonomy bytes. Its new player assembly hash is
+[T0038](../agents/tasks/T-0038-timed-2029-diagnosis.md) completed the diagnostic2029
+repeat: **6/6 in355.483553s, all20 audit checks**,17772 trajectory samples,
+zero collisions/unproven segments and zero charged backups. Health3556/0/0,
+complete coverage, maximum gap0.125757195s. Return0.391618113m leaves8.382mm;
+conservative swept clearance0.252776720m. Both reviewers accepted the evidence.
+
+The19 policy files, profile and course/mission/autonomy bytes match T0035.
+New player assembly SHA256:
 `cf8f4a64b4847bd1d6156d679c0af19ea8f7219b7b4d53458b0f87bf9fa426c3`.
-The old d6519e1 player is preserved separately. No result or causal fix is yet
-claimed, and this repeat cannot replace the original failed first2029 attempt.
+The old player is preserved separately. Timing yielded379 sequential records
+(header plus378 windows), maximum observed Update gap0.057760s, and95 connector
+warning lines observed in the first startup window, matching95 raw log lines.
+Counts are warning observations, not dropped messages. There is no terminal
+stopped/exhausted record: final coverage and unsampled tail remain unknown.
+Whole-trace duration includes time outside the mission; clocks are not exactly
+aligned across hosts. No matched overhead comparison was performed.
+
+**The original interruption was not reproduced or fixed.** This repeat cannot
+replace the failed first2029 attempt or establish a causal benefit. Promotion
+remains blocked;2030 is still ungenerated/uninspected. All sessions stopped with
+independently verified cleanup. Artifacts:
+`artifacts/iterations/2026-10-05/timed-2029-diagnostic-1`.
+Run SHA256: `d2a6821e468080fb978523bad4010641a0fed86adf088340ff870253f2c116ad`.
 
 ## Three verified seed2027 passes
 

@@ -21,9 +21,13 @@ autonomy off. Both reviewers accepted the failed evidence (12/20 audit;
 cause remains undetermined. T0036 added reviewed offline open-gap reporting
 (b1aada7,36 focused tests passed). T0037 integrated opt-in Unity frame and
 connector-warning timing capture as20a18f3:19 Editor checks, Win64 build and
-stopped-player off/on smoke passed. T0038 is running one diagnostic2029 repeat
-with unchanged19 policy files/profile/inputs and tracing enabled. This is not a
-replacement qualification pass, and the upstream fault is not repaired.
+stopped-player off/on smoke passed. T0038's diagnostic2029 repeat completed6/6
+in355.48s with all20 audit checks and3556/0/0 health samples. Same19 policy files,
+profile and inputs; tracing enabled in the new player. Both reviewers accepted
+this non-reproduction result.379 timing records showed a0.05776s maximum sampled
+Update gap and95 startup warning lines; missing terminal record leaves final
+coverage unknown. Warning counts are not drops. The original failure remains
+unresolved and this pass does not replace qualification.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,
