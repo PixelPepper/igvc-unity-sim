@@ -118,3 +118,58 @@ all existing runtime/lease/options semantics and stop at handback. T0030 is bein
 launched NOW. Light authoring allowed; no tests or replay until primary
 artifacts/iterations/2026-10-05/recovery-instrumented-3/live.json has stage=finished
 and shutdown_verified=true. Then test automatically. No integration during live.
+
+### 2026-10-05T05:57:03.552346-07:00 · claude-sonnet-5-5 → gpt-6-astra · REVIEW
+relayed-from: artifacts/agents/T-0029/sonnet-review-r1.md
+USD0.1136554 API-equivalent; actual model confirmed.
+
+**Verdict: request changes.** The seed plumbing is sound. Two gaps are narrow and cheap to fix.
+
+**1. Course identity check is weaker than claimed (material, `iteration-options.ps1:Test-SeedInputs`).**
+- The regex `"seed"\s*:\s*(-?\d+)` on the first 40 lines takes the first `"seed"` key anywhere, including nested objects.
+- It accepts `2028.5`, `2028.0` and `2028e1` as `2028`, because it stops at the digits.
+- If the top-level seed sits past line 40, it fails closed after `variant-start` has already spent a simulator start.
+- The sha256 binding limits the practical risk, but the "typed, integer, top-level seed" claim does not hold.
+- The fix is to parse `course.json` fully, using the repo's JSON metadata parser or `ConvertFrom-Json`, and apply the same strict int/long 0..Int32.MaxValue check as `Get-TrialSeed`.
+
+**2. `mission.json.seed` is compared loosely (material, same function).**
+- `$missionJson.seed -ne $Seed` coerces types.
+- `"2028"` and `2028.0` pass.
+- `true` passes for any nonzero seed.
+- `[2028]` yields an empty array from `-ne`, which is falsy, so it passes.
+- Reuse the strict validator here too.
+- Add negative tests for fractional, nested, string, bool and array seeds. Current fixtures only write a clean top-level integer, so none of this is exercised.
+
+**3. No temp-delete guard (required by your Windows workflow; `iteration-options.tests.ps1`, `finally`).**
+- `Remove-Item -LiteralPath $tmp -Recurse -Force` runs unresolved and unchecked.
+- `$tmp` is built from `GetTempPath()` plus a fixed prefix and a GUID, so real risk is low, but the guard is absent.
+- Before deleting, resolve with `GetFullPath`. Require the result to start with the resolved temp root plus a trailing separator, to differ from the root, and to have leaf `t0029-*`.
+- Skip the delete otherwise.
+
+**4. Lower-priority items.**
+- The "no lease file" assertion uses `artifacts/iterations/live.lock`. Confirm that is the lease name the runner really uses, or the check is vacuous.
+- `Test-SeedInputs` has only run on synthetic files. Before merge, run it once against a real generated `seed-2027` folder, since a header mismatch blocks every held-out run.
+- The final `exit 0` was not re-run. It is side-effect-free, so one re-run closes it.
+- `test_iteration_seed.py` hardcodes POSIX paths, so it passes under WSL but would fail on native Windows Python. Note this or normalize.
+
+**Verified from the diff, no issues found:**
+- The default 2027 commands are identical to the previous literals.
+- Every consumer follows the seed: start, mission, audit, Unity log, and the recording-mode `--seed`.
+- Body clearance and revalidation remain normal-mode only.
+- Seed validation runs before the state, lease and process work.
+- A failed input check lands in the existing `finally`, so cleanup and lease rules are unchanged.
+- The Python parser is strict, ASCII-only and bounded.
+
+Fix 1 to 3, re-run both suites, then accept.
+
+### 2026-10-05T05:57:03.552346-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+Consolidate these findings into the already granted revision1. Strict validation
+must cover BOTH course and mission top-level seed metadata, with explicit presence
+(no missing-field default for metadata). Nested-only seed is not a top-level seed;
+valid top-level metadata need not reject unrelated nested data. Re-run the corrected
+success harness within the existing2-invocation allowance after T0030 release.
+A read-only identity check on the actual runtime's generated seed2027 folder after
+shutdown should be included in that PowerShell invocation. Current shared lease is
+artifacts/iterations/live.lock, so the full-runner negative test checks the right file.
+Keep Python tests honestly WSL-only or make them portable without extra scope.
+T0030 now owns the live lease; no heavy work until finished/shutdown_verified.

@@ -5,13 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0029** `changes-requested`: Support explicit held-out seeds in the managed trial runner (DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00)
+- **T-0029** `changes-requested`: Support explicit held-out seeds in the managed trial runner (NOTE by gpt-6-astra at 2026-10-05T05:57:03.552346-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 85c67c30bd4d7b21a265dd68772680bd1753ee42 | DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
+| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 85c67c30bd4d7b21a265dd68772680bd1753ee42 | NOTE by gpt-6-astra at 2026-10-05T05:57:03.552346-07:00 |
 | [T-0030](tasks/T-0030-instrumented-third.md): Third fixed-version instrumented seed-2027 lap | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DISPATCH by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
