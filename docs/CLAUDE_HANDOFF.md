@@ -14,10 +14,14 @@ The new nearer-station recovery behavior remains unexercised live.
 T0033 also passed the same2028 course used in development (6/6/all20,382.93s,
 zero charged backups). This is a regression result, not untouched validation or
 proof of the change's benefit. The original T0031 first2028 failure (1/6,111.67s,
-blocked lane-entry target) remains preserved. T0035 is now running the first
-preselected2029 attempt;2030 was additionally preselected before that outcome,
-without inspecting or generating it, to retain two untouched validation seeds.
-Promotion remains pending. Return margins are narrow; no causal speed gain,
+blocked lane-entry target) remains preserved. T0035's first preselected2029 attempt
+stopped2/6 after121.43s: perception and clock freshness expired, correctly latching
+autonomy off. Both reviewers accepted the failed evidence (12/20 audit;
+1209 health passes,7 failures,0 unknown; complete sampling coverage). Upstream
+cause remains undetermined; T0036 investigates the retained timing evidence.
+2030 was preselected before that outcome and remains ungenerated and untested.
+Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
+Return margins are narrow; no causal speed gain,
 calibrated hardware autonomy or2027 rule compliance is claimed.
 
 Runtime uses only observations and six sanitized broad GPS goals. Recovery can

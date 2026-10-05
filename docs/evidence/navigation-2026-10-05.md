@@ -1,6 +1,33 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
-## Current source: three verified seed2027 passes, untouched seeds pending
+## Current source: promotion blocked by first2029 freshness failure
+
+[T0035](../agents/tasks/T-0035-heldout-2029.md) tested the same frozen d6519e1
+runtime, profile and player as the three passing2027 laps. The first2029 attempt
+stopped at **2/6 after121.428575356s**. The adapter latched autonomy off when
+camera/lane/depth receipt ages reached0.772s and clock age0.907s, exceeding the
+unchanged0.750s freshness limit. The cause upstream of those observations remains
+undetermined. Endpoint disconnect was logged10.072s later during cleanup and
+does not establish the original cause.
+
+The audit passed12/20 checks over6026 samples. Two health checks failed; the other
+failed checks reflect the incomplete course/return/ramp/loop. Collision, paint
+and speed checks passed, with zero collision poses and0.275208236m conservative
+swept clearance. Health recorded1209pass/7fail/0unknown with complete coverage
+and maximum sample gap0.123985376s. The first failing subscriber snapshot is bound
+to the health ledger. No recovery was charged or recorded; no failed-search
+capture or new retreat behavior was exercised.
+
+Sonnet reviewed the interpretation; Sol independently verified the raw19 source
+hashes, profile/player/input identities, full audit binding and cleanup. The
+failed attempt remains in the benchmark ledger. T0036 investigates its timing;
+no timeout increase, automatic re-enable or retry has been used. Seed2030 remains
+ungenerated/uninspected and is not a replacement for this failure.
+
+Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2029-1.
+Run SHA256: `1443e227c0347e767f5ed7e962c961ffbcb92d83cdfd8deeb3c9db9544249fe6`.
+
+## Three verified seed2027 passes
 
 [T0034](../agents/tasks/T-0034-nearer-gate-qualification.md) qualified the
 seed2027 stage on frozen source **d6519e1ee323db0e66fd5953959f07cc56508cc5**.
@@ -18,11 +45,11 @@ cleanup was independently checked after each run. **The new recovery retreat sti
 has no live exercise or demonstrated benefit.** Times vary under uncontrolled load.
 Smallest return margin was8.340mm; no physical stopping margin is certified.
 
-T0033's2028 pass below is a development regression. T0035 begins the first
-preselected2029 attempt. Before that outcome,2030 was additionally preselected
+T0033's2028 pass below is a development regression. Before the first2029
+outcome,2030 was additionally preselected
 without generation/inspection to retain two untouched validation seeds.
 This adds evidence; it does not discard the original2028 failure or its regression
-requirement. Full promotion remains pending2029/2030 and review.
+requirement. The failed2029 result above blocks full promotion.
 
 Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2027-{1,2,3}.
 Run SHA256 values in order:
