@@ -32,6 +32,11 @@ This is one validated run, not repeatability or calibrated hardware autonomy.
 The [exact profile, results and remaining gates](docs/evidence/navigation-2026-10-01.md#completed-sensor-led-loop)
 are recorded separately; ordinary `course` defaults do not select this experimental
 configuration. The older lap results below describe guided mode.
+The [October 5 continuation](docs/evidence/navigation-2026-10-05.md) completed
+three consecutive seed-2027 passes on one frozen diagnostic build, but its first
+held-out seed-2028 attempt stopped at 1/6. Promotion remains blocked while observed
+lane-entry target selection is investigated. These results do not change ordinary
+launcher defaults or establish calibrated robot autonomy.
 See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
 The [September reliability milestone](docs/RELIABILITY_MILESTONE.md) adds sensor
 timing evidence, matched costmap detail and independent paint/full-loop scoring.
