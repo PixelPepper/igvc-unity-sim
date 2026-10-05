@@ -73,6 +73,20 @@ independently verified cleanup. Artifacts:
 `artifacts/iterations/2026-10-05/timed-2029-diagnostic-1`.
 Run SHA256: `d2a6821e468080fb978523bad4010641a0fed86adf088340ff870253f2c116ad`.
 
+[T0039](../agents/tasks/T-0039-timing-log-diagnosis.md) integrated the reviewed
+offline timing-report tool as7947325. All18 focused tests passed on Windows;
+Sol independently verified the three real-log reports and their original-byte
+hashes. It rejects malformed or contradictory timing data and leaves incomplete
+coverage unknown. It changes no runtime behavior. Example from the repository:
+
+```powershell
+python tools/diagnose_transport_timing.py --unity-log artifacts/iterations/2026-10-05/timed-2029-diagnostic-1/unity.log --output artifacts/timing-report.json
+```
+
+The output path must be new. Reports distinguish sampled frame gaps, asynchronous
+warning observations, and the unmeasured tail; they do not diagnose a cause.
+Two further reproduction attempts are bounded in T0040 but have not been started.
+
 ## Three verified seed2027 passes
 
 [T0034](../agents/tasks/T-0034-nearer-gate-qualification.md) qualified the

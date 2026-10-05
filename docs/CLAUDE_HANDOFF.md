@@ -28,6 +28,9 @@ this non-reproduction result.379 timing records showed a0.05776s maximum sampled
 Update gap and95 startup warning lines; missing terminal record leaves final
 coverage unknown. Warning counts are not drops. The original failure remains
 unresolved and this pass does not replace qualification.
+T0039 added the reviewed offline `tools/diagnose_transport_timing.py` report
+(7947325;18 native Windows tests passed, real-log hashes independently checked).
+T0040 defines up to two further diagnostic repeats; no live grant/session yet.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,
