@@ -4,7 +4,7 @@ title: Frames and sensors
 description: Canonical robot frame, forward axis and the authoritative sensor mount configuration.
 tags: [frames, urdf, sensors, camera, lidar, footprint]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: drive
     resource: ../R3A_DRIVE.md

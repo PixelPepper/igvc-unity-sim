@@ -4,7 +4,7 @@ title: ROS-Unity transport
 description: How the Unity player and ROS 2 Jazzy exchange clock, sensors and commands, and who owns the bridge.
 tags: [unity, ros2, transport, lease, simulation]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: ros-interface
     resource: ../ROS_INTERFACE.md

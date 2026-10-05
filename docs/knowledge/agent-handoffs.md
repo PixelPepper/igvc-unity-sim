@@ -4,7 +4,7 @@ title: Agent handoffs
 description: Where tasks, messages and decisions live, and who may change what.
 tags: [agents, protocol, git, review, coordination]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: protocol
     resource: ../agents/PROTOCOL.md

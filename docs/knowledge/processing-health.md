@@ -4,7 +4,7 @@ title: Processing health evidence
 description: How lane/depth processing health is sampled, latched and diagnosed.
 tags: [health, telemetry, perception, diagnostics]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: ledger
     resource: ../../tools/mission_health.py

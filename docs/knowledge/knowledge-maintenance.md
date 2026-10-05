@@ -4,14 +4,14 @@ title: Knowledge maintenance
 description: When and how to update this bundle without creating a second source of truth.
 tags: [knowledge, okf, maintenance, workflow]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: guide
     resource: ../OPEN_KNOWLEDGE.md
     title: Open Knowledge workflow guide
 igvc_sources:
   - path: docs/OPEN_KNOWLEDGE.md
-    sha256: 7ae4878c815b4e4bdafade4c576270d4f41192d3621ce70130288d688dc53d98
+    sha256: f93f091552929fb891489b06c93858253ff5d2e1330ac448864e2598afb7e434
 ---
 
 # Steps

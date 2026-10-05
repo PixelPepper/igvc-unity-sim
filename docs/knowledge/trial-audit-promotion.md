@@ -4,7 +4,7 @@ title: Trial, audit and promotion
 description: What a live trial must record, what the independent audit decides, and how promotion is gated.
 tags: [evidence, audit, trial, ledger, promotion]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: auditor
     resource: ../../tools/audit_sensor_run.py

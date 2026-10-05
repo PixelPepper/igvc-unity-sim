@@ -50,10 +50,22 @@ python3 tools/agents/knowledge.py export --output artifacts/agents/observatory/k
 
 | Kind | Rules |
 | --- | --- |
-| **Errors (OKF v0.2 conformance)** | A concept file without a parseable YAML frontmatter mapping. A missing or empty `type`. Frontmatter in a non-root `index.md`, or root-index frontmatter other than `okf_version`. `log.md` date headings that are not ISO dates or not newest first. |
-| **Warnings (never conformance failures)** | Broken internal links, and missing local targets outside the bundle. Missing project-recommended fields (`title`, `description`, `tags`, `generated`, `igvc_sources`). A malformed `verified`. A `stale_after` without a timezone or already passed. Source drift: `source_changed`, `source_missing`, or `source_blocked` for absolute, escaping, symlinked, oversized or non-text paths. |
+| **Errors (OKF v0.2 conformance)** | A concept file whose frontmatter is missing, unterminated, unparseable or not a mapping. A missing or empty `type`. In `index.md`: unterminated frontmatter, frontmatter in a non-root index, or root-index frontmatter other than `okf_version`. In `log.md`: any frontmatter, any `##` heading that is not an ISO date, or dates not newest first. Files may start with a UTF-8 BOM. |
+| **Warnings (never conformance failures)** | Broken internal links, and missing local targets outside the bundle. Missing project-recommended fields (`title`, `description`, `tags`, `generated`, `igvc_sources`). A non-string `title` or `description`. Malformed `verified` events. A `stale_after` without a timezone or already passed. YAML values that are not plain JSON, normalized as listed below. Source drift: `source_changed`, `source_missing`, or `source_blocked`. |
 | **Tolerated** | Unknown types and unknown keys. |
-| **Trust tier** | Derived only from `verified` (a bare mapping is treated as a one-item list): unverified, machine-confirmed, or human-reviewed. The lifecycle `status` is reported separately, and neither one is scientific verification. |
+| **Trust tier** | Derived only from **well-formed** `verified` events: an actor in the §7 convention (`human:<id>`, `process:<id>` or `<producer>/<version>`) **and** a timezone-aware `at`. A bare mapping is treated as a one-item list. Malformed or empty events are ignored with a warning and never raise the tier. Result: unverified, machine-confirmed, or human-reviewed. The lifecycle `status` is reported separately, and neither one is scientific verification. |
+
+YAML values that are not plain JSON are normalized in `metadata`, with a warning:
+
+- NaN and infinity become `null` (`nonfinite_number_replaced`)
+- sets become sorted lists (`set_converted_to_sorted_list`)
+- binary values become `null` (`binary_value_replaced`)
+- self-referencing structures become `null` at the cycle (`recursive_value_replaced`)
+
+Dates become ISO strings. Search treats non-string titles, descriptions and tags as text.
+
+Drift is **advisory**: `tools/check_core.sh` runs the non-strict check, so a changed source never fails CI by itself.
+Use `--strict-project` when curating the bundle on purpose.
 
 ## The `igvc_sources` extension
 
@@ -65,15 +77,33 @@ igvc_sources:
     sha256: <hex>                   # SHA-256 of the UTF-8 text with CRLF/CR normalized to LF
 ```
 
-Normalizing line endings keeps hashes identical across Windows and Linux checkouts. Only text sources are pinned:
-never artifacts, logs, credentials, CAD, generated Unity output or binaries. Files the integrator edits often are
-linked but not pinned.
+Normalizing line endings (and dropping a UTF-8 BOM) keeps hashes identical across Windows and Linux checkouts.
+
+**Pin policy.** It is checked on the path text before any file is opened, and both `pin` and `check` apply it:
+
+| Refused | Reason code |
+| --- | --- |
+| Absolute paths and paths containing `..` | `not_repository_relative` / `escapes_repository` |
+| `artifacts/`, `.git/`, `ros2/{build,install,log}/`, Unity generated folders (`Library`, `Temp`, `Obj`, `Logs`, `UserSettings`, `Build(s)`, `GeneratedRobot`), and any `node_modules`, `__pycache__`, `.venv` or `.cursor` component | `excluded_location` |
+| Credential-like file names (`.env*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`, `*.dpapi`, `id_rsa*`, names containing `credential`, `secret`, `token` or `password`, `auth.json`) | `credential_like_name` |
+| Anything outside an allowlist of text suffixes (Markdown, text, Python, JSON, YAML, TOML, XML, URDF/xacro, launch, RViz, C/C++/C#, shell, PowerShell, JavaScript/TypeScript, Unity UI text, ROS interface files) | `not_allowed_text_type` |
+| Symlinked components, missing files, files over 2 MB, and non-UTF-8 content | — |
+
+`pin` exits non-zero for a refused or unreadable path, with a one-line message and no traceback. Files the integrator
+edits often are linked but not pinned.
 
 ## Export for the Observatory
 
 `export` writes one deterministic JSON document (sorted keys; `--now` fixes the evaluation instant for reproducible
-output). It writes atomically via a temporary file and **writes nothing**, exiting 1, when the bundle has OKF format
-errors or the output would exceed the limits below. Consumers therefore never see a partial or misleading export.
+output). A successful export replaces the output atomically via a temporary file.
+
+When the bundle has OKF format errors, or the output would exceed the limits below, `export` exits 1 and writes nothing:
+
+- **No previous export:** the output file does not appear.
+- **Previous export exists:** it is left untouched (it is never deleted). It still carries its old `generated_at`.
+
+A consumer therefore cannot tell from an unchanged snapshot alone that a refresh failed. The producer's exit status,
+or a `generated_at` older than expected, is the signal.
 
 | Field | Meaning |
 | --- | --- |

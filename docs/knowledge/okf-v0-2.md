@@ -5,7 +5,7 @@ description: The pinned external specification this bundle follows.
 tags: [okf, specification, reference]
 status: stable
 resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/ad30107c31c06aec8a7d5636e0d1058118604e6f/SPEC.md
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: spec
     resource: https://github.com/GoogleCloudPlatform/open-knowledge-format/blob/ad30107c31c06aec8a7d5636e0d1058118604e6f/SPEC.md
@@ -15,7 +15,7 @@ sources:
     resource: ../OPEN_KNOWLEDGE.md
 igvc_sources:
   - path: docs/OPEN_KNOWLEDGE.md
-    sha256: 7ae4878c815b4e4bdafade4c576270d4f41192d3621ce70130288d688dc53d98
+    sha256: f93f091552929fb891489b06c93858253ff5d2e1330ac448864e2598afb7e434
 ---
 
 # What we rely on

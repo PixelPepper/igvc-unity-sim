@@ -4,7 +4,7 @@ title: Sensor-led navigation
 description: The observed-only planning pipeline and its hard safety checks.
 tags: [navigation, planning, guidance, path-entry, safety]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:15:00Z }
+generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
 sources:
   - id: sensor-autonomy
     resource: ../SENSOR_AUTONOMY.md
