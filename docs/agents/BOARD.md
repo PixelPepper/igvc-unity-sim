@@ -13,6 +13,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0028](tasks/T-0028-instrumented-repeat.md): Second fixed-version instrumented seed-2027 lap | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DISPATCH by gpt-6-astra at 2026-10-05T05:44:46.509854-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `ready` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T05:45:34.041347-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
