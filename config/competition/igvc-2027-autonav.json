@@ -1,0 +1,52 @@
+{
+  "schema_version": 1,
+  "profile_id": "igvc-2027-autonav-v1",
+  "year": 2027,
+  "event": "AutoNav",
+  "scope": "Sections I and II; bounded simulator compatibility, not competition certification",
+  "provenance": {
+    "url": "https://gl-systems-technology.net/uploads/3/4/7/2/34727963/igvc_2027_rules_version_7_july_26.pdf",
+    "revision": "7 July 26 Version",
+    "retrieved_date": "2026-09-30",
+    "sha256": "4a7162913bce181839228041f1a79512035f597861514cd9edfe7d7181d080b3",
+    "sections": ["I", "II"]
+  },
+  "conversions": {"metres_per_foot": 0.3048, "mps_per_mph": 0.44704},
+  "requirements": {
+    "maximum_speed_mph": 5,
+    "average_speed_mph_exclusive_minimum": 1,
+    "run_time_limit_s": 360,
+    "maximum_ramp_grade_ratio": 0.15,
+    "simulated_pothole": {"diameter_ft": 2, "representation": "solid_white_circle", "optional": true},
+    "minimum_passage_width_ft": 5,
+    "provided_waypoint_pairs": 2,
+    "references": {
+      "speed": "I.2 p6, I.4 p9, II.1/II.2 p10",
+      "course": "II.2 p10",
+      "run_time": "II.2 p10, II.3 p12"
+    }
+  },
+  "opening_speed_conflict": {
+    "status": "unresolved",
+    "narrative": {"distance_ft": 44, "time_s": 30, "reference": "II.2 p10; II.4 narrative p13 also uses 44 ft"},
+    "table": {"distance_ft": 88, "time_s": 60, "reference": "II.4 hold-up traffic table p13"},
+    "action": "Obtain organizer clarification; do not treat either window as definitive."
+  },
+  "nominal_course_guidance": {
+    "approximate_length_ft": 500,
+    "approximate_area_ft": [120, 100],
+    "track_width_ft": [10, 20],
+    "minimum_turn_radius_ft": 5,
+    "boundary_width_inches_approximate": [3, 4],
+    "reference": "II.2 p10; nominal dimensions are not exact fixture tolerances"
+  },
+  "unknown_requirements": [
+    "Measured physical vehicle dimensions and payload security/weight (I.2-I.4)",
+    "Hardware maximum-speed governor and qualification speed (I.2/I.4)",
+    "Hardware mechanical and wireless E-stops, their locations/range/function (I.2/I.4)",
+    "Physical safety light behavior (I.2/I.4)",
+    "Onboard-only processing/control, no base stations or course memorization (I.2)",
+    "Qualification, autonomous lane/obstacle/waypoint performance (I.4)",
+    "Judge-defined start/finish, waypoint crossing, penalties and termination (II.3-II.6)"
+  ]
+}
