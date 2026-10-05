@@ -53,7 +53,7 @@ async function main() {
   const requestedMode = args.shift();
   const mode = requestedMode === 'dry-run' ? 'review' : requestedMode;
   const dry = requestedMode === 'dry-run' || args.includes('--dry-run');
-  if (!['doctor', 'review'].includes(mode)) fail('Usage: node tools/agents/runner.mjs doctor | review --task FILE [--dry-run] | dry-run --task FILE');
+  if (!['doctor', 'catalog', 'review'].includes(mode)) fail('Usage: node tools/agents/runner.mjs doctor | catalog | review --task FILE [--dry-run] | dry-run --task FILE');
   let prepared;
   if (mode === 'review') {
     const index = args.indexOf('--task');
@@ -70,6 +70,14 @@ async function main() {
   // Never print SDK events, API errors, configuration, or environment variables.
   const { Agent, Cursor, JsonlLocalAgentStore } = await import('@cursor/sdk');
   const models = await Cursor.models.list({ apiKey });
+  if (mode === 'catalog') {
+    // Read-only discovery: no agent, inference, task files or credential output.
+    console.log(JSON.stringify({ sdk: '1.0.31', models: models.map(m => ({
+      id: m.id, displayName: m.displayName,
+      parameters: (m.parameters ?? []).map(p => ({id:p.id, values:p.values.map(v=>v.value)}))
+    })) }, null, 2));
+    return;
+  }
   if (mode === 'doctor') {
     let selected = null;
     try { selected = selectGrok(models, selection); } catch { /* Catalog remains available for inspection. */ }

@@ -1,5 +1,5 @@
 param(
-    [Parameter(Position=0)][ValidateSet('doctor','review','dry-run')][string]$Action = 'doctor',
+    [Parameter(Position=0)][ValidateSet('doctor','catalog','review','dry-run','handoff')][string]$Action = 'doctor',
     [string]$Task = '',
     [ValidateSet('low','medium','high','xhigh')][string]$Effort = 'medium',
     [switch]$Fast
@@ -20,7 +20,9 @@ try {
         $env:CURSOR_API_KEY = [System.Net.NetworkCredential]::new('', $encrypted).Password
     }
     $runnerArgs = @($runner, $Action)
-    if ($Task) { $runnerArgs += @('--task', $Task) }
+    if ($Action -eq 'handoff') {
+        $runnerArgs = @((Join-Path $PSScriptRoot 'agents/review-handoff.mjs'), '--role', $Task)
+    } elseif ($Task) { $runnerArgs += @('--task', $Task) }
     & node @runnerArgs
     if ($LASTEXITCODE -ne 0) { throw "Cursor job failed ($LASTEXITCODE); inspect its report." }
 } finally {

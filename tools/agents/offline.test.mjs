@@ -1,10 +1,21 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { prepareTask, selectGrok } from './runner.mjs';
+import { modelSelection } from './review-handoff.mjs';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 const here = path.dirname(fileURLToPath(import.meta.url));
+test('handoff requires the exact model and explicitly supported effort', () => {
+  const models = [{id:'claude-opus-5-5',parameters:[
+    {id:'effort',values:[{value:'medium'},{value:'high'}]},
+    {id:'fast',values:[{value:'true'},{value:'false'}]}]}];
+  assert.deepEqual(modelSelection(models,'claude-opus-5-5'), {
+    id:'claude-opus-5-5',params:[{id:'effort',value:'high'},{id:'fast',value:'false'}]});
+  assert.throws(() => modelSelection(models,'claude-sonnet-5-5'));
+  assert.throws(() => modelSelection(models,'claude-opus-5-5','max'));
+  assert.throws(() => modelSelection([...models,...models],'claude-opus-5-5'));
+});
 test('catalog selects requested mode without silent effort fallback', () => {
   const models = [{id:'grok-4.6',displayName:'Grok 4.6',parameters:[{id:'fast',values:[{value:'true'},{value:'false'}]},{id:'reasoning_effort',values:[{value:'high'},{value:'medium'},{value:'low'}]}]}];
   assert.deepEqual(selectGrok(models), {id:'grok-4.6',params:[{id:'fast',value:'false'},{id:'reasoning_effort',value:'medium'}]});
