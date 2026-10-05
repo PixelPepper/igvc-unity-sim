@@ -23,6 +23,8 @@ Written by ASTRA and frozen at `ready`. Any change goes in the Log as a `DECISIO
 - **Hypothesis / objective:** one falsifiable sentence.
 - **Why now:** link to the handoff priority or [COMPETITION_CONTEXT](../COMPETITION_CONTEXT.md) row.
 - **Inputs:** exact files, run ids and evidence paths to read first. Keep this to the minimum needed.
+- **Knowledge context:** relevant concept IDs from [the OKF index](../../knowledge/index.md),
+  or none. Read their canonical sources when editing; check source drift first.
 - **Owned paths (may edit):** list them. Everything else is read-only.
 - **Must not change:** invariants specific to this task, in addition to the
   [protocol invariants](../PROTOCOL.md#invariants-every-reviewer-checks).
@@ -46,6 +48,7 @@ Live result: destinations, time, backups, clearance, health, audit status:
 Shutdown/lease verification:
 Claim level reached: implemented | tested | audit-passed
 Remaining risks and next experiment:
+Knowledge concepts affected (IDs, source changes or none):
 ```
 
 ## Log

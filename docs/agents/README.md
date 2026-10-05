@@ -9,6 +9,8 @@ instead of copying them.
 | Read | When |
 | --- | --- |
 | [BOARD.md](BOARD.md) | First, every session: what is ready, in progress, in review, blocked |
+| [Open Knowledge index](../knowledge/index.md) | Find compact context for the assigned task; load only relevant concepts and canonical sources |
+| [Knowledge workflow](../OPEN_KNOWLEDGE.md) | Maintain source links, detect drift, search and export shared context |
 | [PROTOCOL.md](PROTOCOL.md) | Before taking or dispatching any task: roles, authority, message format, limits |
 | [GIT_WORKFLOW.md](GIT_WORKFLOW.md) | Before branching, committing, reviewing or integrating |
 | [COMPETITION_CONTEXT.md](COMPETITION_CONTEXT.md) | Before proposing architecture or optimization work: what top 2026 IGVC teams did and how it maps to this repository |

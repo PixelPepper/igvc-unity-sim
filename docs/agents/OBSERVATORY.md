@@ -61,6 +61,38 @@ when reconnecting; it is not a durable inbox. Windows Python must use UTF-8 outp
 for the Unicode message arrows; the default cp1252 console failed during this
 check, although the canonical Claude reply remained intact.
 
+## Shared knowledge view
+
+The separate Knowledge view reads the versioned export from
+`artifacts/agents/observatory/knowledge.json`. Its committed producer and complete
+contract are documented in the [Open Knowledge workflow](../OPEN_KNOWLEDGE.md).
+The eight source-linked concepts start at the [knowledge index](../knowledge/index.md).
+Unlike the prototype coordination helper, this producer is tracked and tested.
+
+After accepting a relevant knowledge change, refresh from the repository root:
+
+```powershell
+wsl -d Ubuntu-24.04 -- python3 tools/agents/knowledge.py check --strict-project
+wsl -d Ubuntu-24.04 -- python3 tools/agents/knowledge.py export --output artifacts/agents/observatory/knowledge.json
+```
+
+The app only reads this export; it never invokes the producer or follows its
+source references. Concept links and source-pin references are different edge
+types. Document trust is a declaration, source drift is a separate check, and
+neither changes task status or proves agent activity. Missing or invalid exports
+must show an explicit status; any retained last-good snapshot keeps its original
+age. Refreshing the collector does not refresh the knowledge itself.
+
+Live acceptance on October 5 at 10:36:47 UTC matched the accepted export hash
+`4d1c2eb5835f8fdd385e05c48a02068be0307bc6b5a73d141567dea673fb4a93`.
+The API and browser showed eight concepts, 16 source-pin relationships and
+15 unique source targets, with no producer warnings or consumer diagnostics.
+All concepts were labeled unverified; source matches are producer-reported.
+Replay before the capture correctly showed no knowledge snapshot. The app owner
+recorded the exact binding and browser checks in `KNOWLEDGE-LIVE-VALIDATION.json`
+inside the external Observatory workspace above. This validates that capture,
+not future exports or restart persistence.
+
 ## Scope and limitations
 
 Public task messages and decision summaries are visible. Private reasoning,

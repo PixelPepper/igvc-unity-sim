@@ -8,6 +8,11 @@ Use its [linked file index](docs/FILE_INDEX.md),
 [ROS/navigation parameter reference](docs/guide/ROS_PARAMETERS.md) and
 [Unity/course editing guide](docs/guide/UNITY_AND_COURSE.md) to find the source for a change.
 
+For focused agent context, use the [Open Knowledge index](docs/knowledge/index.md)
+and [knowledge workflow](docs/OPEN_KNOWLEDGE.md). These small, source-linked
+concepts help Claude, Codex, Sol and other readers find relevant information;
+the task board, source files and experiment records remain authoritative.
+
 For interactive obstacle placement and navigation tuning, see the
 [Unity Sandbox guide](docs/SANDBOX.md). It uses a separate player and named presets.
 Its **Reference lab** tab (HPA*/JPS planner, racing-line optimiser, AI-driver ghosts) is an

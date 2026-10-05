@@ -5,6 +5,12 @@ Read [AGENTS.md](AGENTS.md), [README.md](README.md), then
 Read other documents on demand using the handoff's index; do not ingest all logs,
 CAD files, Unity Library, node_modules or historical agent packets.
 
+For an assigned task, consult the [Open Knowledge index](docs/knowledge/index.md)
+and load only relevant concepts and their canonical sources. Follow the
+[knowledge maintenance workflow](docs/OPEN_KNOWLEDGE.md) when accepted changes
+affect those concepts. Knowledge metadata is context, never dispatch authority
+or proof that a simulation passed.
+
 This is IGVC 2027 AutoNav: Unity on Windows, ROS 2 Jazzy in Ubuntu 24.04 WSL2.
 It is an ideal simulation fixture, not a calibrated physical robot.
 Canonical +X points toward the front driven wheels; rear wheels are casters.

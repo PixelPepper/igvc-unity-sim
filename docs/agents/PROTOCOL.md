@@ -293,6 +293,13 @@ the user's chat session.
 
 ## Context hygiene
 
+Per [ADR-010](DECISIONS.md#adr-010-adopt-open-knowledge-format-as-shared-context),
+use the [Open Knowledge index](../knowledge/index.md) to select compact context.
+Packets name relevant concept IDs; canonical task/source/evidence files still
+control the work. After accepted changes, identify affected concepts for the
+integrator to refresh and validate using [the knowledge workflow](../OPEN_KNOWLEDGE.md).
+Knowledge metadata grants no authority and does not certify a simulation.
+
 - Packets are self-contained. Give workers the task file, not a conversation history.
 - Link to files and line numbers. Never paste whole source files, full logs, CAD, Unity
   `Library/` or `node_modules/` into a packet or message.

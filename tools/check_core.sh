@@ -11,3 +11,4 @@ export OMP_NUM_THREADS=1
 python3 -m unittest discover -s tools/tests -v
 python3 -m unittest discover -s ros2/src/igvc_perception/test -v
 python3 -m unittest discover -s ros2/src/igvc_gps/test -v
+python3 tools/agents/knowledge.py check

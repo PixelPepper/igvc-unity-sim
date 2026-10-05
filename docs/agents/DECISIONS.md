@@ -226,3 +226,35 @@ activity and delay causes remain unverified: message timestamps measure elapsed
 intervals, not CPU use or worker activity. No reduction in runtime or cost is
 claimed from this decision. Existing publication, safety and promotion boundaries
 are unchanged.
+
+## ADR-010: Adopt Open Knowledge Format as shared context
+
+2026-10-05 · gpt-6-astra · DECISION, implementing the user's direct request:
+"implement this into our workflow" with the Google Cloud OKF article.
+
+Adopt a small OKF v0.2 bundle under docs/knowledge. The article introduced v0.1;
+the canonical specification now lives in GoogleCloudPlatform/open-knowledge-format.
+T-0015 pins commit ad30107c31c06aec8a7d5636e0d1058118604e6f.
+
+- Existing task files, decisions, source code and experiment records remain
+  authoritative. Concepts summarize durable knowledge and link to those sources.
+  They do not replace the board or copy conversation history.
+- Task packets name only relevant concept IDs. Agents read the index, selected
+  concepts and exact inputs, rather than loading the complete knowledge bundle.
+- After accepted changes, the owner identifies affected concepts. The integrator
+  updates reviewed summaries and source fingerprints, records changes in the
+  bundle log, validates the bundle and refreshes the read-only export.
+- Format validation, source freshness, machine verification, human review, and
+  simulation audit results remain distinct. Do not manufacture verification
+  stamps or treat an unchanged hash as proof of a scientific claim.
+- The tooling operates on local Markdown and explicit source references. No new
+  cloud account, SDK, automatic agent dispatch, network upload, permission or
+  promotion rule is introduced.
+- The observatory may consume the exported knowledge graph as read-only context;
+  its owner validates that UI integration separately. Task state is still read
+  from canonical coordination records.
+- Broken links are OKF warnings, not format failures. Any stricter project check
+  is explicitly labeled project policy.
+
+T-0015 implements the bundle and tooling with independent code/evidence reviews.
+The coordinator adds entry links and the context-hygiene/template changes here.

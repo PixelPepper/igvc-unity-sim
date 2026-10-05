@@ -6,6 +6,10 @@ covers the major maintained entry points and groups repetitive test/asset files.
 Generated output, binary meshes, `.meta` pairs, Python `__init__.py` files and
 package boilerplate are described by directory rather than individually.
 
+The [Open Knowledge bundle](knowledge/index.md) provides a compact concept index
+for agents. Its [workflow](OPEN_KNOWLEDGE.md) explains validation, source drift,
+search and the read-only JSON export in [knowledge.py](../tools/agents/knowledge.py).
+
 Reviewed 2026-09-30. **Read-only** means a tool does not command the robot; it can
 still write an output report. **Motion/state** means it may move/reset the robot,
 alter ROS authority, interrupt a sensor, or restart processes. Read its arguments

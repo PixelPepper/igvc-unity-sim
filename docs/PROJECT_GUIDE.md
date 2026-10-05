@@ -27,6 +27,8 @@ published release. Relative links work in the repository and on GitHub.
 
 Companion references:
 
+- **[Open Knowledge index](knowledge/index.md)** — compact, source-linked concepts
+  for targeted agent context; [maintenance and commands](OPEN_KNOWLEDGE.md).
 - **[Claude Code handoff](CLAUDE_HANDOFF.md)** — current working-tree status,
   evidence, prioritized optimization tasks, commands and experiment boundaries.
 - **[Linked file and document index](FILE_INDEX.md)** — repository entry points,
