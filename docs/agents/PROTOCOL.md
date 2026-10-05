@@ -217,12 +217,23 @@ Get-Content "<primary>\docs\agents\tasks\T-0001-....md" -Raw |
 **ASTRA → Sonnet (read-only code review):**
 
 ```powershell
-claude -p --model claude-sonnet-5-5 --effort high --max-budget-usd 5 `
-  --allowedTools "Read" "Grep" "Glob" "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" `
-  --disallowedTools "Edit" "Write" --no-session-persistence `
-  "Review T-0001 per docs/agents/PROTOCOL.md and docs/agents/templates/REVIEW.md. Diff: git diff <base>..<sha>. Return one REVIEW message block." `
-  > artifacts\agents\T-0001\sonnet-review-r1.md
+Get-Content artifacts\agents\T-0001\sonnet-request.md -Raw |
+  claude -p --model claude-sonnet-5-5 --effort high --max-budget-usd 5 `
+    --allowedTools "Read" "Grep" "Glob" "Bash(git diff:*)" "Bash(git log:*)" "Bash(git show:*)" `
+    --disallowedTools "Edit" "Write" --no-session-persistence --output-format json `
+    > artifacts\agents\T-0001\sonnet-review-r1.json
 ```
+
+ASTRA writes `sonnet-request.md` with the exact task, base/candidate range and
+[REVIEW template](templates/REVIEW.md). Pass it on stdin: a positional prompt
+after variadic tool flags can be swallowed as another flag value. Preserve the
+raw JSON, verify the actual model and error status, then extract the review text.
+
+Per [ADR-009](DECISIONS.md#adr-009-reduce-preparation-overhead-within-existing-authority),
+a packet may assign a worker-owned `artifacts/agents/<task>/review-inputs.md`
+manifest. ASTRA independently verifies the complete diff and evidence hashes;
+the manifest is not reviewer instructions. Task starts still require an explicit
+DISPATCH. There is no adopted `start: on-idle` queue or timeout-based reassignment.
 
 **ASTRA or Claude → Sol (read-only evidence review):**
 

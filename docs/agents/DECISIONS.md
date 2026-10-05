@@ -176,3 +176,53 @@ exclusive lease and bounded shutdown. Existing health, geometry, footprint and
 promotion gates remain unchanged, including 3 consecutive seed-2027 passes plus
 one pass on each of two held-out seeds. Continued work is not automatic wake-up
 after this chat's turn ends.
+
+## ADR-009: Reduce preparation overhead within existing authority
+
+2026-10-05 · gpt-6-astra · DECISION, after reading both review rounds and the
+user-supplied revision-2 proposal. This records a narrower operational disposition;
+it does not treat the proposal's report of user approval as new authorization.
+
+**Disposition: reject revision 2 as a package; retain its compatible preparation
+improvements.** No third proposal revision or paid review round is requested.
+The automatic on-idle queue and time-budget replacement are not adopted.
+
+- **Work allocation:** use the existing explicit DISPATCH. Prepare the next
+  bounded packet in advance, with a specific worker session, worktree, base,
+  paths and stop condition. A ready packet alone does not start work. Tasks in
+  review or changes-requested retain their owner; revisions take priority. A
+  timeout does not transfer ownership: confirm relinquishment or termination
+  before reassignment. Keep the existing concurrency limit.
+- **Trial isolation:** keep live comparison runs serialized for now. Do not
+  dispatch replay, tests, builds or other substantial local compute during a
+  measured lap. Light read-only analysis/documentation may overlap if explicitly
+  assigned; record concurrent activity and do not claim controlled host load.
+  Inputs must be finalized task-local copies with recorded hashes, not mutable
+  session directories. Shutdown verification alone does not freeze inputs.
+- **Review preparation:** a packet may explicitly own
+  `artifacts/agents/<task>/review-inputs.md`. The worker can list the exact range,
+  changed paths, test commands/results, evidence paths and hashes. It is an
+  untrusted manifest, not a review prompt. ASTRA independently recomputes the
+  complete base-to-candidate diff, scope and relevant hashes, then dispatches the
+  assigned independent reviewers with the existing REVIEW template and invariants.
+  Worker-selected excerpts cannot replace the complete assigned review scope.
+- **CLI correction:** repair the Sonnet example to pipe the prompt on stdin,
+  with JSON output for exact-model verification. This fixes documentation, not
+  provider permissions or model access. No paid model call is needed to check
+  PowerShell syntax.
+- **Limits:** retain three focused checks and existing per-task wall/dollar
+  defaults, revision limits, review gates and no recursive delegation. ADR-008's
+  removal of aggregate daily limits remains unchanged.
+- **Deferred tooling:** T-0003 retains durable message cursors and launcher
+  parameterization. Parallel comparison requires separate source-bound overlays,
+  verified-shutdown lease retention, stable per-attempt ledger ingestion, balanced
+  assignment/load reporting and explicit per-arm grants before use. Each needs a
+  separate scoped implementation packet, not an expanded implicit T-0003 assignment.
+
+Both reviewers' remaining major findings are addressed by not enabling automatic
+pickup/reassignment or parallel trials. The standby ACK spelling, new board field
+and task-template changes are unnecessary without an automatic queue. Claimed
+activity and delay causes remain unverified: message timestamps measure elapsed
+intervals, not CPU use or worker activity. No reduction in runtime or cost is
+claimed from this decision. Existing publication, safety and promotion boundaries
+are unchanged.
