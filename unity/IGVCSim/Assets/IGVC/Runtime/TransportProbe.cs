@@ -33,6 +33,7 @@ namespace IGVC
         [SerializeField] private CasterSwivelSettings swivelSettings;
         private CasterSwivel leftSwivel, rightSwivel;
         private double planarLinear;
+        private long terrainSupportRejects, terrainBudgetRejects;
         [SerializeField] private double defaultCameraPitch = .17453292519943295;
         private string courseIdentity = "reference";
         private double cameraPitch, targetPitch, cameraPitchVelocity;
@@ -54,6 +55,26 @@ namespace IGVC
             public int run_id;
         }
         public double SimTime => ticks * 0.01;
+        private CourseVariant.Manifest activeVariant;
+        public CourseVariant.Manifest ActiveVariant => activeVariant;
+        public void SandboxHold(bool hold) { motion.SetStopped(hold, SimTime); }
+        // Read-only pose for the audit-side Reference Lab trail (course frame, driven axle).
+        public double AxleX => drive.AxleX; public double AxleY => drive.AxleY; public double AxleYaw => drive.Yaw;
+        public void SandboxReload(string path)
+        {
+            if(!motion.Stopped) throw new InvalidOperationException("Stop the sandbox before editing.");
+            CourseVariant.Read(path); // Reject invalid data before touching the active course.
+            var old=activeVariant;
+            var next=CourseVariant.Load(path,laneGuard,true);
+            activeVariant=next;
+            ConfigureTerrain(next.support_surfaces);
+            casterSupport=new CasterTerrainSupport(casterSettings,supportSurfaces);
+            defaultCameraPitch=next.camera_pitch_rad;
+            courseIdentity="sandbox course_hash="+next.runtime_hash;
+            motion.Reset(SimTime);drive.Reset();ResetCasterSupport();ApplyPose();
+            if(old?.runtime_root!=null) { old.runtime_root.SetActive(false); Destroy(old.runtime_root); }
+            Physics.SyncTransforms();
+        }
 
         public void Configure(Transform body, Camera camera) { robot = body; sensorCamera = camera; }
         public void ConfigureR3a(Transform body, Camera camera, Transform left, Transform right, Transform lidar)
@@ -86,6 +107,7 @@ namespace IGVC
             {
                 if (!r3aMode || laneGuard == null) throw new InvalidOperationException("Variants require the course scene");
                 var variant = CourseVariant.Load(variantPath, laneGuard);
+                activeVariant=variant;
                 defaultCameraPitch = variant.camera_pitch_rad;
                 courseIdentity = "seed-" + variant.seed + " course_hash=" + variant.runtime_hash;
                 ConfigureTerrain(variant.support_surfaces);
@@ -140,6 +162,7 @@ namespace IGVC
             {
                 motion.Reset(SimTime);
                 drive.Reset();
+                terrainSupportRejects = terrainBudgetRejects = 0;
                 if (laneGuard != null) laneGuard.Clear();
                 cameraPitch = targetPitch = defaultCameraPitch;
                 cameraPitchVelocity = 0;
@@ -169,11 +192,16 @@ namespace IGVC
                 ApplyPose();
                 Debug.Log("Restored stopped course checkpoint before ROS connection; wheel animation phases reset, no velocity restored.");
             }
+            // Reference Lab drawings must never appear in rendered sensor data; depth copies this mask.
+            sensorCamera.cullingMask &= ~IGVC.Reference.ReferenceLayer.Mask;
             cameraPublisher = sensorCamera.gameObject.AddComponent<ProbeCamera>();
             cameraPublisher.Initialize(ros, this);
             depthPublisher = sensorCamera.gameObject.AddComponent<ProbeDepthCamera>();
             depthPublisher.Initialize(ros, this, sensorCamera);
             ros.Connect(Arg("--ros-ip", "127.0.0.1"), int.Parse(Arg("--ros-port", "10000"), CultureInfo.InvariantCulture));
+            string sandboxDirectory=Arg("--sandbox-dir", "");
+            if(!string.IsNullOrEmpty(sandboxDirectory) && activeVariant!=null)
+                gameObject.AddComponent<SandboxPanel>().Initialize(this,sandboxDirectory);
             Debug.Log(r3aMode ? "IGVC R3-a kinematic oracle started; CAD geometry, provisional sensors, external ROS navigation, no contact physics."
                 : "IGVC transport probe started; ideal motion, synthetic scan/RGB, no CAD or Nav2.");
         }
@@ -193,6 +221,7 @@ namespace IGVC
                     var baseOffset=new Vector3(0,.30385548f,-.25591f);
                     float oldHeight=(robot.position-robot.rotation*baseOffset).y;
                     bool accepted=false;
+                    bool previewFailed=false;
                     for(int attempt=0;attempt<6;attempt++)
                     {
                         double half = motion.Angular * .005;
@@ -204,10 +233,10 @@ namespace IGVC
                         CasterTerrainSupport.Candidate sprung = null;
                         if (CasterMode)
                         {
-                            if (!casterSupport.TryPreview(next,nextYaw,.01,false,out sprung)) break;
+                            if (!casterSupport.TryPreview(next,nextYaw,.01,false,out sprung)) { previewFailed=true; break; }
                             bodyPosition=sprung.Position;bodyRotation=sprung.Rotation;
                         }
-                        else if (!TerrainSupport.TryPose(next,nextYaw,supportSurfaces,out bodyPosition,out bodyRotation)) break;
+                        else if (!TerrainSupport.TryPose(next,nextYaw,supportSurfaces,out bodyPosition,out bodyRotation)) { previewFailed=true; break; }
                         double rise=(bodyPosition-bodyRotation*baseOffset).y-oldHeight;
                         double distance=Math.Sqrt(planarLinear*planarLinear*sinc*sinc*.0001+rise*rise);
                         double budget=Math.Abs(motion.Linear)*.01;
@@ -221,6 +250,10 @@ namespace IGVC
                     }
                     if(!accepted)
                     {
+                        // Count attempted motion only; expose rejection independently
+                        // of Nav2 progress failures without flooding per-frame logs.
+                        if(Math.Abs(motion.Linear)>1e-9 || Math.Abs(motion.Angular)>1e-9)
+                        { if(previewFailed) terrainSupportRejects++; else terrainBudgetRejects++; }
                         motion.RejectMotion(SimTime);planarLinear=0;
                         if(CasterMode && casterSupport.TryPreview(new Vector3((float)-drive.AxleY,0,(float)drive.AxleX),
                             (float)(-drive.Yaw*Mathf.Rad2Deg),.01,false,out var settled)) CommitCasters(settled);
@@ -377,11 +410,12 @@ namespace IGVC
                 capturePath = "";
             }
             if (Time.frameCount % 60 == 0 && !ros.HasConnectionError)
-                ros.Publish("/sim/status", new StringMsg($"{(r3aMode ? "r3a_kinematic_oracle" : "probe")} run={runId} course={courseIdentity} terrain_support={TerrainMode} caster_suspension={CasterMode} camera_pitch={cameraPitch:F4} paused={motion.Paused} estop={motion.Stopped} line_guard={(scoreLinesOnly ? "scoring" : "enforce")} line_blocks={laneGuard?.BlockedSteps ?? 0} sim={SimTime:F2} {cameraPublisher.Diagnostics} {depthPublisher.Diagnostics}"));
+                ros.Publish("/sim/status", new StringMsg($"{(r3aMode ? "r3a_kinematic_oracle" : "probe")} run={runId} course={courseIdentity} terrain_support={TerrainMode} caster_suspension={CasterMode} terrain_support_rejects={terrainSupportRejects} terrain_budget_rejects={terrainBudgetRejects} camera_pitch={cameraPitch:F4} paused={motion.Paused} estop={motion.Stopped} line_guard={(scoreLinesOnly ? "scoring" : "enforce")} line_blocks={laneGuard?.BlockedSteps ?? 0} sim={SimTime:F2} {cameraPublisher.Diagnostics} {depthPublisher.Diagnostics}"));
         }
 
         private void OnGUI()
         {
+            if(GetComponent<SandboxPanel>()!=null) return;
             GUI.Box(new Rect(20, 20, 570, 135), r3aMode ? "R3-a • KINEMATIC ORACLE" : "IGVC • TRANSPORT PROBE");
             GUI.Label(new Rect(35, 48, 460, 100), $"ROS: {(ros.HasConnectionError ? "connecting" : "connected")}   |   sim: {SimTime:F2} s\n"
                     + $"ROS axle pose: x {(r3aMode ? drive.AxleX : motion.X):F2} m, y {(r3aMode ? drive.AxleY : motion.Y):F2} m\n"

@@ -1,0 +1,53 @@
+.sandbox-root { flex-grow: 1; color: rgb(235, 241, 248); font-size: 18px; }
+.topbar { height: 76px; background-color: rgb(16, 24, 36); padding: 12px 22px; flex-direction: row; align-items: center; border-bottom-width: 2px; border-bottom-color: rgb(48, 210, 172); }
+.brand { font-size: 25px; -unity-font-style: bold; margin-right: 28px; }
+.subtitle { color: rgb(161, 179, 199); font-size: 16px; flex-grow: 1; }
+.body { flex-grow: 1; flex-direction: row; }
+.sidebar { width: 480px; background-color: rgba(16, 24, 36, .98); padding: 16px; border-right-width: 1px; border-right-color: rgb(56, 72, 91); }
+.viewport { flex-grow: 1; }
+.footer { min-height: 58px; padding: 12px 22px; background-color: rgb(16, 24, 36); white-space: normal; }
+.row { flex-direction: row; margin-bottom: 6px; }
+.row > Button { flex-grow: 1; margin-right: 6px; }
+.section { margin-top: 18px; margin-bottom: 9px; font-size: 20px; -unity-font-style: bold; }
+.hint { color: rgb(161, 179, 199); font-size: 16px; white-space: normal; margin-bottom: 10px; }
+Button { min-height: 42px; background-color: rgb(42, 57, 75); color: rgb(236, 243, 250); border-width: 1px; border-color: rgb(74, 94, 114); border-radius: 7px; padding: 8px 10px; margin-bottom: 5px; -unity-text-align: middle-center; white-space: normal; }
+Button:hover { background-color: rgb(57, 78, 98); }
+Button:active { background-color: rgb(72, 99, 124); }
+Button:disabled { opacity: .4; }
+.primary { background-color: rgb(28, 114, 97); border-color: rgb(48, 210, 172); }
+.danger { background-color: rgb(116, 46, 55); border-color: rgb(224, 117, 125); }
+.active-tab { border-bottom-width: 3px; border-bottom-color: rgb(48, 210, 172); }
+.unity-base-field { min-height: 40px; margin-bottom: 8px; flex-direction: row; align-items: center; }
+.unity-base-field__label { width: 230px; white-space: normal; font-size: 17px; }
+.unity-base-field__input { flex-grow: 1; min-height: 38px; background-color: rgb(32, 44, 60); border-width: 1px; border-color: rgb(83, 105, 128); border-radius: 5px; padding: 7px; color: white; }
+.unity-text-input { color: white; }
+.unity-base-field:disabled { opacity: .45; }
+.unity-base-popup-field__text { flex-grow: 1; }
+.unity-base-popup-field__input { flex-direction: row; align-items: center; }
+.unity-base-popup-field__arrow { width: 10px; height: 10px; background-color: rgb(48, 210, 172); margin-left: 6px; }
+.unity-scroll-view { flex-grow: 1; }
+.unity-scroll-view__content-viewport { overflow: hidden; }
+.unity-scroller--vertical { width: 16px; }
+.unity-scroller--horizontal { height: 0; display: none; }
+.unity-base-slider__dragger { background-color: rgb(93, 123, 153); min-width: 12px; min-height: 24px; border-radius: 6px; }
+.unity-base-slider__tracker { background-color: rgb(32, 44, 60); }
+.unity-scroll-view__content-container { padding-right: 10px; }
+.unity-base-popup-field__menu { background-color: rgb(23, 35, 50); }
+.unity-generic-dropdown-menu { background-color: rgb(23, 35, 50); color: white; border-width: 1px; border-color: rgb(83, 105, 128); }
+.unity-generic-dropdown-menu__item { min-height: 38px; padding: 8px; }
+.unity-generic-dropdown-menu__item:hover { background-color: rgb(57, 78, 98); }
+.selection-marker { position: absolute; width: 110px; height: 38px; border-width: 2px; border-color: rgb(48, 210, 172); border-radius: 7px; background-color: rgba(16, 24, 36, .9); -unity-text-align: middle-center; font-size: 15px; }
+.topbar, .footer, .sidebar, .row, .run-controls { flex-shrink: 0; }
+.body { min-height: 0; }
+.run-controls { border-top-width: 1px; border-top-color: rgb(56, 72, 91); margin-top: 8px; }
+.unity-scroll-view { min-height: 0; flex-shrink: 1; }
+.unity-scroll-view__content-and-vertical-scroll-container { flex-direction: row; flex-grow: 1; min-height: 0; }
+.unity-scroll-view__content-viewport { flex-grow: 1; min-height: 0; }
+.unity-scroll-view__content-container { flex-shrink: 0; }
+.unity-scroll-view__content-container > * { flex-shrink: 0; }
+.subtitle { flex-shrink: 1; white-space: normal; }
+.ref-warning { color: rgb(255, 196, 92); font-size: 15px; white-space: normal; margin-bottom: 10px; }
+.ref-table { font-size: 14px; white-space: normal; color: rgb(204, 218, 232); margin-bottom: 8px; -unity-font-style: normal; }
+.unity-toggle { min-height: 34px; margin-bottom: 4px; }
+.unity-toggle__checkmark { width: 22px; height: 22px; background-color: rgb(32, 44, 60); border-width: 1px; border-color: rgb(83, 105, 128); border-radius: 4px; }
+.unity-toggle:checked .unity-toggle__checkmark { background-color: rgb(48, 210, 172); border-color: rgb(48, 210, 172); -unity-background-image-tint-color: rgb(16, 24, 36); }

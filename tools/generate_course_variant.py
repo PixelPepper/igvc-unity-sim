@@ -13,6 +13,7 @@ from igvc_gps.geodesy import LocalFrame
 
 BARREL_COLORS = ('red', 'orange', 'blue', 'green', 'yellow', 'white')
 MARGIN = .2
+POTHOLE_RIM_WIDTH = .85  # Must match CourseVariant.Bowl's flat support annulus.
 BODY_RADIUS = math.hypot(1.1, .5)
 DEFAULT_RAMP = dict(id='ramp-001', x=18., y=44.5, yaw=math.pi, width=3.,
                     rise_length=3., deck_length=2., height=.4)
@@ -66,6 +67,14 @@ def obstacle_distance(a,b):
     if ac:return point_box((a['x'],a['y']),b)-a['width']/2
     if bc:return point_box((b['x'],b['y']),a)-b['width']/2
     return polygon_distance(obstacle_box(a),obstacle_box(b))
+
+
+def pothole_rims_clear(a,b):
+    """Neither flat rim may cover the other pothole's unsupported interior."""
+    if a['kind'] != 'pothole' or b['kind'] != 'pothole':
+        return True
+    radii = (max(a['length'],a['width']) + max(b['length'],b['width']))/2
+    return math.hypot(a['x']-b['x'],a['y']-b['y']) >= radii + POTHOLE_RIM_WIDTH
 
 
 def body_clearance(p, yaw, obstacle):
@@ -257,10 +266,11 @@ def generate(seed=2027,difficulty='normal',base=None):
                 if kind=='barricade':
                     if polygon_distance(reserved,obstacle_box(o))<=0:continue
                 else:
-                    radius=max(o['length'],o['width'])/2+.85 if kind=='pothole' else o['width']/2
+                    radius=max(o['length'],o['width'])/2+POTHOLE_RIM_WIDTH if kind=='pothole' else o['width']/2
                     reservation=dict(x=ramp_center,y=44.5,yaw=math.pi,length=10.,width=4.)
                     if point_box((o['x'],o['y']),reservation)<=radius:continue
                 if any(obstacle_distance(o,b)<MARGIN for b in obstacles):continue
+                if any(not pothole_rims_clear(o,b) for b in obstacles):continue
                 conservative=math.inf
                 for p,angle,pad in zip(points,yaw,sweep):
                     reach=max(4.,BODY_RADIUS+pad+math.hypot(o['length'],o['width'])/2+MARGIN)

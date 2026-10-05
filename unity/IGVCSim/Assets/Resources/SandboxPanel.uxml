@@ -1,0 +1,25 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements">
+  <ui:Style src="SandboxPanel.uss" />
+  <ui:VisualElement name="sandboxRoot" class="sandbox-root" picking-mode="Ignore">
+    <ui:VisualElement name="topbar" class="topbar">
+      <ui:Label text="IGVC / SANDBOX" class="brand" />
+      <ui:Label text="Build a course. Tune navigation. Test your ideas." class="subtitle" />
+      <ui:Button name="overview" text="Whole course" />
+      <ui:Button name="follow" text="Follow robot" />
+      <ui:Button name="togglePanel" text="Hide panel [F1]" />
+    </ui:VisualElement>
+    <ui:VisualElement class="body" picking-mode="Ignore">
+      <ui:VisualElement name="sidebar" class="sidebar">
+        <ui:VisualElement class="row">
+          <ui:Button name="courseTab" text="Course editor" class="active-tab" />
+          <ui:Button name="navTab" text="Navigation lab" />
+          <ui:Button name="refTab" text="Reference lab" />
+        </ui:VisualElement>
+        <ui:ScrollView name="content" mode="Vertical" />
+        <ui:VisualElement name="runControls" class="run-controls" />
+      </ui:VisualElement>
+      <ui:VisualElement name="viewport" class="viewport" picking-mode="Ignore" />
+    </ui:VisualElement>
+    <ui:Label name="status" text="Connecting to the sandbox session..." class="footer" />
+  </ui:VisualElement>
+</ui:UXML>

@@ -24,6 +24,17 @@ namespace IGVC
         private bool previousVisibility;
 
         public bool IsFollowing => following;
+        public bool InputBlocked { get; set; }
+        public bool ShowControls { get; set; } = true;
+        public void FrameOverview(Bounds bounds)
+        {
+            float halfFov=GetComponent<Camera>().fieldOfView*Mathf.Deg2Rad*.5f;
+            float horizontal=Mathf.Atan(Mathf.Tan(halfFov)*GetComponent<Camera>().aspect);
+            float fit=bounds.extents.magnitude/Mathf.Sin(Mathf.Min(halfFov,horizontal));
+            overviewTarget=bounds.center;
+            overviewPosition=bounds.center+new Vector3(.45f,.8f,-.4f).normalized*Mathf.Min(MaximumDistance,fit*1.12f);
+            ShowOverview();
+        }
 
         // Serialized configuration survives the editor-generated scene/player build.
         public void Configure(Transform robot, Vector3 overviewPosition, Vector3 overviewTarget)
@@ -48,7 +59,7 @@ namespace IGVC
                 enabled = false;
                 return;
             }
-            Initialize();
+            if(!initialized) Initialize();
         }
 
         private void Initialize()
@@ -66,7 +77,7 @@ namespace IGVC
         {
             if (robot == null) { ReleaseCursor(); return; }
             if (!initialized) Initialize();
-            if (!Application.isFocused)
+            if (!Application.isFocused || InputBlocked)
             {
                 ReleaseCursor();
                 if (following) target = Vector3.Lerp(target, RobotTarget(), 1f - Mathf.Exp(-12f * Time.unscaledDeltaTime));
@@ -170,7 +181,7 @@ namespace IGVC
 
         private void OnGUI()
         {
-            if (!initialized) return;
+            if (!initialized || !ShowControls) return;
             float width = Mathf.Min(640f, Screen.width - 40f);
             GUI.Box(new Rect(20, Screen.height - 70, width, 50),
                 "View: " + (following ? "follow robot" : "free orbit")

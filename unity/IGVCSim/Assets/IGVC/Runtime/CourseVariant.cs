@@ -10,6 +10,7 @@ namespace IGVC
     // Startup-only environment loading. No geometry is published to perception.
     public static class CourseVariant
     {
+        public const double PotholeRimWidth = .85;
         [Serializable] public class Point { public double x, y, half_width; public bool painted; }
         [Serializable] public class Obstacle
         { public string id, kind, color; public double x, y, yaw, length, width, height, depth; }
@@ -23,6 +24,7 @@ namespace IGVC
             public Obstacle[] obstacles;
             public CourseRamp.Definition[] ramps;
             [NonSerialized] public Collider[] support_surfaces;
+            [NonSerialized] public GameObject runtime_root;
         }
         private static Vector3 World(double x, double y, double z=0) => new Vector3((float)-y,(float)z,(float)x);
         private static Material Paint(Color color)
@@ -44,7 +46,7 @@ namespace IGVC
                 default: throw new InvalidDataException("Unknown barrel color: "+name);
             }
         }
-        public static Manifest Load(string path, LaneBoundaryGuard guard)
+        public static Manifest Read(string path)
         {
             if (new FileInfo(path).Length>4000000) throw new InvalidDataException("Course manifest too large");
             var m=JsonUtility.FromJson<Manifest>(File.ReadAllText(path));
@@ -65,13 +67,31 @@ namespace IGVC
                     || o.height<0||o.height>3||o.depth<0||o.depth>1
                     || (o.kind!="barrel"&&o.kind!="barricade"&&o.kind!="pothole"))
                     throw new InvalidDataException("Invalid obstacle");
+            for(int i=0;i<m.obstacles.Length;i++)
+                for(int j=i+1;j<m.obstacles.Length;j++)
+                {
+                    var a=m.obstacles[i];var b=m.obstacles[j];
+                    if(a.kind!="pothole" || b.kind!="pothole") continue;
+                    double separation=Math.Sqrt(Math.Pow(a.x-b.x,2)+Math.Pow(a.y-b.y,2));
+                    double minimum=(Math.Max(a.length,a.width)+Math.Max(b.length,b.width))/2+PotholeRimWidth;
+                    if(separation<minimum)
+                        throw new InvalidDataException("Pothole rim overlaps another depression");
+                }
             if(m.ramps != null && m.ramps.Length>1) throw new InvalidDataException("At most one course ramp is supported");
             foreach(var o in m.obstacles) if(o.kind=="barrel") BarrelColor(o.color);
             if(m.ramps != null) foreach(var ramp in m.ramps) CourseRamp.Validate(ramp);
+            return m;
+        }
+        public static Manifest Load(string path, LaneBoundaryGuard guard, bool replacing=false)
+        {
+            var m=Read(path);
             var original=GameObject.Find("Course frame (source spawn to odom origin)");
-            if (original==null) throw new InvalidOperationException("Expected reference course root missing");
-            original.SetActive(false);
+            if (!replacing && original==null) throw new InvalidOperationException("Expected reference course root missing");
             var root=new GameObject("Procedural IGVC seed "+m.seed).transform;
+            m.runtime_root=root.gameObject;
+            root.gameObject.AddComponent<CourseRuntimeResources>();
+            var stagedGuard=root.gameObject.AddComponent<LaneBoundaryGuard>();
+            try {
             var gray=Paint(new Color(.40f,.42f,.43f));
             var white=Paint(Color.white);var orange=Paint(new Color(1,.36f,.025f));
             var dark=Paint(new Color(.045f,.045f,.045f));
@@ -82,17 +102,17 @@ namespace IGVC
                 if(!barrelMaterials.ContainsKey(key))barrelMaterials[key]=Paint(BarrelColor(key));
             }
             var ground=Ground(root,m,gray);
+            var supports=new List<Collider>{ground};
             if(m.ramps != null && m.ramps.Length>0)
             {
-                var supports=new List<Collider>{ground};
                 var rampMaterial=Paint(new Color(.24f,.32f,.29f));
                 foreach(var ramp in m.ramps) supports.AddRange(CourseRamp.Create(root,ramp,rampMaterial));
-                m.support_surfaces=supports.ToArray();
             }
-            Lanes(root,m,white,guard);
+            Lanes(root,m,white,stagedGuard);
             foreach(var o in m.obstacles)
             {
                 var item=new GameObject(o.kind+" "+o.id).transform;
+                item.gameObject.AddComponent<SandboxObstacle>().Id=o.id;
                 item.SetParent(root,false);item.position=World(o.x,o.y);
                 item.rotation=Quaternion.Euler(0,(float)(-o.yaw*Mathf.Rad2Deg),0);
                 if(o.kind=="barrel")
@@ -111,12 +131,23 @@ namespace IGVC
                     foreach(float side in new[]{-.35f,.35f})
                         Primitive(item,PrimitiveType.Cube,new Vector3(0,(float)o.height*.18f,(float)o.length*side),new Vector3((float)o.width,(float)o.height*.36f,.07f),orange);
                 }
-                else Bowl(item,o,gray,dark);
+                else supports.Add(Bowl(item,o,gray,dark));
             }
+            // Ground cells are removed around each pothole. Its rendered flat rim
+            // fills the coarse cutout outside the actual opening and must also
+            // support the wheels. The depression itself remains unsupported.
+            m.support_surfaces=supports.ToArray();
             Physics.SyncTransforms();
-            if(!guard.CanOccupy(0,0,0)) throw new InvalidDataException("Variant spawn overlaps paint");
+            if(!stagedGuard.CanOccupy(0,0,0)) throw new InvalidDataException("Variant spawn overlaps paint");
+            guard.Configure(stagedGuard.CopySegments());guard.Clear();
+            if(original!=null)original.SetActive(false);
             Debug.Log("IGVC_COURSE_VARIANT_READY seed="+m.seed+" objects="+m.obstacles.Length+" pitch="+m.camera_pitch_rad);
             return m;
+            } catch {
+                root.gameObject.SetActive(false);
+                if(Application.isPlaying)UnityEngine.Object.Destroy(root.gameObject);else UnityEngine.Object.DestroyImmediate(root.gameObject);
+                throw;
+            }
         }
         private static void Primitive(Transform root,PrimitiveType kind,Vector3 position,Vector3 scale,Material material)
         {
@@ -153,7 +184,7 @@ namespace IGVC
                 }
             return MeshObject(root,"Flat ground with cutouts",v,t,gray);
         }
-        private static void Bowl(Transform root,Obstacle o,Material gray,Material dark)
+        private static Collider Bowl(Transform root,Obstacle o,Material gray,Material dark)
         {
             double radius=Math.Max(o.length,o.width)/2;
             var v=new List<Vector3>();var t=new List<int>();
@@ -162,11 +193,13 @@ namespace IGVC
             {
                 double a=i*Math.PI/32,b=(i+1)*Math.PI/32;
                 Func<double,double,double,Vector3> ring=(angle,r,z)=>new Vector3((float)(r*Math.Cos(angle)),(float)z,(float)(r*Math.Sin(angle)));
-                Quad(v,t,ring(a,radius+.85,0),ring(b,radius+.85,0),ring(b,radius,0),ring(a,radius,0));
+                Quad(v,t,ring(a,radius+PotholeRimWidth,0),ring(b,radius+PotholeRimWidth,0),ring(b,radius,0),ring(a,radius,0));
                 Quad(inside,it,ring(a,radius,-.002),ring(b,radius,-.002),ring(b,radius*.4,-o.depth),ring(a,radius*.4,-o.depth));
                 Quad(inside,it,ring(a,radius*.4,-o.depth),ring(b,radius*.4,-o.depth),new Vector3(0,(float)-o.depth,0),new Vector3(0,(float)-o.depth,0));
             }
-            MeshObject(root,"Pothole rim",v,t,gray);MeshObject(root,"Dark depression",inside,it,dark);
+            var rim=MeshObject(root,"Pothole rim",v,t,gray);
+            MeshObject(root,"Dark depression",inside,it,dark);
+            return rim;
         }
         private static void Lanes(Transform root,Manifest m,Material white,LaneBoundaryGuard guard)
         {
@@ -215,4 +248,23 @@ namespace IGVC
             return World(point.x,point.y,height+.008);
         }
     }
+
+    // Runtime meshes/materials are owned by one generated environment. Repeated
+    // sandbox edits must release them; shared Resources assets are never destroyed.
+    public sealed class CourseRuntimeResources : MonoBehaviour
+    {
+        private void OnDestroy()
+        {
+            var meshes=new HashSet<Mesh>();var materials=new HashSet<Material>();
+            foreach(var filter in GetComponentsInChildren<MeshFilter>(true))
+                if(filter.sharedMesh!=null && filter.sharedMesh.name.StartsWith("Flat ground")
+                    || filter.sharedMesh!=null && (filter.sharedMesh.name=="Procedural painted boundaries"
+                    || filter.sharedMesh.name=="Pothole rim" || filter.sharedMesh.name=="Dark depression")) meshes.Add(filter.sharedMesh);
+            foreach(var renderer in GetComponentsInChildren<Renderer>(true))
+                foreach(var material in renderer.sharedMaterials) if(material!=null) materials.Add(material);
+            foreach(var mesh in meshes) {if(Application.isPlaying)Destroy(mesh);else DestroyImmediate(mesh);}
+            foreach(var material in materials) {if(Application.isPlaying)Destroy(material);else DestroyImmediate(material);}
+        }
+    }
+    public sealed class SandboxObstacle : MonoBehaviour { public string Id; }
 }

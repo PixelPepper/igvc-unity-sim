@@ -11,6 +11,7 @@ namespace IGVC
         public int BlockedSteps { get; private set; }
         public void Configure(Segment[] value) { segments = value ?? throw new ArgumentNullException(nameof(value)); }
         public void Clear() { BlockedSteps = 0; }
+        public Segment[] CopySegments() => segments==null ? Array.Empty<Segment>() : (Segment[])segments.Clone();
         public bool CanOccupy(double x, double y, double yaw)
         {
             if (segments == null || segments.Length == 0) return false;

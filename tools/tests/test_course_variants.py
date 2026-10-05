@@ -5,7 +5,7 @@ import sys
 import unittest
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from generate_course_variant import generate
+from generate_course_variant import generate, pothole_rims_clear
 
 
 def rectangle(x,y,yaw,extents):
@@ -42,6 +42,31 @@ class CourseVariantChecks(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.course,cls.mission=generate(2027,'normal')
+
+    def assert_pothole_support_rims_separated(self,course):
+        holes=[o for o in course['obstacles'] if o['kind']=='pothole']
+        for i,a in enumerate(holes):
+            for b in holes[i+1:]:
+                bowl_radii=(max(a['length'],a['width'])+max(b['length'],b['width']))/2
+                self.assertGreaterEqual(math.dist((a['x'],a['y']),(b['x'],b['y']))-bowl_radii,
+                                        .85-1e-9,(a['id'],b['id']))
+
+    def test_pothole_rim_cannot_support_nearby_depression(self):
+        a=dict(kind='pothole',x=0.,y=0.,length=.9,width=.9)
+        # A 1.30m outer rim would cover the second center at 1.20m, even
+        # though the old bowl-to-bowl clearance is a permissible 0.30m.
+        b=dict(a,x=1.2)
+        self.assertFalse(pothole_rims_clear(a,b))
+        self.assertFalse(pothole_rims_clear(b,a))
+        # At 1.75m the rim and the other bowl meet only at their boundary.
+        self.assertTrue(pothole_rims_clear(a,dict(b,x=1.75)))
+        self.assertTrue(pothole_rims_clear(a,dict(b,x=1.8)))
+        # Unity uses the larger dimension for a noncircular manifest entry.
+        stretched=dict(a,length=1.6)
+        self.assertFalse(pothole_rims_clear(stretched,dict(b,x=1.95)))
+        self.assertTrue(pothole_rims_clear(stretched,dict(b,x=2.2)))
+        for kind in ('barrel','barricade'):
+            self.assertTrue(pothole_rims_clear(a,dict(b,kind=kind)))
 
     def test_seed_determinism_and_variation(self):
         self.assertEqual((self.course,self.mission),generate(2027,'normal'))
@@ -135,6 +160,7 @@ class CourseVariantChecks(unittest.TestCase):
             for seed in (0, 7, 13, 2027, 2028, 2029):
                 with self.subTest(seed=seed,difficulty=difficulty):
                     course,_=generate(seed,difficulty)
+                    self.assert_pothole_support_rims_separated(course)
                     lane=course['centerline'];center=lane_midpoint_x(course)
                     left=min(p['x'] for p in lane);right=max(p['x'] for p in lane)
                     boundary_lines=[]
@@ -198,6 +224,7 @@ class CourseVariantChecks(unittest.TestCase):
                         self.assertGreaterEqual(math.dist(local,near)-o['width']/2,.2,o['id'])
 
     def test_no_obstacle_overlap(self):
+        self.assert_pothole_support_rims_separated(self.course)
         obstacles=self.course['obstacles']
         for i,a in enumerate(obstacles):
             for b in obstacles[i+1:]:

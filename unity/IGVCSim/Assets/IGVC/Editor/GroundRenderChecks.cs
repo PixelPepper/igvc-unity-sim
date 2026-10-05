@@ -30,6 +30,7 @@ public static class GroundRenderChecks
 
     public static void BuildCourse()
     {
+        CourseSupportChecks.Run();
         Run();
         DepthChecks.BuildCourse();
     }
