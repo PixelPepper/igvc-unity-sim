@@ -14,7 +14,11 @@ passing runs remain narrow and host load is uncontrolled; no promotion or causal
 speed improvement is claimed.
 The earlier terminal audit failure is preserved alongside its separate corrected
 20/20 re-audit. Completion instrumentation is integrated at 02cea95 with all
-598 combined tests passing; live wiring remains unverified. Opus now owns complete
+598 combined tests passing. The opt-in replacement-path fallback is now integrated
+at 0f76a2a with 610 combined tests passing; it sends checked geometry and remains
+off by default. T0024 is testing off-mode and completion telemetry; enabled live
+benefit remains unverified. Failed recovery diagnostics are being added separately
+under T0023, without changing recovery behavior. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the

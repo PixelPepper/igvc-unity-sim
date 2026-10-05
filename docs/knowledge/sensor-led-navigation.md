@@ -4,7 +4,7 @@ title: Sensor-led navigation
 description: The observed-only planning pipeline and its hard safety checks.
 tags: [navigation, planning, guidance, path-entry, safety]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
+generated: { by: codex/gpt-6-astra, at: 2026-10-05T11:52:57.866375Z }
 sources:
   - id: sensor-autonomy
     resource: ../SENSOR_AUTONOMY.md
@@ -13,8 +13,13 @@ sources:
     resource: ../../tools/observed_navigation.py
   - id: path-entry
     resource: ../../tools/path_entry.py
-# path_entry.py is linked but not pinned until its pending T-0014 change integrates.
+  - id: replacement-path
+    resource: ../../tools/replacement_path.py
 igvc_sources:
+  - path: tools/path_entry.py
+    sha256: 4f11a1cbc4e894df92acdceabf745e8fc4ac9414dd41bd44fdb4dc6aceb574ac
+  - path: tools/replacement_path.py
+    sha256: d86453392284eb244cb346ff533ad582a238471caac800c4508a8ab03a348da7
   - path: docs/SENSOR_AUTONOMY.md
     sha256: 1dd11e27fafbce6866bebc09943c8d2a76d5890cc7bf702803035a091ecf995c
   - path: tools/observed_navigation.py
@@ -33,8 +38,13 @@ and the independent audit only.[^sensor-autonomy]
    the shared observed span.[^guidance]
 2. **Search.** The search admits only full-footprint, forward, curvature-bounded paths under a wall and expansion budget.
 3. **Path entry.** Path entry joins the latest pose with a checked forward biarc and re-sweeps the connector and the
-   remaining path. It rejects stale poses, lethal cells and unknown cells.[^path-entry]
-4. **Recovery.** Recovery uses checked backups within a bounded budget.
+   remaining path. It rejects excessive tracking error, lethal cells and unknown cells.[^path-entry]
+   The caller checks stream freshness; that does not prove zero pose drift during admission and dispatch.
+4. **Replacement fallback (experimental, default off).** With the explicit revalidation option, a rejected new
+   proposal may trigger one check of the accepted active path for the same action/destination. Only the resulting
+   checked connector and suffix are submitted; the old geometry is not blindly retained.[^replacement-path]
+   Unit checks are separate from live preemption, timing and performance evidence.
+5. **Recovery.** Recovery uses checked backups within a bounded budget.
 
 # Not claimed
 
@@ -43,3 +53,5 @@ A bounded search that finds no route is not proof that no route exists. Replay o
 [^sensor-autonomy]: Sensor-led autonomy design
 [^guidance]: Observed navigation guidance
 [^path-entry]: Path-entry admission
+
+[^replacement-path]: Optional checked replacement fallback
