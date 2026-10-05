@@ -17,9 +17,12 @@ The earlier terminal audit failure is preserved alongside its separate corrected
 598 combined tests passing. The opt-in replacement-path fallback is now integrated
 at 0f76a2a with 610 combined tests passing; it sends checked geometry and remains
 off by default. T0024 passed6/6 and20/20 in368.77s with zero charged backups,
-validating the off-mode control and normal completion telemetry. Enabled live
-benefit remains unverified. Failed recovery diagnostics are being added separately
-under T0023, without changing recovery behavior. Opus now owns complete
+validating the off-mode control and normal completion telemetry. T0025 enabled
+comparison failed 2/6 and 14/20 after 208.66 s: 26 fallbacks were logged accepted,
+but 23 ended aborted and three succeeded. Source/profile/player/course/mission
+matched the control; causality and benefit remain unverified. Keep default off.
+Failed recovery diagnostics and a cleanup guard are being reviewed separately
+under T0023/T0026, without changing recovery behavior. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the

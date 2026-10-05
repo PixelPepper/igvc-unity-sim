@@ -1,5 +1,34 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Enabled fallback: logged acceptance, but another failed lap
+
+[T-0025](../agents/tasks/T-0025-replacement-enabled-trial.md) enabled only the
+replacement revalidation flag at the same 0f76a2a source as the passing control.
+It stopped at **2/6 after 208.661111 s; the independent audit passed 14/20 checks**.
+The recorded stop reason was no observed collision-free backup with useful
+forward clearance. No backup attempt was charged. Processing health passed
+2089 samples with zero failed/unknown samples and a maximum gap of 0.122085 s;
+this does not establish adequate lane visibility or correct guidance.
+
+Twenty-six fallback submissions were logged as accepted by the action server.
+Sol independently correlated their prior/new IDs, sequence, destination, target,
+replacement ID and admission records. Of those actions, 23 ended aborted and
+three succeeded. Full transmitted path geometry was not independently captured;
+event agreement and reviewed send wiring are the available evidence.
+
+All 18 runtime source hashes, profile, player, course and mission match the control.
+Root and Sol verified cleanup through session records, absent player/listener and
+exclusive lease availability. Both reviewers accepted the qualified failure record.
+The feature remains **off by default**. One partial run under uncontrolled load
+establishes neither an improvement nor a causal regression or harmlessness.
+Completion, return, ramp and ordered-loop checks failed; collision, paint and
+speed checks passed on the recorded partial trajectory.
+
+Local artifacts: artifacts/iterations/2026-10-05/replacement-enabled-1.
+Run SHA256: 2a294b916141b09784cfd9bc41ab979213952c4b63ac85179075154ed6b3284e.
+Recovery diagnostics in T0023/T0026 are separate pending work; this run does not
+contain their new exact-input failure capture.
+
 ## Default-off control after instrumentation: one audited pass
 
 [T-0024](../agents/tasks/T-0024-replacement-control-trial.md) ran at
@@ -22,7 +51,7 @@ reported zero endpoint displacement is **not proof of physical stationarity**.
 The 64 retained loop evaluations are only the end of the run, not sensor-rate data.
 
 This validates one normal off-mode run and the recorder's live wiring. The enabled
-fallback has no live result yet, failed-recovery capture is a separate pending
+fallback result is recorded above, failed-recovery capture is a separate pending
 change, and the repeatability/held-out promotion gate remains unmet.
 Local artifacts: artifacts/iterations/2026-10-05/replacement-control-1.
 Run SHA256: d31e3a1ad4489895cae341be6707961c02b689647edde1c008add72d4d29e2a4.
