@@ -5,15 +5,15 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0029** `changes-requested`: Support explicit held-out seeds in the managed trial runner (DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0028](tasks/T-0028-instrumented-repeat.md): Second fixed-version instrumented seed-2027 lap | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DISPATCH by gpt-6-astra at 2026-10-05T05:44:46.509854-07:00 |
+| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 85c67c30bd4d7b21a265dd68772680bd1753ee42 | DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
+| [T-0030](tasks/T-0030-instrumented-third.md): Third fixed-version instrumented seed-2027 lap | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DISPATCH by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `ready` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T05:45:34.041347-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -42,6 +42,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0025](tasks/T-0025-replacement-enabled-trial.md): Compare enabled checked replacement fallback to the frozen off-mode control | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 0f76a2ac6090de0cf83c8f57bd471874dbffe552 | DECISION by gpt-6-astra at 2026-10-05T05:29:18.795544-07:00 |
 | [T-0026](tasks/T-0026-capture-stop-guard.md): Skip deferred recovery capture when command-stop cleanup failed | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 9cdfd99131548ec22181da229f37edf8fc30ed25 | INTEGRATION by gpt-6-astra at 2026-10-05T05:33:30.385245-07:00 |
 | [T-0027](tasks/T-0027-recovery-instrumented-trial.md): Exercise reviewed recovery evidence in one unchanged-policy live trial | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T05:44:46.509854-07:00 |
+| [T-0028](tasks/T-0028-instrumented-repeat.md): Second fixed-version instrumented seed-2027 lap | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
