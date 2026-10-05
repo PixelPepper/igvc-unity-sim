@@ -56,6 +56,42 @@ class RecoveryPolicyTests(unittest.TestCase):
                 self.assertIsNone(self.plan(costs,forward_planner=forward))
                 forward.assert_not_called()
 
+    def test_parallel_close_hazard_preserves_configured_side_clearance(self):
+        costs = self.grid()
+        # The painted row starts at Y=4.10; the padded body ends at Y=4.09.
+        # Old isotropic 0.025m sweep padding falsely intersected this row.
+        self.wall(costs, 20, 57, 41, 42)
+        self.assertFalse(_rectangle_clear(5., 3.57, 0.,
+            (-1.145, .645, -.545, .545), costs, self.size, self.size, .1, (0,0)))
+        for y, expected in ((3.57, True), (3.59, False)):
+            with self.subTest(body_y=y):
+                forward = Mock(return_value={'local_goal': (7., y), 'diagnostics': {
+                    'expanded_cells': 1, 'local_path_length': 3.,
+                    'checked_continuation_length': 1., 'endpoint': (8., 8.)}})
+                result = select_backup_recovery((0,0), .1, self.size, self.size,
+                    costs, (5.,y), 0., (9.,8.), goal_footprint=self.footprint,
+                    distances=(.6,), forward_planner=forward)
+                self.assertEqual(result is not None, expected)
+                if expected:
+                    self.assertEqual(result['distance_m'], .6)
+                    self.assertEqual(result['diagnostics']['rear_body_sweep'],
+                                     'exact_fixed_yaw_rectangle_union')
+                else:
+                    forward.assert_not_called()
+
+    def test_rotated_sweep_rejects_thin_rear_barrier_between_clear_endpoints(self):
+        costs = self.grid()
+        self.wall(costs, 20, 41, 25, 26)
+        footprint = (-.1,.1,-.1,.1)
+        for y in (3.5, 1.7):
+            self.assertTrue(_rectangle_clear(3.5,y,math.pi/2,footprint,
+                costs,self.size,self.size,.1,(0,0)))
+        forward = Mock(return_value=None)
+        self.assertIsNone(select_backup_recovery((0,0),.1,self.size,self.size,
+            costs,(3.5,3.5),math.pi/2,(9.,8.),goal_footprint=footprint,
+            distances=(1.8,),forward_planner=forward))
+        forward.assert_not_called()
+
     def test_observed_navigation_partial_survives_spawn_and_preserves_guidance(self):
         costs = self.grid()
         self.wall(costs, 60, 63, 0, 60)
@@ -93,6 +129,40 @@ class RecoveryPolicyTests(unittest.TestCase):
                 'diagnostics':{'expanded_cells':1,'local_path_length':1.2,
                     'checked_continuation_length':2.,'endpoint':(8.,8.)}}
         self.assertIsNone(self.plan(costs,forward_planner=forward))
+
+    def test_nearby_terminal_escape_needs_no_reserve_beyond_reached_target(self):
+        # A real checked route from the backed-up pose can finish at a nearby
+        # target instead of requiring an artificial extra metre beyond it.
+        result = select_backup_recovery((0,0), .1, self.size, self.size,
+            self.grid(), (5.,3.5), 0., (6.,3.5), goal_footprint=self.footprint,
+            distances=(.6,), forward_options={'robot_radius':.5,
+                'minimum_turn_radius':1.25, 'lookahead':7.})
+        self.assertIsNotNone(result)
+        self.assertTrue(result['diagnostics']['terminal_escape'])
+        self.assertEqual(result['forward_plan']['diagnostics']['checked_continuation_length'], 0.)
+        self.assertLessEqual(math.dist(result['forward_plan']['path'][-1], (6.,3.5)), .25)
+        self.assertGreaterEqual(result['diagnostics']['original_trap_progress_m'], .5)
+
+    def test_nonterminal_dead_end_and_terminal_return_to_trap_are_rejected(self):
+        for target, goal in (((8.,3.5),(5.6,3.5)), ((5.2,3.5),(5.2,3.5))):
+            with self.subTest(target=target):
+                forward = Mock(return_value={'local_goal':goal,
+                    'path':[(3.8,3.5),goal], 'diagnostics':{
+                        'guidance_target':target, 'endpoint':goal,
+                        'expanded_cells':1, 'local_path_length':math.dist((3.8,3.5),goal),
+                        'checked_continuation_length':0.}})
+                self.assertIsNone(select_backup_recovery((0,0),.1,self.size,self.size,
+                    self.grid(),(5.,3.5),0.,(9.,8.),goal_footprint=self.footprint,
+                    distances=(1.2,),forward_planner=forward))
+                forward.assert_called_once()
+
+    def test_full_route_terminal_diagnostics_do_not_certify_truncated_local_path(self):
+        forward = Mock(return_value={'local_goal':(5.6,3.5),
+            'path':[(4.4,3.5),(5.6,3.5)], 'diagnostics':{
+                'guidance_target':(8.,3.5), 'endpoint':(8.,3.5),
+                'expanded_cells':1, 'local_path_length':1.2,
+                'checked_continuation_length':0.}})
+        self.assertIsNone(self.plan(self.grid(),distances=(.6,),forward_planner=forward))
 
     def test_no_forward_escape_in_observed_closed_corridor(self):
         costs=self.grid()

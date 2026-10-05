@@ -1,12 +1,266 @@
 """Lane guidance must still obey observed collision geometry."""
 from pathlib import Path
+import math
 import sys
 import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from observed_navigation import plan_observed_navigation
+from observed_navigation import (plan_observed_navigation, select_observed_guidance,
+                                 refine_corridor_guidance)
+from sensor_route_policy import _rectangle_clear
 
 
 class ObservedNavigationTests(unittest.TestCase):
+    footprint = (-1.12,.62,-.52,.52)
+
+    def gate_fixture(self, blockage=None):
+        paint = [(x/5,y) for x in range(25,91) for y in (4.,10.)]
+        costs = [0]*12100
+        if blockage is not None:
+            # A small obstacle blocks the mouth midpoint but leaves both sides.
+            # A full strip also leaves free space outside the observed lanes.
+            rows = range(33,37) if blockage == 'barrel' else range(20,50)
+            value = -1 if blockage == 'unknown' else 100
+            for y in rows:
+                for x in range(21,26):
+                    costs[y*110+x] = value
+        self.assertTrue(_rectangle_clear(2.,7.,0.,self.footprint,
+            costs,110,110,.2,(0.,0.)))
+        diagnostics = {}
+        selection = select_observed_guidance(paint,(2.,7.),0.,(20.,15.),
+            guidance_diagnostics=diagnostics)
+        return paint,costs,selection,diagnostics['corridor']
+
+    def test_blocked_midpoint_uses_supported_clear_lateral_gate_and_checked_route(self):
+        paint,costs,original,corridor = self.gate_fixture('barrel')
+        self.assertFalse(_rectangle_clear(*original['target'],original['yaw'],
+            self.footprint,costs,110,110,.2,(0.,0.)))
+        selected,evidence = refine_corridor_guidance(original,corridor,
+            (0.,0.),.2,110,110,costs,self.footprint)
+        self.assertIsNotNone(selected)
+        self.assertEqual(selected['yaw'],original['yaw'])
+        self.assertAlmostEqual(selected['target'][0],evidence['observed_station_span_m'][0])
+        self.assertGreater(abs(selected['target'][1]-7.),.5)
+        self.assertTrue(4.52 <= selected['target'][1] <= 9.48)
+        self.assertAlmostEqual(evidence['station_projection_m'],.6)
+        self.assertTrue(_rectangle_clear(*selected['target'],selected['yaw'],
+            self.footprint,costs,110,110,.2,(0.,0.)))
+        diagnostic = {}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,costs,
+            (2.,7.),0.,(20.,15.),paint,guidance_diagnostics=diagnostic,
+            robot_radius=.5,forward_only=True,minimum_turn_radius=.65,
+            goal_footprint=self.footprint,min_goal_distance=.4,
+            continuation_reserve=1.,max_search_seconds=.5)
+        self.assertIsNotNone(plan)
+        self.assertEqual(diagnostic['guidance_target'],selected['target'])
+        # Reach alongside the obstacle, rather than merely stopping before it.
+        self.assertGreater(plan['path'][-1][0],4.7)
+        self.assertGreater(abs(plan['path'][-1][1]-7.),.5)
+        self.assertTrue(plan['diagnostics']['full_footprint_sweep'])
+        for point,yaw in zip(plan['path'],plan['path_yaws']):
+            self.assertTrue(_rectangle_clear(*point,yaw,self.footprint,
+                costs,110,110,.2,(0.,0.)))
+
+    def test_full_gate_barrier_or_unknown_cannot_select_outside_lanes(self):
+        for blockage in ('wall','unknown'):
+            with self.subTest(blockage=blockage):
+                _,costs,selection,corridor = self.gate_fixture(blockage)
+                refined,evidence = refine_corridor_guidance(selection,corridor,
+                    (0.,0.),.2,110,110,costs,self.footprint)
+                self.assertIsNone(refined)
+                self.assertEqual(evidence['reason'],'observed_gate_blocked')
+                self.assertLessEqual(evidence['candidates_checked'],35)
+
+    def test_clear_midpoint_and_non_corridor_intent_are_preserved(self):
+        _,costs,selection,corridor = self.gate_fixture()
+        refined,evidence = refine_corridor_guidance(selection,corridor,
+            (0.,0.),.2,110,110,costs,self.footprint)
+        self.assertEqual(refined,selection)
+        self.assertEqual(evidence['reason'],'original_target_clear')
+        for guidance in ('broad_gps','remembered_lane_entrance'):
+            other = dict(guidance=guidance,target=[4.4,7.],yaw=None)
+            refined,_ = refine_corridor_guidance(other,None,(0.,0.),.2,
+                110,110,[-1]*12100,self.footprint)
+            self.assertEqual(refined,other)
+
+    def test_frozen_midpoint_is_not_laterally_retargeted(self):
+        paint,costs,selection,_ = self.gate_fixture('barrel')
+        diagnostic = {}
+        plan_observed_navigation((0.,0.),.2,110,110,costs,(2.,7.),0.,
+            (20.,15.),paint,frozen_guidance=selection,
+            guidance_diagnostics=diagnostic,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65,goal_footprint=self.footprint,
+            min_goal_distance=.4,max_search_seconds=.1)
+        self.assertEqual(diagnostic['guidance_target'],selection['target'])
+        self.assertNotIn('corridor_target_refinement',diagnostic)
+
+    def test_unknown_far_target_retains_checked_partial_progress_and_intent(self):
+        paint,_,_,_ = self.gate_fixture()
+        costs = [0]*12100
+        for y in range(110):
+            for x in range(60,110):
+                costs[y*110+x] = -1
+        diagnostic = {}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,costs,
+            (6.,7.),0.,(20.,15.),paint,lookahead=7.,
+            guidance_diagnostics=diagnostic,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65,goal_footprint=self.footprint,
+            min_goal_distance=.4,continuation_reserve=1.,max_search_seconds=.5)
+        self.assertIsNotNone(plan)
+        self.assertEqual(diagnostic['guidance'],'observed_lane_corridor')
+        self.assertAlmostEqual(diagnostic['guidance_target'][0],13.)
+        self.assertEqual(diagnostic['corridor_target_refinement']['reason'],
+                         'observed_gate_blocked')
+        self.assertGreater(plan['local_goal'][0],7.)
+        for point,yaw in zip(plan['path'],plan['path_yaws']):
+            self.assertTrue(_rectangle_clear(*point,yaw,self.footprint,
+                costs,110,110,.2,(0.,0.)))
+
+    def test_oblique_entry_uses_observed_overlap_beyond_radial_mouth_limit(self):
+        lanes = [(x/10,y) for x in range(33,97) for y in (1.3,7.3)]
+        diagnostic = {}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
+            (2.5,5.8),-.9,(3.1,16.),lanes,lookahead=7.,
+            guidance_diagnostics=diagnostic,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65,goal_footprint=(-1.12,.62,-.52,.52),
+            min_goal_distance=.4,continuation_reserve=1.,max_search_seconds=.5)
+        self.assertIsNotNone(plan)
+        self.assertEqual(diagnostic['entrance_state'],'observed_mouth_handoff')
+        mouth = diagnostic['corridor']['diagnostics']['mouth_entry']
+        self.assertGreater(math.dist((2.5,5.8),mouth),1.1)
+        target = diagnostic['guidance_target']
+        self.assertGreater(target[0],6.)
+        self.assertLessEqual(target[0],9.6)
+        self.assertAlmostEqual(target[1],4.3,places=5)
+        self.assertTrue(plan['diagnostics']['full_footprint_sweep'])
+
+    def test_outside_observed_sides_or_before_supported_mouth_does_not_handoff(self):
+        lanes = [(x/10,y) for x in range(33,97) for y in (1.3,7.3)]
+        for pose in ((3.1,8.1),(1.8,5.8)):
+            with self.subTest(pose=pose):
+                diagnostic = {}
+                select_observed_guidance(lanes,pose,-.9,(3.1,16.),
+                    lookahead=7.,guidance_diagnostics=diagnostic)
+                self.assertNotEqual(diagnostic.get('entrance_state'),'observed_mouth_handoff')
+
+    def near_mouth_plan(self, barrier=None, paint=True):
+        # Reproduces the integrated stop: axle between observed sides, near
+        # their beginning, but oblique to the corridor. The mouth is behind the
+        # axle and still ahead along body X; a short mouth goal cannot turn in.
+        lanes = [(x/10,y) for x in range(33,97) for y in (1.3,7.3)] if paint else []
+        costs = [0]*12100
+        if barrier is not None:
+            # The rotated body's maximum X is about 3.893 m. Place the strip
+            # at 4.2 m, proving a clear start before blocking continuation.
+            # Unknown is as blocking as lethal; a partial safe path is allowed.
+            for y in range(110):
+                for x in range(21,110):
+                    costs[y*110+x] = barrier
+            self.assertTrue(_rectangle_clear(3.1,5.19,-.9,
+                (-1.12,.62,-.52,.52),costs,110,110,.2,(0.,0.)))
+        diagnostic = {}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,costs,
+            (3.1,5.19),-.9,(3.1,16.),lanes,lookahead=7.,
+            guidance_diagnostics=diagnostic,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65,goal_footprint=(-1.12,.62,-.52,.52),
+            min_goal_distance=.4,continuation_reserve=1.,max_search_seconds=.5)
+        return plan, diagnostic, costs
+
+    def test_near_oblique_mouth_hands_off_into_observed_overlap(self):
+        plan, diagnostic, _ = self.near_mouth_plan()
+        self.assertIsNotNone(plan)
+        self.assertEqual(diagnostic['guidance'],'observed_lane_corridor')
+        target = diagnostic['guidance_target']
+        self.assertGreater(target[0],6.)
+        self.assertLessEqual(target[0],9.6)
+        self.assertAlmostEqual(target[1],4.3,places=5)
+        self.assertGreater(plan['local_goal'][0],4.)
+        self.assertEqual(diagnostic['lane_detection']['top_candidate']['entry_mode'],'visible_mouth')
+        self.assertTrue(plan['diagnostics']['full_footprint_sweep'])
+
+    def test_near_mouth_handoff_does_not_cross_wall_or_unknown(self):
+        for value in (100,-1):
+            with self.subTest(value=value):
+                plan, diagnostic, costs = self.near_mouth_plan(barrier=value)
+                if plan is not None:
+                    for (x,y),yaw in zip(plan['path'],plan['path_yaws']):
+                        self.assertLess(x,4.2)
+                        self.assertTrue(_rectangle_clear(x,y,yaw,
+                            (-1.12,.62,-.52,.52),costs,110,110,.2,(0.,0.)))
+                self.assertEqual(diagnostic['guidance'],'observed_lane_corridor')
+                self.assertGreater(diagnostic['guidance_target'][0],6.)
+
+    def test_missing_boundary_support_cannot_create_corridor_handoff(self):
+        _, diagnostic, _ = self.near_mouth_plan(paint=False)
+        self.assertNotIn('entrance_state',diagnostic)
+        self.assertEqual(diagnostic['guidance'],'broad_gps')
+        self.assertIsNone(diagnostic['corridor'])
+
+    def test_backup_does_not_resurrect_consumed_lane_extent(self):
+        paint = [(x/10,y) for x in range(50,85) for y in (3.,7.)]
+        current = select_observed_guidance(paint,(8.,5.),0.,(16.,5.),
+            entrance_tracking=True,lookahead=7.)
+        backed = select_observed_guidance(paint,(7.,5.),0.,(16.,5.),
+            entrance_tracking=True,lookahead=7.)
+        self.assertEqual(current['guidance'],'broad_gps')
+        self.assertEqual(backed['guidance'],'observed_lane_corridor')
+        plan = plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
+            (7.,5.),0.,(16.,5.),paint,entrance_tracking=True,
+            frozen_guidance=current,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65)
+        self.assertEqual(plan['diagnostics']['guidance_target'],[16.,5.])
+        self.assertGreater(plan['local_goal'][0],9.)
+
+    def test_preserved_entrance_does_not_fallback_when_new_obstacle_blocks_it(self):
+        selection = {'guidance':'observed_lane_corridor','target':[4.4,7.],'yaw':0.}
+        costs=[0]*12100
+        for y in range(110):
+            for x in range(13,16):costs[y*110+x]=100
+        diagnostic={}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,costs,
+            (2.,7.),0.,(2.,15.),[],frozen_guidance=selection,
+            guidance_diagnostics=diagnostic,robot_radius=.5,forward_only=True,
+            minimum_turn_radius=.65,min_goal_distance=.4,max_search_seconds=.1)
+        self.assertIsNone(plan)
+        self.assertEqual(diagnostic['guidance_target'],[4.4,7.])
+        self.assertEqual(diagnostic['guidance'],'observed_lane_corridor')
+
+    def test_preserved_guidance_cannot_contain_route_geometry(self):
+        with self.assertRaises(ValueError):
+            plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
+                (2.,7.),0.,(20.,15.),[],frozen_guidance={
+                    'guidance':'broad_gps','target':[20.,15.],'yaw':None,'route':[]})
+
+    def test_fixed_observed_entrance_survives_skewed_gps_intent(self):
+        hint = {'entry':[12.,5.], 'direction':[1.,0.], 'observed_entrance':True}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
+            (5.,5.),0.,(5.,16.),[],heading_hint=hint,entrance_tracking=True,
+            robot_radius=.5,forward_only=True,minimum_turn_radius=.65)
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan['diagnostics']['guidance'],'remembered_lane_entrance')
+        self.assertEqual(plan['diagnostics']['guidance_target'],[12.,5.])
+
+    def test_reached_observed_extent_does_not_keep_issuing_tiny_goal(self):
+        paint = [(x/10,y) for x in range(50,85) for y in (3.,7.)]
+        plan = plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
+            (8.,5.),0.,(16.,5.),paint,entrance_tracking=True,
+            robot_radius=.5,forward_only=True,minimum_turn_radius=.65)
+        self.assertIsNotNone(plan)
+        self.assertEqual(plan['diagnostics']['guidance'],'broad_gps')
+        self.assertGreater(plan['local_goal'][0],9.)
+
+    def test_fixed_entrance_still_cannot_plan_through_observed_wall(self):
+        costs = [0]*12100
+        for y in range(110):
+            for x in range(30,33):
+                costs[y*110+x] = 100
+        hint = {'entry':[12.,5.], 'direction':[1.,0.], 'observed_entrance':True}
+        plan = plan_observed_navigation((0.,0.),.2,110,110,costs,
+            (5.,5.),0.,(5.,16.),[],heading_hint=hint,entrance_tracking=True,
+            robot_radius=.5,forward_only=True,minimum_turn_radius=.65)
+        if plan is not None:
+            self.assertTrue(all(x < 6. for x,_ in plan['path']))
+            self.assertEqual(plan['diagnostics']['guidance'],'remembered_lane_entrance')
+
     def test_remembered_straight_yields_to_broad_corner_direction(self):
         hint={'entry':[12.,5.], 'direction':[1.,0.]}
         plan=plan_observed_navigation((0.,0.),.2,110,110,[0]*12100,
