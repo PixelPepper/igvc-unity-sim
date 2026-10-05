@@ -26,8 +26,12 @@ speed checks passed on the recorded partial trajectory.
 
 Local artifacts: artifacts/iterations/2026-10-05/replacement-enabled-1.
 Run SHA256: 2a294b916141b09784cfd9bc41ab979213952c4b63ac85179075154ed6b3284e.
-Recovery diagnostics in T0023/T0026 are separate pending work; this run does not
-contain their new exact-input failure capture.
+Recovery diagnostics in T0023/T0026 are integrated separately at f1a6ae4; this run
+does not contain their new exact-input failure capture. Staged validation covers
+630 distinct tests after repairing generated-board freshness and the remaining
+suite environment. The malformed new knowledge-log heading was also repaired;
+strict knowledge validation reports 8 concepts and zero errors/warnings. All failed
+check logs are retained. Live wiring is pending the separate T0027 trial.
 
 ## Default-off control after instrumentation: one audited pass
 

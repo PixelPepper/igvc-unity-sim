@@ -4,7 +4,7 @@ title: Sensor-led navigation
 description: The observed-only planning pipeline and its hard safety checks.
 tags: [navigation, planning, guidance, path-entry, safety]
 status: stable
-generated: { by: codex/gpt-6-astra, at: 2026-10-05T11:52:57.866375Z }
+generated: { by: codex/gpt-6-astra, at: 2026-10-05T12:31:17.335811Z }
 sources:
   - id: sensor-autonomy
     resource: ../SENSOR_AUTONOMY.md
@@ -15,7 +15,11 @@ sources:
     resource: ../../tools/path_entry.py
   - id: replacement-path
     resource: ../../tools/replacement_path.py
+  - id: recovery-evidence
+    resource: ../../tools/recovery_evidence.py
 igvc_sources:
+  - path: tools/recovery_evidence.py
+    sha256: 27ed8ce71d27dc384503f5849043eb9ba410a24c8daa29d13dd93a4c181cf367
   - path: tools/path_entry.py
     sha256: 4f11a1cbc4e894df92acdceabf745e8fc4ac9414dd41bd44fdb4dc6aceb574ac
   - path: tools/replacement_path.py
@@ -45,6 +49,10 @@ and the independent audit only.[^sensor-autonomy]
    checked connector and suffix are submitted; the old geometry is not blindly retained.[^replacement-path]
    Unit checks are separate from live preemption, timing and performance evidence.
 5. **Recovery.** Recovery uses checked backups within a bounded budget.
+   Failed legacy searches retain bounded rejection stages and fingerprints of the submitted and worker inputs.
+   The full observed-input capture is deferred until after attempted command-stop cleanup and health-interval end,
+   and skipped if cleanup records errors. Capture/worker mismatch or unavailable binding remains explicit.
+   Diagnostic evidence does not alter recovery acceptance or prove a timed replay will be identical.[^recovery-evidence]
 
 # Not claimed
 
@@ -55,3 +63,5 @@ A bounded search that finds no route is not proof that no route exists. Replay o
 [^path-entry]: Path-entry admission
 
 [^replacement-path]: Optional checked replacement fallback
+
+[^recovery-evidence]: Failed-search diagnostics and deferred exact-input capture

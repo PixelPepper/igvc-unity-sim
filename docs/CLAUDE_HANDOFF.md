@@ -21,8 +21,9 @@ validating the off-mode control and normal completion telemetry. T0025 enabled
 comparison failed 2/6 and 14/20 after 208.66 s: 26 fallbacks were logged accepted,
 but 23 ended aborted and three succeeded. Source/profile/player/course/mission
 matched the control; causality and benefit remain unverified. Keep default off.
-Failed recovery diagnostics and a cleanup guard are being reviewed separately
-under T0023/T0026, without changing recovery behavior. Opus now owns complete
+Failed recovery diagnostics and a cleanup guard are integrated at f1a6ae4
+under T0023/T0026, without changing recovery behavior. Validation covers 630
+distinct tests after targeted board/environment repairs; live wiring is pending T0027. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the

@@ -7,3 +7,8 @@
 * **Initialization**: Created the bundle (T-0015) with eight concepts covering transport, frames and sensors, sensor-led navigation, processing health, trial/audit/promotion, agent handoffs, knowledge maintenance and the pinned [OKF v0.2 reference](okf-v0-2.md).
 
 - 2026-10-05T11:52:57.866375Z: Sensor-led-navigation now describes default-off T0021 fallback, pins its source and integrated path-entry helper, and separates freshness from admission-to-send pose drift. No live benefit claimed.
+
+* **Update**: Reviewed recovery evidence. Updated sensor-led-navigation for T0023/T0026: bounded failed-search traces,
+submitted/worker/capture binding, deferred capture after health-end, and explicit
+skip after recorded cleanup errors. Source pin added. Behavioral checks and live
+wiring remain separate; no reliability improvement is claimed by this metadata.
