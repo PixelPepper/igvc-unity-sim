@@ -5,13 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0037** `changes-requested`: Capture bounded Unity frame and connector warning timing (REVISION by gpt-6-astra at 2026-10-05T07:53:43.4673875-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0037](tasks/T-0037-unity-timing-capture.md): Capture bounded Unity frame and connector warning timing | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f9f80be5a8fccf6413892e4a62f31f86b2385750 | REVISION by gpt-6-astra at 2026-10-05T07:53:43.4673875-07:00 |
+| [T-0038](tasks/T-0038-timed-2029-diagnosis.md): Observe one diagnostic 2029 lap with reviewed Unity timing capture | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef | LEASE-GRANT by gpt-6-astra at 2026-10-05T08:05:53.5627466-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
@@ -49,6 +49,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0034](tasks/T-0034-nearer-gate-qualification.md): Qualify the new recovery build with three fixed-version seed2027 laps | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | d6519e1ee323db0e66fd5953959f07cc56508cc5 | DECISION by gpt-6-astra at 2026-10-05T07:20:33.7641952-07:00 |
 | [T-0035](tasks/T-0035-heldout-2029.md): First preselected seed2029 test of the fixed recovery build | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | d6519e1ee323db0e66fd5953959f07cc56508cc5 | DECISION by gpt-6-astra at 2026-10-05T07:34:26.2875166-07:00 |
 | [T-0036](tasks/T-0036-freshness-interruption.md): Explain the first2029 perception and clock freshness interruption | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 0779593c8b077da4c8b47c5a497c47b6dc29df93 | INTEGRATION by gpt-6-astra at 2026-10-05T07:46:50.5790187-07:00 |
+| [T-0037](tasks/T-0037-unity-timing-capture.md): Capture bounded Unity frame and connector warning timing | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | ccee5bccba857d6f0046f4085d110cee18889061 | INTEGRATION by gpt-6-astra at 2026-10-05T08:05:16.3186176-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
