@@ -98,7 +98,7 @@ baseline (`claim: promoted` in [PROTOCOL.md](PROTOCOL.md#task-file-format)):
 | Metric | Gate |
 | --- | --- |
 | Independent audit (`audit_sensor_run.py`), all checks incl. processing health | Pass on every counted run |
-| Consecutive passes, same commit and profile | **User to set** (ASTRA asked). Proposed: ≥ 3 on seed 2027, then ≥ 1 on each of 2 held-out seeds |
+| Consecutive passes, same commit and profile | **User approved:** ≥ 3 on seed 2027, then ≥ 1 on each of 2 preselected held-out seeds; see ADR-008 |
 | Boundary / obstacle contacts, interventions | 0 |
 | Elapsed time, backups, min clearance, return distance | No worse than the frozen baseline under comparable load |
 | Provenance | Commit, profile, player, overlay and course/mission hashes recorded |
@@ -113,3 +113,30 @@ baseline (`claim: promoted` in [PROTOCOL.md](PROTOCOL.md#task-file-format)):
 - Sensor placement can beat filtering. Michigan raised its GNSS antennas and the error dropped from 0.82 to 0.70 m.
 - Separate near-ground lane cameras from long-range depth (Crusaders). This is relevant to the
   OAK-D Pro mount decision.
+
+## Implementation status, October 5
+
+ASTRA read the user's 28-page `IGVC 2026 Top-Team Technical Research and Claude
+Implementation Handoff.pdf` directly, including its priorities on pages 20-21,
+benchmarks on pages 23-26 and acceptance gate on page 27. This confirms what the
+report recommends; it does not independently verify the underlying team results.
+Several matching architectural components predate this report.
+
+| Report recommendation | Actual application and remaining gap |
+| --- | --- |
+| Freeze, record, replay and compare | T-0000 checkpoint, T-0002 append-only benchmark ledger and T-0005 first-failure snapshots are integrated. Exact planner inputs are replayable; deterministic full-stack sensor/localization/controller replay is not established. |
+| Fix geometry and timing before tuning | Canonical forward frame and sensor mount configurations remain authoritative. T-0001 found the old failure's causal evidence missing; T-0005 preserves future first-event evidence. Historical processing failures are not explained or claimed fixed. |
+| Common traversability map | Existing observed lane, hazard, depth and lidar costmap layers implement this architecture. NVBlox was not added. Ground-truth course geometry remains outside runtime policy. |
+| Simple planning/tracking baseline | Existing footprint-checked forward-arc search and RPP are used. T-0008 corrects observed lane-entry membership using the front extent; 567 integrated checks passed and T-0009 completed one audited 6/6. MPPI has not displaced this baseline. |
+| Independent safety/recovery | Existing watchdogs, command authority and swept-body recovery checks remain. T-0009 used two checked backups. Broad injected-failure recovery-rate and physical stopping tests remain open. |
+| Proactive speed scheduling | RPP already regulates curvature/cost. Anticipatory braking and higher-speed benchmarking remain pending; T-0009 held 0.6 m/s and took 399.23 s. |
+| Optional learned perception | No U-Net lane model or held-out appearance benchmark is established. Separate experimental learned route scorers exist; both were disabled in T-0009. They are not learned camera segmentation. |
+| EKF and physical sensor validation | Independent noisy GNSS/IMU/encoders, calibrated dynamics and physical stopping distances remain hardware/fidelity work; ideal simulated GPS/odometry do not validate them. |
+
+The PDF proposes at least five consecutive successful runs. Our separately
+user-approved project gate is three consecutive seed-2027 audit passes plus one
+on each of two preselected held-out seeds. These are different gate designs; one
+successful run satisfies neither. The ledger does not yet include every proposed
+perception precision/recall, tracking-error, latency and physical-safety metric.
+See [October 5 evidence](../evidence/navigation-2026-10-05.md) for both the failed
+baseline and passing comparison, and [the task board](BOARD.md) for ownership.
