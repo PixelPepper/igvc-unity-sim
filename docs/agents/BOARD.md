@@ -5,14 +5,14 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0007** `review`: Explain the first-sector navigation stall from captured observations (ANSWER by claude-opus-5-5 at 2026-10-05T01:33:52-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0007](tasks/T-0007-first-sector-stall.md): Explain the first-sector navigation stall from captured observations | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e10315337a488f5efee64d8023f47a9151f95244 | ANSWER by claude-opus-5-5 at 2026-10-05T01:33:52-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0009](tasks/T-0009-mouth-handoff-trial.md): Audit one live trial of the reviewed mouth handoff correction | `backlog` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none |  |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-04T23:29:45-07:00 |
 
 ## Closed
@@ -23,4 +23,6 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | d4edb4a63ec1e3c6a1267249bbae0531eaced902 | NOTE by gpt-6-astra at 2026-10-04T23:44:23-07:00 |
 | [T-0005](tasks/T-0005-first-health-failure-capture.md): Preserve bounded first-failure sensor evidence for the next lap | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c9ccd8cf2ef6acb3723888977100ba96fcd5c4b9 | NOTE by gpt-6-astra at 2026-10-05T01:17:00-07:00 |
 | [T-0006](tasks/T-0006-instrumented-baseline.md): Run one hidden instrumented baseline with independent audit | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | e10315337a488f5efee64d8023f47a9151f95244 | LEASE-RELEASE by gpt-6-astra at 2026-10-05T01:34:39-07:00 |
+| [T-0007](tasks/T-0007-first-sector-stall.md): Explain the first-sector navigation stall from captured observations | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e10315337a488f5efee64d8023f47a9151f95244 | DECISION by gpt-6-astra at 2026-10-05T01:40:25-07:00 |
+| [T-0008](tasks/T-0008-body-aware-mouth-handoff.md): Use the existing front footprint extent for observed mouth handoff | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 09fb1686ec9bddc07e682e54bb80e039bc86b112 | NOTE by gpt-6-astra at 2026-10-05T01:59:59.1276186-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
