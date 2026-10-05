@@ -23,9 +23,21 @@ class SensorTelemetry:
     Percentiles describe a bounded recent window, maxima/counters the full run.
     Subscriber arrival is not a measurement of upstream GPU or network latency.
     """
-    def __init__(self, clock=time.monotonic, window=4096, event_limit=384, status_byte_limit=4096):
+    # Statuses whose last values are retained in a first-failure snapshot.
+    SNAPSHOT_STATUSES = ('lanes', 'depth_processing', 'lane_health', 'depth_health', 'lidar_processing')
+    SNAPSHOT_STREAMS = ('clock', 'rgb', 'rgb_info', 'depth', 'depth_info', 'scan') + SNAPSHOT_STATUSES
+
+    def __init__(self, clock=time.monotonic, window=4096, event_limit=384, status_byte_limit=4096,
+                 snapshot_events=32, snapshot_byte_limit=262144):
         if type(status_byte_limit) is not int or status_byte_limit < 512:
             raise ValueError('status_byte_limit must be an integer >=512 bytes')
+        if (type(snapshot_events) is not int or snapshot_events < 0
+                or type(snapshot_byte_limit) is not int or snapshot_byte_limit < 4096):
+            raise ValueError('snapshot_events >=0 and snapshot_byte_limit >=4096 integers required')
+        self.snapshot_events = snapshot_events
+        self.snapshot_byte_limit = snapshot_byte_limit
+        # At most one immutable snapshot per non-pass verdict kind, stored serialized.
+        self.health_snapshots = {'fail': None, 'unknown': None}
         self.clock = clock
         self.started = clock()
         self.window = window
@@ -179,6 +191,65 @@ class SensorTelemetry:
                     max_age_wall_s=max_age_wall_s, max_acquisition_lag_sim_s=max_acquisition_lag_sim_s,
                     scope='Latest lane/depth health Bools plus processed acquisition claims; not full stream health, output quality or motion authorization.')
 
+    def capture_health_snapshot(self, verdict, ledger_event, summary, now):
+        """Retain subscriber evidence for the first ledger 'fail' and first 'unknown'.
+
+        Call with the status MissionHealthLedger.observe returned, its event, and
+        the exact summary/time used for it. Passing samples and later failures
+        return immediately without copying. Nothing here alters any verdict.
+        """
+        if verdict not in self.health_snapshots or self.health_snapshots[verdict] is not None:
+            return False
+        if not isinstance(ledger_event, dict) or ledger_event.get('status') != verdict:
+            return False
+        streams = {}
+        for name in self.SNAPSHOT_STREAMS:
+            stream = self.streams.get(name)
+            if stream is None:
+                continue
+            stamp = stream['last_stamp_ns']
+            lag = (self.sim_ns-stamp)/1e9 if stamp is not None and self.sim_ns is not None else None
+            streams[name] = {'count': stream['count'],
+                             'receipt_age_wall_s': None if stream['last_wall'] is None else now-stream['last_wall'],
+                             'last_stamp_ns': stamp, 'acquisition_lag_sim_s': lag,
+                             'max_gap_wall_s_so_far': stream['max_gap_s']}
+        snapshot = {
+            'schema_version': 1, 'verdict': verdict,
+            'ledger_sample': {key: ledger_event.get(key) for key in ('monotonic_s', 'odom_stamp_ns', 'status', 'reasons')},
+            'clocks': {'monotonic_s': now, 'telemetry_started_monotonic_s': self.started,
+                       'telemetry_elapsed_s': now-self.started, 'latest_sim_clock_ns': self.sim_ns,
+                       'semantics': 'monotonic_s/started are time.monotonic wall seconds; recent status '
+                                    'event elapsed_s = monotonic_s - telemetry_started_monotonic_s; '
+                                    'latest_sim_clock_ns is the last received /clock.'},
+            'health_summary': summary,
+            'source_reported_status': {name: self.last_status[name] for name in self.SNAPSHOT_STATUSES
+                                       if name in self.last_status},
+            'subscriber_observations': streams,
+            'recent_status_events': list(self.events)[-self.snapshot_events:] if self.snapshot_events else [],
+            'unavailable': ['node-side processing duration', 'TF wait time', 'node scheduling/CPU',
+                            'Unity frame time', 'hardware behavior'],
+            'interpretation': 'source_reported_status is what perception nodes published; '
+                              'subscriber_observations are receipt/acquisition ages seen here. '
+                              'No cause is inferred: an unhealthy Bool does not say why.'}
+        try:
+            encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False)
+        except (ValueError, TypeError, OverflowError, RecursionError):
+            snapshot['health_summary'] = None
+            snapshot['capture_error'] = 'nonfinite_or_unserializable_summary'
+            encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False, default=str)
+        dropped = 0
+        while len(encoded.encode('utf-8')) > self.snapshot_byte_limit and snapshot['recent_status_events']:
+            snapshot['recent_status_events'].pop(0)  # drop oldest first; keep events nearest the failure
+            dropped += 1
+            snapshot['recent_status_events_dropped_for_size'] = dropped
+            encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False)
+        if len(encoded.encode('utf-8')) > self.snapshot_byte_limit:
+            encoded = json.dumps({'schema_version': 1, 'verdict': verdict,
+                                  'ledger_sample': snapshot['ledger_sample'], 'clocks': snapshot['clocks'],
+                                  'capture_error': 'snapshot_exceeds_byte_limit'})
+        self.health_snapshots[verdict] = encoded  # serialized: later mutation cannot alter it
+        return True
+
     def report(self):
         now = self.clock()
         result = {}
@@ -191,6 +262,14 @@ class SensorTelemetry:
                 recent_interarrival_wall_s=percentiles(stream['gaps']),
                 recent_acquisition_lag_sim_s=percentiles(stream['lags']))
         return {'schema_version': 1, 'duration_wall_s': now-self.started,
+                # Additive fields; schema 1 consumers ignore them.
+                'started_monotonic_s': self.started,
+                'clock_semantics': 'started_monotonic_s and recent_events elapsed_s origin use this '
+                                   'process time.monotonic (same clock as the mission health ledger).',
+                'first_health_snapshots': {kind: None if encoded is None else json.loads(encoded)
+                                           for kind, encoded in self.health_snapshots.items()},
+                'snapshot_limits': {'recent_status_events': self.snapshot_events,
+                                    'bytes_each': self.snapshot_byte_limit},
                 'clock_resets': self.clock_resets, 'streams': result,
                 'latest_status': dict(self.last_status),
                 'status_reason_counts': {name: dict(counts) for name, counts in self.reasons.items()},

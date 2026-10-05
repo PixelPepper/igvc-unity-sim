@@ -185,7 +185,7 @@ def run(args):
                      'lane_heading_memory.py', 'sensor_route_policy.py',
                      'entrance_memory.py', 'entrance_support.py', 'recovery_budget.py', 'recovery_policy.py',
                      'execution_path.py', 'path_entry.py', 'swept_footprint.py', 'recovery_intent.py',
-                     'action_cancellation.py', 'mission_health.py')
+                     'action_cancellation.py', 'mission_health.py', 'sensor_telemetry.py')
                      + (('trap_memory.py',) if trap_memory is not None else ())}
     latest = {}
     entrance_tracking = args.guidance_memory == 'entrance'
@@ -201,8 +201,11 @@ def run(args):
     def sample_mission_health():
         if mission_health.active:
             sampled_at = time.monotonic()
-            mission_health.observe(telemetry.health_summary(now=sampled_at),
-                                   sampled_at, stamps.get('odom'))
+            summary = telemetry.health_summary(now=sampled_at)
+            verdict = mission_health.observe(summary, sampled_at, stamps.get('odom'))
+            # Evidence only: retain the first fail/unknown before rolling rings evict it.
+            if verdict in ('fail', 'unknown'):
+                telemetry.capture_health_snapshot(verdict, mission_health.events[-1], summary, sampled_at)
 
     # Wall-clock sampling continues while simulation time stalls. Missing
     # callbacks are recorded as coverage gaps, never inferred to be healthy.

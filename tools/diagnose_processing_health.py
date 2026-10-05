@@ -22,6 +22,34 @@ SUCCESS_FRESH_WALL_S = 0.5   # receipt bound, wall (monotonic) clock
 # Monotonic time at telemetry initialization, if a future schema records it
 # (sensor_telemetry.py keeps `started` internally; schema v1 does not export it).
 TELEMETRY_ORIGIN_KEY = 'started_monotonic_s'
+SNAPSHOT_RETAINED = ('first-failure snapshot retained and bound to the ledger sample; node-reported '
+                     'statuses and subscriber ages are listed; cause is not inferred')
+LEDGER_SAMPLE_KEYS = ('monotonic_s', 'odom_stamp_ns', 'status', 'reasons')
+
+
+def _validate_snapshot(snapshot, kind, ledger_first):
+    """Expose a snapshot only if it is exactly bound to the ledger's first sample of that kind."""
+    if snapshot is None:
+        return {'valid': False, 'reason': 'absent'}
+    if not isinstance(snapshot, dict) or snapshot.get('schema_version') != 1 or snapshot.get('verdict') != kind:
+        return {'valid': False, 'reason': 'malformed_or_wrong_kind'}
+    if not isinstance(ledger_first, dict):
+        return {'valid': False, 'reason': 'ledger_has_no_first_%s' % kind}
+    sample = snapshot.get('ledger_sample')
+    if (not isinstance(sample, dict)
+            or any(sample.get(key) != ledger_first.get(key) for key in LEDGER_SAMPLE_KEYS)):
+        return {'valid': False, 'reason': 'ledger_sample_mismatch'}
+    if snapshot.get('capture_error'):
+        return {'valid': False, 'reason': 'capture_error: %s' % snapshot['capture_error']}
+    events = snapshot.get('recent_status_events')
+    return {'valid': True, 'ledger_sample': sample, 'clocks': snapshot.get('clocks'),
+            'source_reported_status': snapshot.get('source_reported_status'),
+            'subscriber_observations': snapshot.get('subscriber_observations'),
+            'health_summary': snapshot.get('health_summary'),
+            'recent_status_events': events if isinstance(events, list) else None,
+            'recent_status_events_dropped_for_size': snapshot.get('recent_status_events_dropped_for_size', 0),
+            'unavailable': snapshot.get('unavailable'),
+            'interpretation': 'Retained subscriber evidence; an unhealthy Bool does not establish why.'}
 
 
 def get(value, *path):
@@ -106,6 +134,17 @@ def diagnose(run, window_s=6.0):
             'per-failure status events retained; inspect sensor_health.recent_events'
             if coverage['status_events'] == 'covers_failure' else UNDETERMINED)
     report['retained_event_coverage'] = coverage
+
+    # Bounded first-verdict snapshots (telemetry additive fields; absent in older runs).
+    snapshots = get(health, 'first_health_snapshots')
+    report['first_verdict_snapshots'] = {}
+    for kind, ledger_key in (('fail', 'first_fail'), ('unknown', 'first_unknown')):
+        report['first_verdict_snapshots'][kind] = check = _validate_snapshot(
+            get(snapshots, kind), kind, get(interval, ledger_key))
+        if kind == 'fail' and check['valid']:
+            report['first_failure_cause'] = SNAPSHOT_RETAINED
+    if snapshots is None:
+        unavailable.append('first-verdict snapshots (not recorded by this run)')
     unavailable += ['per-frame image interarrival and acquisition lag at first failure',
                     'node-side processing duration and scheduling; Unity frame time',
                     'WSLg/compositor restart time']
