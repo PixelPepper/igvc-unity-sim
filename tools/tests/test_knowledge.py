@@ -64,6 +64,7 @@ class KnowledgeTest(unittest.TestCase):
                  'index-unterminated': ('kb/index.md', '---\nokf_version: "0.2"\n# S\n', 'index_frontmatter_unterminated'),
                  'log-order': ('kb/log.md', '# Log\n\n## 2026-09-01\n* a\n\n## 2026-10-01\n* b\n', 'log_not_newest_first'),
                  'log-non-date': ('kb/log.md', '# Log\n\n## Recent changes\n* a\n', 'log_heading_not_iso_date'),
+                 'log-compact-date': ('kb/log.md', '# Log\n\n## 20261005\n* a\n', 'log_heading_not_iso_date'),
                  'log-frontmatter': ('kb/log.md', '---\nx: 1\n---\n# Log\n', 'log_frontmatter_not_allowed')}
         for name, (rel, text, code) in cases.items():
             with self.subTest(name):
@@ -143,6 +144,11 @@ class KnowledgeTest(unittest.TestCase):
             with self.subTest(rel):
                 self.write(rel.replace('docs/../', ''), 'synthetic\n')
                 self.assertEqual(knowledge.resolve_inside(self.root, rel), (None, reason))
+        # Case variants are refused by path text alone; these files do not exist and are never touched.
+        for rel in ('Artifacts/run.json', '.GIT/config.txt', 'tools/Node_Modules/p.js', 'ROS2/Build/x.txt',
+                    'unity/igvcsim/library/a.txt', 'tools\\__PYCACHE__\\m.py'):
+            with self.subTest(rel):
+                self.assertEqual(knowledge.resolve_inside(self.root, rel), (None, 'excluded_location'))
         self.write('kb/s.md', concept(extra='igvc_sources:\n  - {path: artifacts/run.json, sha256: x}\n'))
         self.assertEqual(self.load().nodes[0]['sources_status'][0], {'path': 'artifacts/run.json',
                          'status': 'blocked', 'reason': 'excluded_location'})
@@ -152,6 +158,16 @@ class KnowledgeTest(unittest.TestCase):
         self.assertEqual(self.cli('pin', 'docs/ok.md'), 0)
         for bad in ('docs/latin1.md', 'artifacts/run.json', 'missing.md'):
             self.assertEqual(self.cli('pin', bad), 1)
+
+    def test_accepted_pin_paths_are_reported_in_canonical_posix_form(self):
+        digest = knowledge.normalized_sha256(self.write('src/doc.md', 'text\n').read_bytes())
+        self.write('kb/n.md', concept(extra=f"igvc_sources:\n  - {{path: 'src\\doc.md', sha256: {digest}}}\n"
+                                            f"  - {{path: ./src/doc.md, sha256: {digest}}}\n"))
+        bundle = self.load()
+        self.assertEqual([(s['path'], s['status']) for s in bundle.nodes[0]['sources_status']],
+                         [('src/doc.md', 'match'), ('src/doc.md', 'match')])
+        self.assertEqual({e['target'] for e in bundle.edges if e['kind'] == 'source_pin'}, {'src/doc.md'})
+        self.assertEqual(self.cli('pin', 'src\\doc.md'), 0)
 
     @unittest.skipIf(os.name == 'nt', 'symlink creation needs privileges on Windows')
     def test_symlinked_source_is_refused(self):

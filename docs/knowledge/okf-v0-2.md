@@ -15,7 +15,7 @@ sources:
     resource: ../OPEN_KNOWLEDGE.md
 igvc_sources:
   - path: docs/OPEN_KNOWLEDGE.md
-    sha256: f93f091552929fb891489b06c93858253ff5d2e1330ac448864e2598afb7e434
+    sha256: 5bf7e6454e2f289aad8e15d347ad67ec9975d239b5bb27d7c637e7bc9320b21e
 ---
 
 # What we rely on

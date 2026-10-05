@@ -89,8 +89,13 @@ Normalizing line endings (and dropping a UTF-8 BOM) keeps hashes identical acros
 | Anything outside an allowlist of text suffixes (Markdown, text, Python, JSON, YAML, TOML, XML, URDF/xacro, launch, RViz, C/C++/C#, shell, PowerShell, JavaScript/TypeScript, Unity UI text, ROS interface files) | `not_allowed_text_type` |
 | Symlinked components, missing files, files over 2 MB, and non-UTF-8 content | — |
 
-`pin` exits non-zero for a refused or unreadable path, with a one-line message and no traceback. Files the integrator
-edits often are linked but not pinned.
+- **Case-folded exclusions.** Location exclusions ignore case, so `Artifacts/`, `.GIT/` and `Node_Modules` are refused
+  without touching the filesystem.
+- **Canonical form.** An accepted pin path is normalized to POSIX form (backslashes become `/`, a leading `./` is
+  dropped). That form is used in `pin` output and in exported `sources_status` paths and edge targets. A refused path
+  keeps its raw text in diagnostics.
+- **Failure behavior.** `pin` exits non-zero for a refused or unreadable path, with a one-line message and no traceback.
+- **Unpinned files.** Files the integrator edits often are linked but not pinned.
 
 ## Export for the Observatory
 
@@ -132,7 +137,9 @@ or a `generated_at` older than expected, is the signal.
 
 - `kind: "link"`: an explicit Markdown link from one concept to another inside the bundle. It is resolved relative to
   the linking file, or to `bundle_path` for links that start with `/`.
-- `kind: "source_pin"`: derived from `igvc_sources`. Its `target` is a repository-relative path.
+- `kind: "source_pin"`: derived from `igvc_sources`. Its `target` is the canonical repository-relative path. Only pins
+  whose file was actually hashed (`match` or `changed`) create an edge. A `missing` or `blocked` pin appears only in the
+  node's `sources_status`, with a `reason`, and as a warning; it never creates an edge.
 
 Links to files outside the bundle do not create edges. If such a target is missing, the export records a
 `missing_external_target` warning instead.

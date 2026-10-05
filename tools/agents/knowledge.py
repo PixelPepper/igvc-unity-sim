@@ -39,6 +39,7 @@ PROJECT_ID = 'igvc-unity-sim'
 EXPORT_LIMITS = {'max_bytes': 2*1024*1024, 'max_nodes': 1000, 'max_edges': 4000, 'body_display_bytes': 8192}
 LINK = re.compile(r'(?<!!)\[[^\]]*\]\(([^)\s]+)(?:\s+"[^"]*")?\)')
 LOG_HEADING = re.compile(r'^##\s+(.*?)\s*$')
+ISO_DATE = re.compile(r'\d{4}-\d{2}-\d{2}')
 ACTOR = re.compile(r'^(human|process):[^\s:]+$|^[^\s:/]+/[^\s]+$')
 DEFAULT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -91,15 +92,24 @@ def normalized_sha256(data):
     return hashlib.sha256(text.encode('utf-8')).hexdigest()
 
 
+def normalize_pin(relative):
+    """Canonical POSIX spelling of a pin path (backslashes and './' removed), or None if unusable."""
+    if not isinstance(relative, str) or not relative:
+        return None
+    return PurePosixPath(relative.replace('\\', '/')).as_posix()
+
+
 def pin_policy(relative):
-    """Reason the path may never be pinned or read, or None. Text-only check, nothing is opened."""
+    """Reason the path may never be pinned or read, or None. Text-only check, nothing is opened.
+    Location exclusions are case-folded so 'Artifacts/' or '.GIT/' cannot bypass them."""
     if not isinstance(relative, str) or not relative or relative.startswith(('/', '\\')) or ':' in relative:
         return 'not_repository_relative'
     pure = PurePosixPath(relative.replace('\\', '/'))
-    if '..' in pure.parts or '.' in pure.parts:
+    if '..' in pure.parts:
         return 'escapes_repository'
-    posix = pure.as_posix()
-    if any(posix.startswith(prefix) for prefix in DENIED_PREFIXES) or DENIED_PARTS & set(pure.parts):
+    folded = pure.as_posix().casefold()
+    if (any(folded.startswith(prefix.casefold()) for prefix in DENIED_PREFIXES)
+            or {part.casefold() for part in DENIED_PARTS} & {part.casefold() for part in pure.parts}):
         return 'excluded_location'
     if CREDENTIAL_NAME.search(pure.name):
         return 'credential_like_name'
@@ -114,7 +124,7 @@ def resolve_inside(root, relative):
     if reason:
         return None, reason
     current = root
-    for part in PurePosixPath(relative.replace('\\', '/')).parts:
+    for part in PurePosixPath(normalize_pin(relative)).parts:
         current = current / part
         if current.is_symlink():
             return None, 'symlink_refused'
@@ -286,6 +296,9 @@ class Bundle:
             if not match:
                 continue
             try:
+                # Exact YYYY-MM-DD only: newer fromisoformat also accepts compact forms like 20261005.
+                if not ISO_DATE.fullmatch(match.group(1)):
+                    raise ValueError(match.group(1))
                 dates.append(date.fromisoformat(match.group(1)))
             except ValueError:
                 self.error(rel, 'log_heading_not_iso_date', match.group(1)[:40])
@@ -339,8 +352,9 @@ class Bundle:
         status = []
         for pin in pins:
             path, expected = (pin.get('path'), pin.get('sha256')) if isinstance(pin, dict) else (None, None)
-            label = path if isinstance(path, str) else None
             target, reason = resolve_inside(self.root, path)
+            # Accepted pins are reported in canonical POSIX form; refused ones keep their raw text for diagnosis.
+            label = (normalize_pin(path) if not reason else path) if isinstance(path, str) else None
             if not reason:
                 try:
                     actual = normalized_sha256(target.read_bytes())
@@ -353,10 +367,10 @@ class Bundle:
                 continue
             state = 'match' if actual == expected else 'changed'
             if state == 'changed':
-                self.warn(rel, 'source_changed', path)
-            status.append({'path': path, 'status': state, 'expected_sha256': expected if isinstance(expected, str) else None,
+                self.warn(rel, 'source_changed', label)
+            status.append({'path': label, 'status': state, 'expected_sha256': expected if isinstance(expected, str) else None,
                            'actual_sha256': actual})
-            self.edges.append({'source': node_id, 'target': path, 'kind': 'source_pin'})
+            self.edges.append({'source': node_id, 'target': label, 'kind': 'source_pin'})
         return status
 
     def _links(self, path, rel, body, node_id=None):
@@ -432,7 +446,7 @@ def main(argv=None):
             target, reason = resolve_inside(root, path)
             if not reason:
                 try:
-                    print(f'- path: {path}\n  sha256: {normalized_sha256(target.read_bytes())}')
+                    print(f'- path: {normalize_pin(path)}\n  sha256: {normalized_sha256(target.read_bytes())}')
                     continue
                 except ValueError:
                     reason = 'not_utf8_text'
