@@ -4,6 +4,14 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
+**October 5 update:** the reviewed lane-mouth correction completed one sensor-led
+6/6 comparison in 399.23 s, with all 20 independent audit checks passing and no
+failed/unknown health samples. It used two checked backups and is not promoted as
+a repeatable or faster baseline. See [current evidence](evidence/navigation-2026-10-05.md)
+and the [research-to-implementation status](agents/COMPETITION_CONTEXT.md#implementation-status-october-5).
+The October 1 checkout/session descriptions below are historical; use the
+[task board](agents/BOARD.md) and current Git/runtime state for ongoing work.
+
 ## Contents
 
 1. [Start in Claude Code](#start-in-claude-code)

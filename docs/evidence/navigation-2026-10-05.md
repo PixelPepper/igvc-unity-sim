@@ -1,4 +1,44 @@
-# October 5: instrumentation and a failed sensor-led baseline
+# October 5: instrumented baseline and a passing mouth-handoff comparison
+
+## Follow-up: one audited full loop
+
+[T-0008](../agents/tasks/T-0008-body-aware-mouth-handoff.md) changed the lower
+lane-mouth membership test to account for the existing footprint's front-center
+projection. Heading, lateral, upper-span, collision, health and audit checks were
+retained. Exact saved-observation replay supported the change; Sonnet and Sol
+reviewed candidate `09fb1686ec9bddc07e682e54bb80e039bc86b112`. It was integrated
+as `8f5e87766d5a7dffcba68da3917a7f101853d80d`; 567 combined tests passed.
+
+[T-0009](../agents/tasks/T-0009-mouth-handoff-trial.md) then ran once from clean
+launch commit `8f99951a189a02ba1b3e8d07b3fc58b50fdcfc0f`.
+
+| Recorded measure | Comparison result |
+| --- | --- |
+| Destinations / independent audit | 6/6; all 20 checks passed |
+| Armed-through-cleanup wall time | 399.229339 s |
+| Armed processing samples | 3994 pass, 0 fail, 0 unknown; complete coverage |
+| Maximum health sampling gap | 0.138817 s |
+| Requested / maximum audited interval speed | 0.6 / approximately 0.6 m/s |
+| Recoveries | Two checked backups, approximately 0.602 m actual travel each |
+| Conservative swept obstacle clearance lower bound | 0.116546 m |
+| Return distance | 0.384816 m against the unchanged 0.4 m bound |
+| Sampled obstacle collision poses | 0 |
+| Runtime cleanup | Runner verified shutdown; supervisor/player and TCP10000 absent afterward |
+
+Course, six-goal mission, RPP profile and player assembly hashes match the failed
+T-0006 baseline below. Only `sensor_course.py` and `observed_navigation.py` changed
+among recorded source fingerprints, matching the reviewed correction. The trial
+used its own verified ROS overlay, `/home/brand/igvc_agent_ws/t0008-mouth-handoff`.
+Both learned scorers were disabled. No world geometry was added to policy inputs.
+Evidence is in `artifacts/iterations/2026-10-05/mouth-handoff/` and the appended
+[benchmark ledger](benchmark_runs.csv) row.
+
+This is **one passing comparison, not baseline promotion or a speed improvement**.
+The historical October 1 pass took 363.37 s with one backup; this run is slower and
+has two. Host load remains uncontrolled. The return margin remains small. Neither
+the user-approved repeatability gate nor physical calibration is established.
+There was no failed/unknown health sample, so live first-failure capture remains
+unexercised. The failed T-0006 result below is retained without reinterpretation.
 
 ## Outcome
 
