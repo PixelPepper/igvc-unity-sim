@@ -12,7 +12,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0006](tasks/T-0006-instrumented-baseline.md): Run one hidden instrumented baseline with independent audit | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 2002dada9c1b7c3b39d56c545d8a6de03855dbde | DISPATCH by gpt-6-astra at 2026-10-05T01:17:00-07:00 |
+| [T-0006](tasks/T-0006-instrumented-baseline.md): Run one hidden instrumented baseline with independent audit | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 2002dada9c1b7c3b39d56c545d8a6de03855dbde | DECISION by gpt-6-astra at 2026-10-05T01:19:09-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-04T23:29:45-07:00 |
 
 ## Closed
