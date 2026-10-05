@@ -1,5 +1,36 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Current source: three verified seed2027 passes, untouched seeds pending
+
+[T0034](../agents/tasks/T-0034-nearer-gate-qualification.md) qualified the
+seed2027 stage on frozen source **d6519e1ee323db0e66fd5953959f07cc56508cc5**.
+Both reviewers verified all three sequential, separately granted attempts.
+
+| Attempt | Elapsed seconds | Audit | Health pass/fail/unknown | Maximum gap seconds | Return distance metres |
+|---|---:|---|---|---:|---:|
+| 1 | 332.553487 | 20/20 | 3328/0/0 | 0.121141 | 0.363768 |
+| 2 | 358.873351 | 20/20 | 3590/0/0 | 0.127246 | 0.391660 |
+| 3 | 336.905819 | 20/20 | 3371/0/0 | 0.119719 | 0.375731 |
+
+All completed6/6 with zero charged backups and no recovery-gate events. Source19,
+profile, actual player and all2027 inputs matched. Full trajectories were audited;
+cleanup was independently checked after each run. **The new recovery retreat still
+has no live exercise or demonstrated benefit.** Times vary under uncontrolled load.
+Smallest return margin was8.340mm; no physical stopping margin is certified.
+
+T0033's2028 pass below is a development regression. T0035 begins the first
+preselected2029 attempt. Before that outcome,2030 was additionally preselected
+without generation/inspection to retain two untouched validation seeds.
+This adds evidence; it does not discard the original2028 failure or its regression
+requirement. Full promotion remains pending2029/2030 and review.
+
+Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2027-{1,2,3}.
+Run SHA256 values in order:
+
+- 43021cab417c373915d32f0257c5fb3206ea7872e16444db57bd675e1bd2ba17
+- b4b4602251cef5fb8ab78863d2a7d4978e36b619124e262120c14780264c0335
+- dfc698e00fd7e332ceddefc042fa72cd8931f241d032a548d887f1c52bcedf93
+
 ## New recovery build: passing2028 regression, mechanism unexercised
 
 [T0032](../agents/tasks/T-0032-lane-entry-recovery.md) adds a recovery-only search
@@ -20,8 +51,8 @@ exercised live.** The result establishes no causal benefit or explanation of the
 earlier failure. This is a development regression:2028 observations informed the
 change. The original failure remains below and in the ledger.
 
-Old-version2027 passes do not qualify this source. T0034 starts its fixed-version
-2027 checks;2029 remains preselected and untested. Promotion remains pending.
+Old-version2027 passes do not qualify this source; the new T0034 batch above does.
+Untouched2029/2030 checks remain pending. Promotion remains pending.
 No speed improvement or hardware fidelity is claimed.
 
 Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2028-1.

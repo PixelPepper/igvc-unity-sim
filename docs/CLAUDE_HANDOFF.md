@@ -4,45 +4,33 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
-**October 5 update:** the reviewed connector arithmetic correction has two
-same-version seed-2027 laps at commit a0a3d49: 6/6 with all 20 audit checks passing
-in 380.35 s (zero recovery attempts) and 355.42 s (one checked backup).
-The third frozen-version repeat failed at 2/6 after 226.30 s: no observed safe
-backup with useful forward clearance. Its audit passed 14/20 checks, processing
-health passed, and the consecutive-pass streak is broken. Return margins on the
-passing runs remain narrow and host load is uncontrolled; no promotion or causal
-speed improvement is claimed.
-The earlier terminal audit failure is preserved alongside its separate corrected
-20/20 re-audit. Completion instrumentation is integrated at 02cea95 with all
-598 combined tests passing. The opt-in replacement-path fallback is now integrated
-at 0f76a2a with 610 combined tests passing; it sends checked geometry and remains
-off by default. T0024 passed6/6 and20/20 in368.77s with zero charged backups,
-validating the off-mode control and normal completion telemetry. T0025 enabled
-comparison failed 2/6 and 14/20 after 208.66 s: 26 fallbacks were logged accepted,
-but 23 ended aborted and three succeeded. Source/profile/player/course/mission
-matched the control; causality and benefit remain unverified. Keep default off.
-Failed recovery diagnostics and a cleanup guard are integrated at f1a6ae4
-under T0023/T0026, without changing recovery behavior. Validation covers 630
-distinct tests after targeted board/environment repairs. T0027 then passed 6/6
-and all 20 audit checks in 364.39 s with zero charged backups. It did not exercise
-the failed-capture branch. T0028 repeated f1a6ae4 and passed 6/6/all20 in335.56s,
-with zero charged backups. T0030 passed 6/6/all20 in383.59s with one checked1.2m
-backup, completing three consecutive seed2027 passes on f1a6ae4. Held-out2028/2029
-remain required. The second return margin was only0.555mm; no robust physical
-stopping or causal speed claim. T0029 explicit seed selection is integrated at
-08e8ca5 after both reviews and 3 Python tests plus 107 PowerShell checks on the
-integration. The first preselected held-out2028 trial T0031 failed at1/6 after
-111.67s: no observed clear lane-entry position for recovery. Audit14/20, processing
-health passed; zero charged backup. Both reviews accepted the failure evidence.
-Promotion is blocked. T0032's reviewed recovery-only nearer observed target selection
-is integrated at d6519e1. All643 combined integration tests passed. T0033 completed
-6/6/all20 in382.93s with zero charged backups and no recovery-gate event; both
-reviews accepted the regression, but the changed mechanism was not exercised.
-T0034 begins new-version2027 qualification. This seed2028 now
-informs development, while2029 remains untested. Old-version2027 passes do not
-qualify the new source. Opus now owns complete
-bounded development tasks under ADR-011, with independent review and exclusive
-live-test coordination retained.
+**October 5 current state:** the reviewed recovery build is frozen at
+**d6519e1ee323db0e66fd5953959f07cc56508cc5**. It passed643 combined checks and,
+under T0034, three consecutive seed2027 laps:6/6 and all20 audit checks in
+332.55s,358.87s and336.91s. Both reviewers verified complete processing-health
+coverage, source/input identity and cleanup. All three used zero charged backups.
+The new nearer-station recovery behavior remains unexercised live.
+
+T0033 also passed the same2028 course used in development (6/6/all20,382.93s,
+zero charged backups). This is a regression result, not untouched validation or
+proof of the change's benefit. The original T0031 first2028 failure (1/6,111.67s,
+blocked lane-entry target) remains preserved. T0035 is now running the first
+preselected2029 attempt;2030 was additionally preselected before that outcome,
+without inspecting or generating it, to retain two untouched validation seeds.
+Promotion remains pending. Return margins are narrow; no causal speed gain,
+calibrated hardware autonomy or2027 rule compliance is claimed.
+
+Runtime uses only observations and six sanitized broad GPS goals. Recovery can
+select a nearer clear station in the same observed corridor, with a nominal
+forward bound and unchanged body/unknown/path acceptance. Replacement-path
+fallback remains off: its earlier enabled trial failed2/6. Failed-search diagnostics
+and deferred capture are integrated but their failure branch remains unexercised
+live. Every earlier failure stays in the ledger and detailed evidence.
+
+Opus owns complete bounded development tasks under ADR-011, with independent
+Sonnet/Sol reviews and exclusive live-test coordination retained. Current immutable
+source, trial grants and outcomes live in the canonical task board; older workspace
+and session descriptions below are historical.
 See [current evidence](evidence/navigation-2026-10-05.md), the
 [task board](agents/BOARD.md) and [research implementation status](agents/COMPETITION_CONTEXT.md#implementation-status-october-5).
 Use the [Open Knowledge index](knowledge/index.md) for targeted context and

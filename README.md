@@ -36,7 +36,8 @@ The [October 5 continuation](docs/evidence/navigation-2026-10-05.md) completed
 three consecutive seed-2027 passes on one frozen diagnostic build, but its first
 held-out seed-2028 attempt stopped at 1/6. A reviewed recovery-target update then
 passed the same2028 course, with no recovery needed; benefit of the change is
-unproven. New-version qualification remains pending. These results do not change ordinary
+unproven. The new version has since passed three consecutive2027 laps; untouched
+2029/2030 validation remains pending. These results do not change ordinary
 launcher defaults or establish calibrated robot autonomy.
 See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
 The [September reliability milestone](docs/RELIABILITY_MILESTONE.md) adds sensor
