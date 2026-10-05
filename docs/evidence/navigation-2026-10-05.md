@@ -1,6 +1,6 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
-## Reviewed diagnostic build: first passing lap
+## Reviewed diagnostic build: two passing laps
 
 [T-0027](../agents/tasks/T-0027-recovery-instrumented-trial.md) ran the integrated
 recovery-diagnostic build at f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f, with fallback
@@ -18,7 +18,17 @@ Both reviewers accepted this single-run evidence. Independent player/port/lease
 checks corroborated shutdown. No recovery-search event or failure capture occurred:
 **the new failed-search capture branch remains unexercised live**. No causal
 speed gain, recovery fix, calibrated hardware claim or promotion is established.
-This is the first pass on this exact version; T0028 is a separately bounded repeat.
+T0028 repeated the same immutable version and completed 6/6 with all 20 checks
+passing in **335.561454 s**, again with zero charged backups. Its 3358 health samples
+all passed (maximum gap 0.122978 s). Both reviewers verified the second pass.
+The return distance was 0.399444509 m: only **0.555 mm inside the bound**.
+All 19 runtime hashes and the profile/player/course/mission matched T0027.
+Neither run exercised failed-backup capture. This gives two consecutive passes
+on this version; T0030 is the separately bounded third attempt. Earlier failures
+remain preserved, and held-out 2028/2029 validation is still required.
+
+T0028 artifacts: artifacts/iterations/2026-10-05/recovery-instrumented-2.
+Run SHA256: e8242ae844cd33b45ae9088b95a9bf4145363d20ddea8d73b35036c59047c362.
 
 Artifacts: artifacts/iterations/2026-10-05/recovery-instrumented-1.
 Run SHA256: 057b7662370e2ebe320c697295bfd478b62300ecfbc60e68009cf942eb6c7843.
