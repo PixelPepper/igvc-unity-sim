@@ -1,3 +1,5 @@
+import gzip
+import json
 from pathlib import Path
 import math
 import sys
@@ -131,6 +133,50 @@ class PathEntryTests(unittest.TestCase):
             plan,d=self.admit((2.8,3.,0.),costs)
             self.assertIsNone(plan)
             self.assertEqual(d['reason'],'latest_observed_sweep_blocked')
+
+    def circle_plan(self, relative_excess, length=1.6, spacing=.025):
+        # Independent analytic circle (center/angle form), not path_entry's own
+        # arc helper. Margins to the 1e-9 boundary (>=5e-10) exceed the library's
+        # largest rounding observed on decision 212 (7.0e-11), so the real
+        # comparison is exercised without isolating the comparator.
+        k = (1/.65)*(1+relative_excess)
+        x0, y0, yaw0 = 2., 3., 0.
+        cx, cy = x0-math.sin(yaw0)/k, y0+math.cos(yaw0)/k
+        angles = [yaw0+k*spacing*i for i in range(round(length/spacing)+1)]
+        return {'path': [(cx+math.sin(a)/k, cy-math.cos(a)/k) for a in angles], 'path_yaws': angles}
+
+    def test_turn_limit_comparison_allows_only_arithmetic_rounding(self):
+        cases = {0.: True, 5e-10: True, 2e-9: False, 1e-8: False}
+        for excess, accepted in cases.items():
+            with self.subTest(relative_excess=excess):
+                plan = self.circle_plan(excess)
+                admitted, d = self.admit((2., 3., 0.), plan=plan)
+                self.assertEqual(admitted is not None, accepted, d)
+                if accepted:
+                    self.assert_forward_drivable(admitted, d, (2., 3., 0.), plan)
+                else:
+                    self.assertEqual(d['reason'], 'no_forward_connector_within_turn_radius')
+
+    def test_straight_path_from_its_exact_start_is_admitted(self):
+        admitted, d = self.admit((2., 3., 0.))
+        self.assertIsNotNone(admitted, d)
+        self.assert_forward_drivable(admitted, d, (2., 3., 0.), self.plan)
+
+    def test_recorded_at_limit_plan_from_its_exact_start_is_admitted(self):
+        # T-0009 decision 212 (fixtures/path_entry_20261005.md): the live result
+        # was no_forward_connector_within_turn_radius from rounding of 3.9968e-15 to
+        # 7.0448e-11 relative on an arc exactly at the limit. The grid is the
+        # planner-submission grid, not proof of the live latest grid.
+        with gzip.open(Path(__file__).with_name('fixtures')/'path_entry_20261005.json.gz', 'rt') as stream:
+            fixture = json.load(stream)
+        grid, pose = fixture['grid'], tuple(fixture['checked_pose'])
+        self.assertEqual(fixture['recorded_admission']['reason'], 'no_forward_connector_within_turn_radius')
+        admitted, d = prepare_controller_plan(fixture['plan'], pose, tuple(grid['origin']), grid['resolution'],
+            grid['width'], grid['height'], grid['costs'], tuple(fixture['footprint']))
+        self.assertIsNotNone(admitted, d)
+        self.assertEqual((d['nearest_index'], d['cross_track_m'], d['heading_error_rad']), (0, 0., 0.))
+        self.assertEqual(d['join_index'], 88)
+        self.assert_forward_drivable(admitted, d, pose, fixture['plan'])
 
     def test_body_corner_is_checked_even_if_axle_clear(self):
         costs=self.costs.copy();costs[35*80+18]=100

@@ -19,6 +19,10 @@ import math
 from sensor_route_policy import _rectangle_clear
 from swept_footprint import arc_sweep_box
 
+# Relative floating-point allowance for comparing computed connector curvature with
+# 1/min_turn_radius. About 0.65 nm of radius at 0.65 m; not a physical relaxation.
+CURVATURE_RELATIVE_ALLOWANCE = 1e-9
+
 
 def _wrap(angle):
     return math.atan2(math.sin(angle), math.cos(angle))
@@ -113,6 +117,11 @@ def prepare_controller_plan(plan, pose, origin, resolution, width, height, costs
     # Feasible joins: vertices strictly ahead of the projection whose biarc is
     # forward and within the planner's curvature limit. The suffix is unchanged.
     limit = 1/min_turn_radius
+    # Comparison-only arithmetic allowance: a checked path exactly at the turn
+    # limit reproduces it to within rounding (3.9968e-15..7.0448e-11 relative on
+    # T-0009 decision 212); genuine excess began at 1.13e-2. The configured
+    # radius, connector geometry and every sweep are unchanged.
+    admissible = limit*(1+CURVATURE_RELATIVE_ALLOWANCE)
     travelled = math.dist(points[index], points[index+1])*(1-fraction)
     feasible = []
     for j in range(index+1, len(points)):
@@ -123,7 +132,7 @@ def prepare_controller_plan(plan, pose, origin, resolution, width, height, costs
         if travelled <= 1e-9:
             continue
         arcs = _biarc(pose, points[j], yaws[j])
-        if arcs is not None and all(abs(k) <= limit for k, _ in arcs):
+        if arcs is not None and all(abs(k) <= admissible for k, _ in arcs):
             feasible.append((travelled, j, arcs))
     if not feasible:
         diagnostic['reason'] = 'no_forward_connector_within_turn_radius'
