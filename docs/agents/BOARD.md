@@ -5,15 +5,16 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0038** `review`: Observe one diagnostic 2029 lap with reviewed Unity timing capture (LEASE-RELEASE by gpt-6-astra at 2026-10-05T08:13:28.5543511-07:00)
+- **T-0039** `changes-requested`: Summarize bounded Unity timing captures without inferring a cause (REVISION by gpt-6-astra at 2026-10-05T08:16:01.5246331-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0038](tasks/T-0038-timed-2029-diagnosis.md): Observe one diagnostic 2029 lap with reviewed Unity timing capture | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef | NOTE by gpt-6-astra at 2026-10-05T08:07:15.7700155-07:00 |
+| [T-0038](tasks/T-0038-timed-2029-diagnosis.md): Observe one diagnostic 2029 lap with reviewed Unity timing capture | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef | LEASE-RELEASE by gpt-6-astra at 2026-10-05T08:13:28.5543511-07:00 |
+| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 09ad7e9d5203762b6d4131da7c7b016a06185150 | REVISION by gpt-6-astra at 2026-10-05T08:16:01.5246331-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `ready` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T08:08:22.6604254-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
