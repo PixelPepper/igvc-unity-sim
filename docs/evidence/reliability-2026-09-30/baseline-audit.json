@@ -1,0 +1,38 @@
+{
+  "source_run": "artifacts/courses/seed-2027/diagnostic-run.json",
+  "source_run_sha256": "91eb3e7a4721303159c208a14382220e1b6502688c17672bc2ec86cb392eabfc",
+  "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+  "passed": false,
+  "certification_status": "failed",
+  "identity_matched": true,
+  "completed_destinations": 2,
+  "total_destinations": 6,
+  "sample_count": 11969,
+  "trajectory_continuous": true,
+  "maximum_interval_speed_mps": 1.5212655057040643,
+  "sampled_obstacles_clear": true,
+  "swept_obstacles_clear": true,
+  "minimum_obstacle_clearance_m": 0.103880405382277,
+  "paint": {
+    "certified": true,
+    "rendered_quad_count": 1112,
+    "contact_pose_count": 0,
+    "unproven_sweep_subsegments": 0,
+    "conservative_clearance_lower_bound_m": 0.009004547800897465,
+    "evaluated_pose_clearance_cap_m": 0.02,
+    "exact_final_base_footprint_clearance_m": 0.06056201787388815
+  },
+  "topology": {
+    "full_loop": false,
+    "gates_visited": 30,
+    "gates_required": 77,
+    "progress_m": 59.758881413210545,
+    "total_arc_m": 155.18610514980062
+  },
+  "returned_within_0_4_m": false,
+  "all_ramps_traversed_entry_to_exit": false,
+  "all_ramps_body_contained_entry_to_departure": false,
+  "wheel_support_certified": false,
+  "limitations": "Compact summary of the already-computed independent audit. Development open-area topology tolerance8m; ideal XY geometry and interpolation, not contact physics or official rule compliance.",
+  "source_artifact_sha256": "785f13e6c40fded94e651ff34a0d3f0886be3ad03b74a99899b7f6817a182d89"
+}

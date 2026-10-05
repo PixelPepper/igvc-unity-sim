@@ -1,0 +1,28 @@
+{
+  "command_exit_code": 1,
+  "interpretation": "Expected aggregate rejection was not enforced; exit 1 intentionally exposes the certification gap. Persisted from the already-completed test output; no rerun.",
+  "manifest_sha256": "77f2ebe7ceaa71cb58f9d014a1e3965936ca616b823c8f2485268da79319b1fa",
+  "results": [
+    {
+      "case": "missing_sensor_health",
+      "expected_full_acceptance": false,
+      "audit_passed": true,
+      "full_loop_certified": true,
+      "checks": ["course_identity_matches", "completed_six_destinations", "sensor_led_mode", "scoring_guard", "zero_line_blocks", "finite_trajectory", "obstacle_geometry_available", "trajectory_continuous", "speed_at_most_2_2_mps", "sampled_obstacles_clear", "swept_obstacles_clear", "returned_within_0_4_m", "all_ramps_traversed_entry_to_exit", "all_ramps_body_contained_entry_to_departure", "whole_footprint_paint_sweep_clear", "ordered_world_full_loop", "six_destinations_independently_visited_in_order"]
+    },
+    {
+      "case": "failed_sensor_health",
+      "expected_full_acceptance": false,
+      "audit_passed": true,
+      "full_loop_certified": true,
+      "checks": ["course_identity_matches", "completed_six_destinations", "sensor_led_mode", "scoring_guard", "zero_line_blocks", "finite_trajectory", "obstacle_geometry_available", "trajectory_continuous", "speed_at_most_2_2_mps", "sampled_obstacles_clear", "swept_obstacles_clear", "returned_within_0_4_m", "all_ramps_traversed_entry_to_exit", "all_ramps_body_contained_entry_to_departure", "whole_footprint_paint_sweep_clear", "ordered_world_full_loop", "six_destinations_independently_visited_in_order"]
+    },
+    {
+      "case": "mismatched_mission_hash",
+      "expected_full_acceptance": false,
+      "audit_passed": true,
+      "full_loop_certified": true,
+      "checks": ["course_identity_matches", "completed_six_destinations", "sensor_led_mode", "scoring_guard", "zero_line_blocks", "finite_trajectory", "obstacle_geometry_available", "trajectory_continuous", "speed_at_most_2_2_mps", "sampled_obstacles_clear", "swept_obstacles_clear", "returned_within_0_4_m", "all_ramps_traversed_entry_to_exit", "all_ramps_body_contained_entry_to_departure", "whole_footprint_paint_sweep_clear", "ordered_world_full_loop", "six_destinations_independently_visited_in_order"]
+    }
+  ]
+}

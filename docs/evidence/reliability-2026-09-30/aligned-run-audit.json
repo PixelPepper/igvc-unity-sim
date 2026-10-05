@@ -1,0 +1,130 @@
+{
+  "passed": false,
+  "source_status": "stopped",
+  "completed_destinations": 2,
+  "checks": {
+    "course_identity_matches": true,
+    "completed_six_destinations": false,
+    "sensor_led_mode": true,
+    "scoring_guard": true,
+    "zero_line_blocks": true,
+    "finite_trajectory": true,
+    "obstacle_geometry_available": true,
+    "trajectory_continuous": true,
+    "speed_at_most_2_2_mps": true,
+    "sampled_obstacles_clear": true,
+    "swept_obstacles_clear": true,
+    "returned_within_0_4_m": false,
+    "all_ramps_traversed_entry_to_exit": false,
+    "all_ramps_body_contained_entry_to_departure": false,
+    "whole_footprint_paint_sweep_clear": true,
+    "ordered_world_full_loop": false,
+    "six_destinations_independently_visited_in_order": false
+  },
+  "sample_count": 18562,
+  "topology_certified": false,
+  "full_loop_certified": false,
+  "paint_crossing_certified": true,
+  "course_identity": {
+    "passed": true,
+    "expected_course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+    "observed_course_hashes": [
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2"
+    ],
+    "status": "matched"
+  },
+  "certification_status": "failed",
+  "limitations": "Offline ideal geometry evidence, not contact physics. Swept bounds assume linear translation and shortest-angle rotation between recorded poses. Gaps fail continuity. Topology uses an explicit development lateral tolerance in unpainted areas, not a competition rule. Intended direction is WORLD centerline array order; initial yaw is not assumed. Course identity requires exact manifest-byte SHA-256. Ramp axle and body-side XY containment are separate evidence. The asymmetric rectangle is not a physical wheel-support polygon; wheel contact, elevation, suspension and rollover are not certified.",
+  "ramp_traversals": [
+    {
+      "ramp_id": "ramp-001",
+      "passed": false,
+      "longitudinal_span_m": 8.0,
+      "reason": "No ordered positive-longitudinal entry-to-exit axle traversal within ramp width"
+    }
+  ],
+  "ramp_body_containment": [
+    {
+      "passed": false,
+      "ramp_id": "ramp-001",
+      "reason": "Body-side containment unproven",
+      "trajectory_index": 17896.0,
+      "conservative_side_margin_m": -4.666498878299429
+    }
+  ],
+  "wheel_support_certified": false,
+  "paint_crossing": {
+    "passed": true,
+    "geometry_available": true,
+    "painted_quad_count": 1112,
+    "contact_pose_count": 0,
+    "unproven_sweep_subsegments": 0,
+    "first_contact": null,
+    "conservative_clearance_lower_bound_m": 0.009011107287866513,
+    "numerical_allowance_m": 0.001,
+    "evaluated_pose_clearance_cap_m": 0.02
+  },
+  "world_topology": {
+    "passed": false,
+    "policy": {
+      "open_area_lateral_m": 8.0,
+      "gate_spacing_m": 2.0,
+      "start_finish_tolerance_m": 0.4,
+      "arc_motion_multiplier": 1.5,
+      "intended_direction": "WORLD centerline array order"
+    },
+    "gates_visited": 40,
+    "gates_required": 77,
+    "total_arc_m": 155.18610514980062,
+    "progress_m": 81.46446695698516,
+    "maximum_progress_m": 81.46446695698516,
+    "last_sample_index": 17613,
+    "last_lateral_m": 5.701839356876,
+    "reason": "Outside ordered WORLD corridor at sample 17614"
+  },
+  "observed_destination_visits": [
+    {
+      "destination_index": 0,
+      "sample_index": 5649,
+      "stamp": 339.76
+    },
+    {
+      "destination_index": 1,
+      "sample_index": 12122,
+      "stamp": 469.22
+    }
+  ],
+  "footprint": {
+    "x_min": -1.1,
+    "x_max": 0.6,
+    "y_min": -0.5,
+    "y_max": 0.5
+  },
+  "obstacle_count": 54,
+  "minimum": {
+    "clearance_m": 0.09102786802238155,
+    "trajectory_index": 13680.0,
+    "pose": [
+      29.64407275084267,
+      31.411732227228814,
+      0.8523446390130364
+    ],
+    "obstacle_id": "barrel-003"
+  },
+  "conservative_swept_clearance_lower_bound_m": 0.0862445997122348,
+  "collision_pose_count": 0,
+  "unproven_sweep_subsegments": 0,
+  "evaluated_sweep_subsegments": 18870,
+  "observed_distance_m": 91.57074373898354,
+  "maximum_interval_speed_mps": 1.1066069384117823,
+  "speed_violation_indices": [],
+  "timestamp_gap_indices": [],
+  "nonincreasing_timestamp_indices": [],
+  "final_distance_to_origin_m": 52.079440948083395,
+  "simulation_span_s": 371.44,
+  "run_sha256": "251c252b98e24cc1c0f98e797d81d682efd9264c175c1cc364592a2deea5bb9c",
+  "source_run": "artifacts/courses/seed-2027/aligned-grid-run.json",
+  "evaluation_course": "artifacts/courses/seed-2027/course.json",
+  "source_artifact_sha256": "d4df65fe27f45b17852efdf55a76bf7a7536bed09a1a35b4ef398b20c7dfeac0"
+}

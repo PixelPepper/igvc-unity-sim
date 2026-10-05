@@ -1,0 +1,283 @@
+{
+  "source_artifact_sha256": "8b41e14987e08d565170c7ad8217eae5051b4a3a7758dda7e03fe3202d61757c",
+  "duration_wall_s": 6.0470160009999745,
+  "recording_status": "recorded",
+  "processing_health_summary": {
+    "status": "pass",
+    "fresh_successful_processing": true,
+    "checks": {
+      "lanes": {
+        "status": "pass",
+        "reason": "fresh_successful_processing_status",
+        "age_wall_s": 0.1028826089998347,
+        "acquisition_lag_sim_s": 0.26,
+        "health_topic": "lane_health",
+        "reported_healthy": true,
+        "health_age_wall_s": 0.10534963199984304
+      },
+      "depth_processing": {
+        "status": "pass",
+        "reason": "fresh_successful_processing_status",
+        "age_wall_s": 0.10280958399994233,
+        "acquisition_lag_sim_s": 0.26,
+        "health_topic": "depth_health",
+        "reported_healthy": true,
+        "health_age_wall_s": 0.10310936999985643
+      }
+    },
+    "lane_detection_visibility": {
+      "status": "insufficient",
+      "reported_valid": false,
+      "fresh_acquisition": true,
+      "meaning": "Lane status.valid means sufficient visible lane points; false can be a legitimate gap.",
+      "current_points": 11,
+      "components": 2
+    },
+    "max_age_wall_s": 1.5,
+    "max_acquisition_lag_sim_s": 1.5,
+    "scope": "Latest lane/depth health Bools plus processed acquisition claims; not full stream health, output quality or motion authorization."
+  },
+  "streams": {
+    "clock": {
+      "count": 497,
+      "last_stamp_ns": 965600000000,
+      "max_gap_s": 0.08814947700011544,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 2.916999983426649e-05,
+      "max_gap_including_tail_s": 0.08814947700011544,
+      "recent_interarrival_wall_s": {
+        "p50": 0.0003822379999292025,
+        "p95": 0.047380505000091944,
+        "p99": 0.052935112000113804
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0
+      }
+    },
+    "lidar_processing": {
+      "count": 25,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.2046956860001501,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.13991816899988407,
+      "max_gap_including_tail_s": 0.2046956860001501,
+      "recent_interarrival_wall_s": {
+        "p50": 0.1999360219999744,
+        "p95": 0.20136919799983843,
+        "p99": 0.2046956860001501
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "lane_health": {
+      "count": 25,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.21714622500007863,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.10534963199984304,
+      "max_gap_including_tail_s": 0.21714622500007863,
+      "recent_interarrival_wall_s": {
+        "p50": 0.19984664999992674,
+        "p95": 0.20239818200002446,
+        "p99": 0.21714622500007863
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "lanes": {
+      "count": 25,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.21615639600008762,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.1028826089998347,
+      "max_gap_including_tail_s": 0.21615639600008762,
+      "recent_interarrival_wall_s": {
+        "p50": 0.20000784900003055,
+        "p95": 0.20217863500010935,
+        "p99": 0.21615639600008762
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "rgb": {
+      "count": 66,
+      "last_stamp_ns": 965560000000,
+      "max_gap_s": 0.11249787700012348,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.05008689099986441,
+      "max_gap_including_tail_s": 0.11249787700012348,
+      "recent_interarrival_wall_s": {
+        "p50": 0.07050981900010811,
+        "p95": 0.09499908700013293,
+        "p99": 0.11249787700012348
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.02,
+        "p99": 0.03
+      }
+    },
+    "rgb_info": {
+      "count": 66,
+      "last_stamp_ns": 965560000000,
+      "max_gap_s": 0.11359563300015907,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.049922912000056385,
+      "max_gap_including_tail_s": 0.11359563300015907,
+      "recent_interarrival_wall_s": {
+        "p50": 0.06842343100015569,
+        "p95": 0.10942800400016495,
+        "p99": 0.11359563300015907
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.03
+      }
+    },
+    "depth": {
+      "count": 46,
+      "last_stamp_ns": 965560000000,
+      "max_gap_s": 0.1311020410000765,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.049406670000053055,
+      "max_gap_including_tail_s": 0.1311020410000765,
+      "recent_interarrival_wall_s": {
+        "p50": 0.1000701579998804,
+        "p95": 0.12967757799992796,
+        "p99": 0.1311020410000765
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.02,
+        "p99": 0.03
+      }
+    },
+    "depth_info": {
+      "count": 46,
+      "last_stamp_ns": 965560000000,
+      "max_gap_s": 0.15764485299996522,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.049318033999952604,
+      "max_gap_including_tail_s": 0.15764485299996522,
+      "recent_interarrival_wall_s": {
+        "p50": 0.10085942399996384,
+        "p95": 0.1503805919999195,
+        "p99": 0.15764485299996522
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.03
+      }
+    },
+    "depth_processing": {
+      "count": 25,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.2105145939999602,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.10280958399994233,
+      "max_gap_including_tail_s": 0.2105145939999602,
+      "recent_interarrival_wall_s": {
+        "p50": 0.2000288859999273,
+        "p95": 0.2027320800000325,
+        "p99": 0.2105145939999602
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "depth_health": {
+      "count": 25,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.210374283000192,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.10310936999985643,
+      "max_gap_including_tail_s": 0.210374283000192,
+      "recent_interarrival_wall_s": {
+        "p50": 0.20028839299993706,
+        "p95": 0.20282154500000615,
+        "p99": 0.210374283000192
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "simulator": {
+      "count": 6,
+      "last_stamp_ns": null,
+      "max_gap_s": 1.0040695800000776,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.6426825189998908,
+      "max_gap_including_tail_s": 1.0040695800000776,
+      "recent_interarrival_wall_s": {
+        "p50": 0.9934403449999536,
+        "p95": 1.0040695800000776,
+        "p99": 1.0040695800000776
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "scan": {
+      "count": 25,
+      "last_stamp_ns": 965410000000,
+      "max_gap_s": 0.2264105719998497,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 5,
+      "age_wall_s": 0.19414357499999824,
+      "max_gap_including_tail_s": 0.2264105719998497,
+      "recent_interarrival_wall_s": {
+        "p50": 0.19469174000005296,
+        "p95": 0.21165853100001186,
+        "p99": 0.2264105719998497
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.0,
+        "p95": 0.01,
+        "p99": 0.01
+      }
+    }
+  },
+  "limits": "Stationary final recorder smoke. Does not establish navigation correctness."
+}

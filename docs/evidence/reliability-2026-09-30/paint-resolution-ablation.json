@@ -1,0 +1,118 @@
+{
+  "source": "artifacts\\checks\\clearance-pair\\global.json",
+  "source_sha256": "0b47bfc4822bd190b328c1255341a63caedd5006f37996a2d9cb566434bf6eed",
+  "mode": "paint-only synthetic ablation; not the complete observed costmap",
+  "source_lane_point_count": 3145,
+  "source_grid_resolution_m": 0.10000000149011612,
+  "pose": [
+    26.64024000976114,
+    33.3624767379918,
+    1.6478634484258377
+  ],
+  "goal_footprint": [
+    -1.12,
+    0.62,
+    -0.52,
+    0.52
+  ],
+  "settings": {
+    "origin": [
+      24.599999999254933,
+      31.299999999254936
+    ],
+    "physical_window_size_m": [
+      4.0,
+      4.0
+    ],
+    "resolutions_m": [
+      0.1,
+      0.05
+    ],
+    "same_origin_for_both": true,
+    "origin_lattice": "cropped from source origin in 0.10m increments",
+    "all_other_cells_cost": 0,
+    "paint_cost": 100,
+    "max_points": 8000,
+    "rasterization": "LaneLayer worldToMap: lower bounds then integer coordinate/resolution; discard outside; setCost LETHAL"
+  },
+  "results": [
+    {
+      "resolution_m": 0.1,
+      "width": 40,
+      "height": 40,
+      "marked_unique_cells": 114,
+      "marked_point_count": 214,
+      "footprint_clear": false,
+      "blocking_cell_count": 4,
+      "blocking_cells": [
+        {
+          "cell": [
+            14,
+            23
+          ],
+          "world_xy": [
+            26.049999999254933,
+            33.64999999925494
+          ],
+          "cost": 100,
+          "nearest_remembered_paint_m": 0.02568021478904735
+        },
+        {
+          "cell": [
+            14,
+            24
+          ],
+          "world_xy": [
+            26.049999999254933,
+            33.74999999925494
+          ],
+          "cost": 100,
+          "nearest_remembered_paint_m": 0.02513772665387682
+        },
+        {
+          "cell": [
+            14,
+            25
+          ],
+          "world_xy": [
+            26.049999999254933,
+            33.84999999925493
+          ],
+          "cost": 100,
+          "nearest_remembered_paint_m": 0.041167547435331166
+        },
+        {
+          "cell": [
+            14,
+            26
+          ],
+          "world_xy": [
+            26.049999999254933,
+            33.949999999254935
+          ],
+          "cost": 100,
+          "nearest_remembered_paint_m": 0.02733529175810506
+        }
+      ],
+      "inside_grid": true,
+      "center_cost": 0
+    },
+    {
+      "resolution_m": 0.05,
+      "width": 80,
+      "height": 80,
+      "marked_unique_cells": 182,
+      "marked_point_count": 214,
+      "footprint_clear": true,
+      "blocking_cell_count": 0,
+      "blocking_cells": [],
+      "inside_grid": true,
+      "center_cost": 0
+    }
+  ],
+  "latency_s": 0.007907100007287227,
+  "resolution_alone_reproduces_old_intersection": true,
+  "resolution_change_alone_clears_intersection": true,
+  "limitations": "Same recorded points, pose, padded footprint and physical origin. Paint-only synthetic marking; ignores inflation, lidar, depth, unknown cells, observation age and asynchronous timing. Explains planner cell-square SAT overlap, not ground-truth paint or contact physics. Resolution comparison does not claim the new full costmap shares the same memory.",
+  "source_artifact_sha256": "e845bb8853912a81d23d2c5e82cca0faffbc36b49d8f2cb84161c4d6313c56c9"
+}

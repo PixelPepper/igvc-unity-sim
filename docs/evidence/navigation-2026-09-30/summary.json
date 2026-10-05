@@ -1,0 +1,1299 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "environment": "Windows Unity ideal fixture, native Ubuntu 24.04 WSL2 ROS 2 Jazzy",
+  "baseline_configuration": "Matched 0.05 m grids, full padded asymmetric footprint, inflation 0.30 m, speed cap 2.2 m/s",
+  "runtime_world_geometry": false,
+  "independent_world_audit": true,
+  "trials": [
+    {
+      "name": "baseline",
+      "source_files": {
+        "run": "artifacts/checks/entrance-baseline-run.json",
+        "audit": "artifacts/checks/entrance-baseline-audit.json",
+        "analysis": "artifacts/checks/entrance-baseline-analysis.json",
+        "episode": "artifacts/checks/entrance-baseline-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "579b5ce6a1be3bf9a63cd47a6b150c4cc90b46771caf963cd338e886917376f9",
+        "audit": "c3f29885ac61b48346e0ffb8dd95cbc990bb68aa897e6dd2a3554adc573e9330",
+        "analysis": "d6d25d543a14e583d4caef9d9c7288b483a0480909db72212ec31175f4b23f0b",
+        "episode": "8aa46a8ef5f201d77a149483c040ba4bfd758e2033a903d66b5a2f5c0859b758"
+      },
+      "source_sha256": {
+        "sensor_course.py": "6a26b93b9fd00ca5b855b389493a0d635885ee28b8207e2e4a00ae6be4b3aeaf",
+        "observed_navigation.py": "49c5b367cf4128a97fb6d4e39018e3f6eab843cdc4b2bba36cc557b6da923dd0",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "5142d99b0f94336df8578a75c9f06b1279d885df319d211b61cb456dc442757c"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 5.0,
+        "guidance_memory": "heading",
+        "goal_policy": "rolling",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 360.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 2,
+        "elapsed_wall_s": 278.88389750400006,
+        "recoveries": [
+          {
+            "destination": 1,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6020000089267398,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 1.0212623923970494,
+              "elapsed_seconds": 1.235258798000018,
+              "charged_expansions": 1216,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1216,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 180.0,
+          "distance_m": 50.20720094086843,
+          "below_0_05_mps_time_fraction": 0.2805555555555571,
+          "average_progress_speed_mps": 0.27892889411593574
+        },
+        "decision_capture": {
+          "saved": 98,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-baseline-decisions"
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.12213019329605684,
+          "trajectory_index": 11044.0,
+          "pose": [
+            29.88882349728685,
+            31.87771054920334,
+            1.4396584816233873
+          ],
+          "obstacle_id": "barrel-003"
+        },
+        "maximum_interval_speed_mps": 1.179163098321285,
+        "final_distance_to_origin_m": 50.79601664927519,
+        "ramp_body_containment": [
+          {
+            "passed": false,
+            "ramp_id": "ramp-001",
+            "reason": "No complete body entry and departure"
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 98,
+        "guidance_counts": {
+          "observed_lane_corridor": 65,
+          "broad_gps": 16,
+          "remembered_lane_heading": 17
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 65,
+          "all_pairs_rejected": 20,
+          "insufficient_extracted_segments": 13
+        },
+        "input_age_wall_s": {
+          "median": 0.6087130924999542,
+          "p95": 5.643304523600039,
+          "max": 5.708676867999998
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 41,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.894015357934567,
+        "largest_differences": [
+          {
+            "sequence": 21,
+            "goal_id": "8aaaf37ae0474494b323308580d220e9",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.09508471760716879,
+            "input_age_wall_s": 0.5439586859999963,
+            "nav_stamp_ns": 526510000000,
+            "symmetric_max_m": 1.2945726418166768,
+            "reference_to_nav_p95_m": 0.057502802957339116,
+            "nav_to_reference_p95_m": 1.2831089142726009
+          },
+          {
+            "sequence": 2,
+            "goal_id": "1ea977e331404b84b42602e4baa2b1da",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.04813127562048492,
+            "input_age_wall_s": 5.1891985419999855,
+            "nav_stamp_ns": 482240000000,
+            "symmetric_max_m": 1.1992660338223406,
+            "reference_to_nav_p95_m": 0.05593270459632905,
+            "nav_to_reference_p95_m": 1.1919093497415252
+          },
+          {
+            "sequence": 79,
+            "goal_id": "04d6698deb274243b8dbe8c5427c5590",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.4059491789608873,
+            "input_age_wall_s": 5.6235410450000245,
+            "nav_stamp_ns": 708550000000,
+            "symmetric_max_m": 0.894015357934567,
+            "reference_to_nav_p95_m": 0.890795158328306,
+            "nav_to_reference_p95_m": 0.8894724839075969
+          }
+        ]
+      },
+      "recording": {
+        "status": "finished",
+        "duration_wall_s": 405.039390315,
+        "frames_attempted": 800,
+        "receive_counters": {
+          "rgb_info_received": 5503,
+          "depth_received": 3849,
+          "depth_info_received": 3849,
+          "rgb_received": 5502,
+          "/scan_received": 2169,
+          "/cmd_vel_received": 8079,
+          "/odom_received": 20567,
+          "mask_received": 2019,
+          "lane_status_received": 2019,
+          "lane_points_received": 2019,
+          "lane_evidence_received": 2018,
+          "surfaces_received": 2019,
+          "depth_status_received": 2019,
+          "/mission/decision_received": 326,
+          "/mission/observed_path_received": 47,
+          "/plan_received": 208
+        },
+        "writer_counters": {
+          "frame_queued": 800,
+          "queue_high_water": 17,
+          "frame_written": 800,
+          "event_queued": 35434,
+          "event_written": 35434
+        },
+        "writer_drained": true
+      }
+    },
+    {
+      "name": "fast",
+      "source_files": {
+        "run": "artifacts/checks/entrance-fast-run.json",
+        "audit": "artifacts/checks/entrance-fast-audit.json",
+        "analysis": "artifacts/checks/entrance-fast-analysis.json",
+        "episode": "artifacts/checks/entrance-fast-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "fa6c193274f7d35a1558d8960815e620f42e34b284532241c3bc6932868459f3",
+        "audit": "2843aeb61a0c547f06586786eb6f5626d93ccdfac214349082eb8b166a588f8e",
+        "analysis": "0e9ecf49b49bf28fabbc68b5046d12867b1abffbd7f02c45d3ea2968ff966be7",
+        "episode": "bd9ca9ac3736490ce428c03ad04da2450376486ebe2323c2d6fb1537271c562f"
+      },
+      "source_sha256": {
+        "sensor_course.py": "7e59b133add3ad0680d00234c8019937e7f25a31f4deb078625945a012757699",
+        "observed_navigation.py": "49c5b367cf4128a97fb6d4e39018e3f6eab843cdc4b2bba36cc557b6da923dd0",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "5142d99b0f94336df8578a75c9f06b1279d885df319d211b61cb456dc442757c"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 0.5,
+        "guidance_memory": "heading",
+        "goal_policy": "rolling",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 360.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "Bounded sensor mission timed out",
+        "completed_destinations": 5,
+        "elapsed_wall_s": 360.011508071,
+        "recoveries": [
+          {
+            "destination": 5,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6050000089708613,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 4.3279762804798985,
+              "elapsed_seconds": 1.213813281999819,
+              "charged_expansions": 1280,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1280,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 179.99999999999997,
+          "distance_m": 73.61132030417347,
+          "below_0_05_mps_time_fraction": 0.32922222222222214,
+          "average_progress_speed_mps": 0.4089517794676305
+        },
+        "decision_capture": {
+          "saved": 236,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-fast-decisions",
+          "drained": true
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": true,
+          "all_ramps_body_contained_entry_to_departure": true,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.08073213422690034,
+          "trajectory_index": 18679.0,
+          "pose": [
+            -8.395522631711081,
+            11.882464278539194,
+            -1.5899306651064355
+          ],
+          "obstacle_id": "barrel-004"
+        },
+        "maximum_interval_speed_mps": 1.3318141096429335,
+        "final_distance_to_origin_m": 14.492050996470544,
+        "ramp_body_containment": [
+          {
+            "passed": true,
+            "ramp_id": "ramp-001",
+            "entry_trajectory_index": 12131.0,
+            "exit_trajectory_index": 13014.0,
+            "conservative_side_margin_m": 0.6609188499834528
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 235,
+        "guidance_counts": {
+          "observed_lane_corridor": 53,
+          "remembered_lane_heading": 71,
+          "broad_gps": 111
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 53,
+          "all_pairs_rejected": 107,
+          "insufficient_extracted_segments": 74,
+          "insufficient_points_after_spatial_gates": 1
+        },
+        "input_age_wall_s": {
+          "median": 1.0093536799997764,
+          "p95": 1.1650208495000698,
+          "max": 1.1996827139998913
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 86,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.6378824790605013,
+        "largest_differences": [
+          {
+            "sequence": 231,
+            "goal_id": "0f53c716ae5b4b6496431885228ab953",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.0053172642136886826,
+            "input_age_wall_s": 1.124697648999927,
+            "nav_stamp_ns": 378340000000,
+            "symmetric_max_m": 0.8838377290185085,
+            "reference_to_nav_p95_m": 0.8671441332028201,
+            "nav_to_reference_p95_m": 0.8304509567863627
+          },
+          {
+            "sequence": 29,
+            "goal_id": "42871c33e7294ee9b526b56b73e673c0",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.38893884734730844,
+            "input_age_wall_s": 1.0568530689999989,
+            "nav_stamp_ns": 63040000000,
+            "symmetric_max_m": 0.8302067103052867,
+            "reference_to_nav_p95_m": 0.8179219556738211,
+            "nav_to_reference_p95_m": 0.8225416660799141
+          },
+          {
+            "sequence": 198,
+            "goal_id": "88fba0a7908b44a9b7e1c79589d5bfe3",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.2792519256887848,
+            "input_age_wall_s": 1.079516840999986,
+            "nav_stamp_ns": 321500000000,
+            "symmetric_max_m": 0.8035909454534221,
+            "reference_to_nav_p95_m": 0.7906424145388509,
+            "nav_to_reference_p95_m": 0.749669143476303
+          }
+        ]
+      },
+      "recording": {
+        "status": "finished",
+        "duration_wall_s": 405.01990032000003,
+        "frames_attempted": 801,
+        "receive_counters": {
+          "lane_status_received": 2021,
+          "depth_received": 3950,
+          "depth_info_received": 3950,
+          "rgb_received": 5494,
+          "surfaces_received": 2020,
+          "depth_status_received": 2020,
+          "mask_received": 2019,
+          "rgb_info_received": 5494,
+          "lane_points_received": 2020,
+          "lane_evidence_received": 2019,
+          "/scan_received": 2165,
+          "/odom_received": 20500,
+          "/cmd_vel_received": 8057,
+          "/mission/decision_received": 794,
+          "/mission/observed_path_received": 95,
+          "/plan_received": 328
+        },
+        "writer_counters": {
+          "frame_queued": 801,
+          "queue_high_water": 30,
+          "frame_written": 801,
+          "event_queued": 35980,
+          "event_written": 35980
+        },
+        "writer_drained": true
+      }
+    },
+    {
+      "name": "completion",
+      "source_files": {
+        "run": "artifacts/checks/entrance-completion-run.json",
+        "audit": "artifacts/checks/entrance-completion-audit.json",
+        "analysis": "artifacts/checks/entrance-completion-analysis.json",
+        "episode": "artifacts/checks/entrance-completion-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "bb4446e4ed8bb75fd0e5905a5cf7d815b35170de0ad6063bf79dcfc2b419126d",
+        "audit": "a982ad35e4408cd7c734e6bda0007318e95d88edc2169fe6a9f670e3ea8d5bad",
+        "analysis": "f7b9ed0116da513e620850fe2755cd9cbdf0bd63a9ad24a5ea3656c0e82014e6",
+        "episode": "9a28d77468763093a40a1659b0cd8e4e7a0e6bcb6b3e0b952112f896fe214273"
+      },
+      "source_sha256": {
+        "sensor_course.py": "7e59b133add3ad0680d00234c8019937e7f25a31f4deb078625945a012757699",
+        "observed_navigation.py": "49c5b367cf4128a97fb6d4e39018e3f6eab843cdc4b2bba36cc557b6da923dd0",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "5142d99b0f94336df8578a75c9f06b1279d885df319d211b61cb456dc442757c"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 0.5,
+        "guidance_memory": "heading",
+        "goal_policy": "rolling",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 600.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 4,
+        "elapsed_wall_s": 385.234166447,
+        "recoveries": [
+          {
+            "destination": 1,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6060000089858678,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 2.861517567613798,
+              "elapsed_seconds": 1.2169488080000974,
+              "charged_expansions": 1088,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1088,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          },
+          {
+            "destination": 4,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6060000089862309,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 1.3544297894571917,
+              "elapsed_seconds": 0.5757683080000788,
+              "charged_expansions": 43,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 43,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 180.0,
+          "distance_m": 82.33053636457905,
+          "below_0_05_mps_time_fraction": 0.15055555555555564,
+          "average_progress_speed_mps": 0.4573918686921058
+        },
+        "decision_capture": {
+          "saved": 247,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-completion-decisions",
+          "drained": true
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": true,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.07792971724620829,
+          "trajectory_index": 5482.0,
+          "pose": [
+            28.675319858752268,
+            21.1747398089766,
+            2.7957103993757233
+          ],
+          "obstacle_id": "barrel-002"
+        },
+        "maximum_interval_speed_mps": 1.3450521036828793,
+        "final_distance_to_origin_m": 22.41573963827927,
+        "ramp_body_containment": [
+          {
+            "passed": false,
+            "ramp_id": "ramp-001",
+            "reason": "Body-side containment unproven",
+            "trajectory_index": 9727.0,
+            "conservative_side_margin_m": -0.26714046638189887
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 247,
+        "guidance_counts": {
+          "observed_lane_corridor": 107,
+          "broad_gps": 46,
+          "remembered_lane_heading": 94
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 107,
+          "all_pairs_rejected": 87,
+          "insufficient_extracted_segments": 53
+        },
+        "input_age_wall_s": {
+          "median": 0.6587729639998088,
+          "p95": 1.1147183949999544,
+          "max": 1.238219177000019
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 70,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.8996454367713357,
+        "largest_differences": [
+          {
+            "sequence": 222,
+            "goal_id": "8282baf47fb34050aec548c69ee5d519",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.18196199233495974,
+            "input_age_wall_s": 1.0221352839998872,
+            "nav_stamp_ns": 365730000000,
+            "symmetric_max_m": 1.3876356057621748,
+            "reference_to_nav_p95_m": 0.1263242942965455,
+            "nav_to_reference_p95_m": 1.374460603079195
+          },
+          {
+            "sequence": 223,
+            "goal_id": "a87adee172fe49d8a76768246da8f528",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.21647550101244822,
+            "input_age_wall_s": 1.0095994439998321,
+            "nav_stamp_ns": 366800000000,
+            "symmetric_max_m": 1.3856768196685711,
+            "reference_to_nav_p95_m": 0.1445757801934203,
+            "nav_to_reference_p95_m": 1.3669770022127992
+          },
+          {
+            "sequence": 89,
+            "goal_id": "b2c5d8a92d564ac8840aee7b24c55610",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.3609401812994298,
+            "input_age_wall_s": 1.1079453339998508,
+            "nav_stamp_ns": 162570000000,
+            "symmetric_max_m": 0.9879840408643451,
+            "reference_to_nav_p95_m": 0.974839334856148,
+            "nav_to_reference_p95_m": 0.9557195321571135
+          }
+        ]
+      },
+      "recording": {
+        "status": "interrupted",
+        "duration_wall_s": 548.541716877,
+        "frames_attempted": 1084,
+        "receive_counters": {
+          "surfaces_received": 2740,
+          "depth_status_received": 2742,
+          "mask_received": 2734,
+          "lane_points_received": 2735,
+          "lane_status_received": 2738,
+          "lane_evidence_received": 2734,
+          "/odom_received": 27932,
+          "/cmd_vel_received": 10940,
+          "rgb_info_received": 7457,
+          "rgb_received": 7456,
+          "/scan_received": 2938,
+          "depth_received": 5313,
+          "depth_info_received": 5313,
+          "/mission/decision_received": 794,
+          "/mission/observed_path_received": 76,
+          "/plan_received": 315
+        },
+        "writer_counters": {
+          "frame_queued": 1084,
+          "queue_high_water": 18,
+          "frame_written": 1084,
+          "event_queued": 48475,
+          "event_written": 48475
+        },
+        "writer_drained": true
+      }
+    },
+    {
+      "name": "fixed",
+      "source_files": {
+        "run": "artifacts/checks/entrance-fixed-run.json",
+        "audit": "artifacts/checks/entrance-fixed-audit.json",
+        "analysis": "artifacts/checks/entrance-fixed-analysis.json",
+        "episode": "artifacts/checks/entrance-fixed-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "ea86c6adc567185d43d4db8fe3c55b1a698d8f0277fe24e3a92ba125c2bccd24",
+        "audit": "9771faf34c4eb5b0d05c850a041ce533dc755f41680e5cb61c90681529a3bb2f",
+        "analysis": "3bec4799c1a9b68c06d352e3aba7b0a01084aedf1f7ae35d50fc5cc9724046f7",
+        "episode": "6fe062f629fde6652f46a43c649a952ab9c6632d886e5619505349a3a5fb0e35"
+      },
+      "source_sha256": {
+        "sensor_course.py": "73f90993b86beeab300d8bb7ed952a4ea33e8fb35b12f18e501effe1be6c2839",
+        "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "5142d99b0f94336df8578a75c9f06b1279d885df319d211b61cb456dc442757c",
+        "entrance_memory.py": "10048593513f89f875f42dd6072e69e890cd14db76c83bc0475472cd06ee4b63",
+        "entrance_support.py": "7b84e8e5896968ef12d4fb4dbb81857749f7ee6cd9d0a1f38c2812ece96e4d27"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 0.5,
+        "guidance_memory": "entrance",
+        "goal_policy": "rolling",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 600.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 5,
+        "elapsed_wall_s": 431.3161853429997,
+        "recoveries": [
+          {
+            "destination": 1,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6080000090163254,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 1.7364246928751097,
+              "elapsed_seconds": 1.3330725000000712,
+              "charged_expansions": 960,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 960,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 179.99999999999997,
+          "distance_m": 47.489165177610346,
+          "below_0_05_mps_time_fraction": 0.13777777777777755,
+          "average_progress_speed_mps": 0.2638286954311686
+        },
+        "decision_capture": {
+          "saved": 281,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-fixed-decisions",
+          "drained": true
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": true,
+          "all_ramps_body_contained_entry_to_departure": true,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.09070101443617812,
+          "trajectory_index": 9615.0,
+          "pose": [
+            28.09775185946562,
+            22.672613328435308,
+            1.5502762709201607
+          ],
+          "obstacle_id": "barrel-002"
+        },
+        "maximum_interval_speed_mps": 1.5330060479998775,
+        "final_distance_to_origin_m": 0.4997541147083832,
+        "ramp_body_containment": [
+          {
+            "passed": true,
+            "ramp_id": "ramp-001",
+            "entry_trajectory_index": 13951.0,
+            "exit_trajectory_index": 15382.0,
+            "conservative_side_margin_m": 0.584278146484556
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 281,
+        "guidance_counts": {
+          "observed_lane_corridor": 150,
+          "broad_gps": 117,
+          "remembered_lane_entrance": 14
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 150,
+          "all_pairs_rejected": 102,
+          "insufficient_extracted_segments": 19,
+          "insufficient_points_after_spatial_gates": 1,
+          "not_requested": 9
+        },
+        "input_age_wall_s": {
+          "median": 0.8486242479998509,
+          "p95": 1.1404110920002495,
+          "max": 1.2093245589999242
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 93,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.7897025155045375,
+        "largest_differences": [
+          {
+            "sequence": 119,
+            "goal_id": "230a794f410e4a1abb2f0ec2fefa412b",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.09319608675759022,
+            "input_age_wall_s": 1.1182003670000995,
+            "nav_stamp_ns": 215810000000,
+            "symmetric_max_m": 1.0504411373839913,
+            "reference_to_nav_p95_m": 1.0287893083429005,
+            "nav_to_reference_p95_m": 0.9783497517572681
+          },
+          {
+            "sequence": 195,
+            "goal_id": "6038968c5ff74718bd7fdb083c3a92b5",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.12726220208020433,
+            "input_age_wall_s": 0.9844112989999303,
+            "nav_stamp_ns": 332620000000,
+            "symmetric_max_m": 1.023993553586243,
+            "reference_to_nav_p95_m": 1.01864461068162,
+            "nav_to_reference_p95_m": 0.9845154402628314
+          },
+          {
+            "sequence": 196,
+            "goal_id": "19b3a5fd2e3549f9aeb43bcc92584deb",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.20518812935568193,
+            "input_age_wall_s": 0.9392583919998287,
+            "nav_stamp_ns": 333700000000,
+            "symmetric_max_m": 0.904590082653737,
+            "reference_to_nav_p95_m": 0.8907958196454233,
+            "nav_to_reference_p95_m": 0.8414973463369179
+          }
+        ]
+      },
+      "recording": {
+        "status": "interrupted",
+        "duration_wall_s": 524.3781959070002,
+        "frames_attempted": 1037,
+        "receive_counters": {
+          "surfaces_received": 2621,
+          "depth_status_received": 2621,
+          "depth_info_received": 5102,
+          "rgb_received": 7154,
+          "rgb_info_received": 7154,
+          "depth_received": 5101,
+          "/scan_received": 2816,
+          "mask_received": 2615,
+          "lane_status_received": 2616,
+          "lane_points_received": 2616,
+          "lane_evidence_received": 2615,
+          "/odom_received": 26627,
+          "/cmd_vel_received": 10430,
+          "/mission/decision_received": 926,
+          "/plan_received": 383,
+          "/mission/observed_path_received": 98
+        },
+        "writer_counters": {
+          "frame_queued": 1037,
+          "queue_high_water": 23,
+          "frame_written": 1037,
+          "event_queued": 46517,
+          "event_written": 46517
+        },
+        "writer_drained": true
+      }
+    },
+    {
+      "name": "hold",
+      "source_files": {
+        "run": "artifacts/checks/entrance-hold-run.json",
+        "audit": "artifacts/checks/entrance-hold-audit.json",
+        "analysis": "artifacts/checks/entrance-hold-analysis.json",
+        "episode": "artifacts/checks/entrance-hold-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "f32d0aa7670ac618239ea83107ae02de2aa7ea204378b3e311f7394e97665859",
+        "audit": "0592117505b6ff1be1c3dbbeb38ede385aa40aa7fdf4ae15e892b7fc3e8c0cab",
+        "analysis": "07855fd48487deba3e440b8b3cb890defe1fa88d26a4f67a2385f1dad50f9833",
+        "episode": "41c63cfcc203c97f08d0e883aad34ef8e28ce169af1e6365163debc3b2c8c0a4"
+      },
+      "source_sha256": {
+        "sensor_course.py": "e05dd042c88afe51b523544efd09c0b9c0558737034ecfc7f8ee1918da69c33a",
+        "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "aed9df8f0a3a6d9b75b01b97e30d0f6c1eec88e66c832a1e575095aedf6f83b2",
+        "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+        "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 0.5,
+        "guidance_memory": "heading",
+        "goal_policy": "hold",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 180.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "Bounded sensor mission timed out",
+        "completed_destinations": 1,
+        "elapsed_wall_s": 180.01468257099987,
+        "recoveries": [],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 179.99999999999997,
+          "distance_m": 46.53289109901193,
+          "below_0_05_mps_time_fraction": 0.10022222222222223,
+          "average_progress_speed_mps": 0.2585160616611774
+        },
+        "decision_capture": {
+          "saved": 15,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-hold-decisions",
+          "drained": true
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.10649072774007101,
+          "trajectory_index": 7638.0,
+          "pose": [
+            27.629586100653814,
+            8.992245549534923,
+            0.893060149268604
+          ],
+          "obstacle_id": "barrel-019"
+        },
+        "maximum_interval_speed_mps": 0.8539759839035215,
+        "final_distance_to_origin_m": 35.33419253370565,
+        "ramp_body_containment": [
+          {
+            "passed": false,
+            "ramp_id": "ramp-001",
+            "reason": "No complete body entry and departure"
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 14,
+        "guidance_counts": {
+          "observed_lane_corridor": 12,
+          "broad_gps": 2
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 12,
+          "all_pairs_rejected": 2
+        },
+        "input_age_wall_s": {
+          "median": 0.6279595114999665,
+          "p95": 1.1409001848999878,
+          "max": 1.1433204820000356
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 13,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.4254456705893328,
+        "largest_differences": [
+          {
+            "sequence": 2,
+            "goal_id": "5d72c270f4cd42e6a6b21cea151e5ba9",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.00244179961528346,
+            "input_age_wall_s": 0.7450583180002468,
+            "nav_stamp_ns": 22950000000,
+            "symmetric_max_m": 0.5169984626221418,
+            "reference_to_nav_p95_m": 0.5101540397512752,
+            "nav_to_reference_p95_m": 0.4843318894219798
+          },
+          {
+            "sequence": 10,
+            "goal_id": "da2d56c1429b4e2bb09bd0c57a05e60e",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.0011653925572909284,
+            "input_age_wall_s": 1.1433204820000356,
+            "nav_stamp_ns": 88500000000,
+            "symmetric_max_m": 0.36441047590079384,
+            "reference_to_nav_p95_m": 0.34469629285073117,
+            "nav_to_reference_p95_m": 0.34223162298658005
+          },
+          {
+            "sequence": 4,
+            "goal_id": "166296572ff94618a10d8bcc3970ce33",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.00266126131668677,
+            "input_age_wall_s": 0.5807985350002127,
+            "nav_stamp_ns": 38910000000,
+            "symmetric_max_m": 0.22351381488061106,
+            "reference_to_nav_p95_m": 0.20964727293974997,
+            "nav_to_reference_p95_m": 0.20627816846903746
+          }
+        ]
+      },
+      "recording": {
+        "status": "finished",
+        "duration_wall_s": 220.04368066400002,
+        "frames_attempted": 435,
+        "receive_counters": {
+          "/cmd_vel_received": 4373,
+          "/odom_received": 10980,
+          "depth_received": 2160,
+          "depth_info_received": 2160,
+          "rgb_received": 2934,
+          "rgb_info_received": 2934,
+          "/scan_received": 1156,
+          "depth_status_received": 1092,
+          "surfaces_received": 1091,
+          "mask_received": 1088,
+          "lane_points_received": 1089,
+          "lane_status_received": 1089,
+          "lane_evidence_received": 1088,
+          "/mission/decision_received": 58,
+          "/mission/observed_path_received": 14,
+          "/plan_received": 166
+        },
+        "writer_counters": {
+          "frame_queued": 435,
+          "queue_high_water": 15,
+          "frame_written": 435,
+          "event_queued": 18928,
+          "event_written": 18928
+        },
+        "writer_drained": true
+      }
+    },
+    {
+      "name": "verified",
+      "source_files": {
+        "run": "artifacts/checks/entrance-verified-run.json",
+        "audit": "artifacts/checks/entrance-verified-audit.json",
+        "analysis": "artifacts/checks/entrance-verified-analysis.json",
+        "episode": "artifacts/checks/entrance-verified-episode/episode.json"
+      },
+      "files_sha256": {
+        "run": "246fe87cdb34d3deb4fb36613bdfc12f16ebac4930cefd8ba86184f25979abdc",
+        "audit": "cecae4607f18c48b5e4ee6944133c4a71b199129129e1081357cde6681620344",
+        "analysis": "96d1a5b20e52f22ae03b8809c137136de28b0bf84e56e4a66dc43128ba8e354b",
+        "episode": "d27c9bc9aeee9f58408fdc557fad192ade7142d16bb0dea27d252bed644a5d97"
+      },
+      "source_sha256": {
+        "sensor_course.py": "e05dd042c88afe51b523544efd09c0b9c0558737034ecfc7f8ee1918da69c33a",
+        "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+        "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+        "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+        "sensor_route_policy.py": "aed9df8f0a3a6d9b75b01b97e30d0f6c1eec88e66c832a1e575095aedf6f83b2",
+        "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+        "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294"
+      },
+      "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+      "configuration": {
+        "planning_budget_wall_s": 0.5,
+        "guidance_memory": "entrance",
+        "goal_policy": "rolling",
+        "requested_speed_mps": 2.2,
+        "timeout_wall_s": 600.0
+      },
+      "result": {
+        "status": "stopped",
+        "reason": "No safe forward route after limited backup recovery",
+        "completed_destinations": 3,
+        "elapsed_wall_s": 429.11793835399976,
+        "recoveries": [
+          {
+            "destination": 1,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6090000090301133,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 9.496234431485794,
+              "elapsed_seconds": 1.4455563490000714,
+              "charged_expansions": 768,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 768,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          },
+          {
+            "destination": 3,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6070000090002657,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 4.211987395746915,
+              "elapsed_seconds": 1.2058850230000644,
+              "charged_expansions": 1472,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1472,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          },
+          {
+            "destination": 3,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6080000090155702,
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 4.182975319629792,
+              "elapsed_seconds": 1.2684076059999825,
+              "charged_expansions": 1408,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1408,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ],
+        "first_window_motion": {
+          "window": "First up to 180 simulator seconds after first requested decision",
+          "observed_duration_s": 180.0,
+          "distance_m": 51.75531734614168,
+          "below_0_05_mps_time_fraction": 0.10855555555555557,
+          "average_progress_speed_mps": 0.28752954081189824
+        },
+        "decision_capture": {
+          "saved": 272,
+          "dropped": 0,
+          "errors": [],
+          "directory": "artifacts/checks/entrance-verified-decisions",
+          "drained": true
+        },
+        "audit_passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": true,
+          "all_ramps_body_contained_entry_to_departure": true,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum_obstacle_clearance": {
+          "clearance_m": 0.08325742719498876,
+          "trajectory_index": 16862.0,
+          "pose": [
+            2.2849965147555378,
+            43.32149310427909,
+            -2.776389201752411
+          ],
+          "obstacle_id": "barricade-006"
+        },
+        "maximum_interval_speed_mps": 1.5012677477266878,
+        "final_distance_to_origin_m": 41.66438086497095,
+        "ramp_body_containment": [
+          {
+            "passed": true,
+            "ramp_id": "ramp-001",
+            "entry_trajectory_index": 12081.0,
+            "exit_trajectory_index": 16460.0,
+            "conservative_side_margin_m": 0.2391397915884447
+          }
+        ]
+      },
+      "analysis": {
+        "schema_version": 1,
+        "evaluated_decisions": 272,
+        "guidance_counts": {
+          "observed_lane_corridor": 122,
+          "remembered_lane_entrance": 5,
+          "broad_gps": 145
+        },
+        "lane_rejection_counts": {
+          "geometric_corridor_supported": 122,
+          "all_pairs_rejected": 116,
+          "insufficient_extracted_segments": 34
+        },
+        "input_age_wall_s": {
+          "median": 0.9856610525000633,
+          "p95": 1.1738307175499356,
+          "max": 1.249128165000002
+        },
+        "limitations": "Path matching uses endpoint/time because nav_msgs/Path has no action UUID. Differences may be valid replanning, not proof of collision or wrong course intent. Sparse camera capture is not full-rate sensor replay."
+      },
+      "path_comparison": {
+        "matches": 63,
+        "method": "Endpoint/time/frame/start-proximity/active-lifetime heuristic; no action UUID on Path",
+        "symmetric_max_p95_m": 0.7139910039556705,
+        "largest_differences": [
+          {
+            "sequence": 58,
+            "goal_id": "562ba1455fff4775a984c9aad43cf6d2",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.01660354482285331,
+            "input_age_wall_s": 1.0493993200002478,
+            "nav_stamp_ns": 114300000000,
+            "symmetric_max_m": 0.9514953830646992,
+            "reference_to_nav_p95_m": 0.9377576239581866,
+            "nav_to_reference_p95_m": 0.9043797597002141
+          },
+          {
+            "sequence": 111,
+            "goal_id": "6cd89d543ca94ea4b09c2b107244f3db",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.10711239859825662,
+            "input_age_wall_s": 1.0236205760002122,
+            "nav_stamp_ns": 195490000000,
+            "symmetric_max_m": 0.9118129693794286,
+            "reference_to_nav_p95_m": 0.8919886961600278,
+            "nav_to_reference_p95_m": 0.8741006431976447
+          },
+          {
+            "sequence": 113,
+            "goal_id": "7ec7f616ef2249d287fdd21f0f009f89",
+            "matched_by": "endpoint_and_acquisition_time_not_path_goal_uuid",
+            "start_offset_m": 0.09364676162178334,
+            "input_age_wall_s": 1.0294949719996112,
+            "nav_stamp_ns": 198580000000,
+            "symmetric_max_m": 0.7451870715945621,
+            "reference_to_nav_p95_m": 0.7267684164159478,
+            "nav_to_reference_p95_m": 0.6793863687089112
+          }
+        ]
+      },
+      "recording": {
+        "status": "interrupted",
+        "duration_wall_s": 486.95831813899986,
+        "frames_attempted": 962,
+        "receive_counters": {
+          "/scan_received": 2611,
+          "rgb_received": 6628,
+          "rgb_info_received": 6628,
+          "depth_received": 4731,
+          "depth_info_received": 4731,
+          "lane_status_received": 2433,
+          "mask_received": 2431,
+          "lane_points_received": 2432,
+          "lane_evidence_received": 2431,
+          "/odom_received": 24731,
+          "/cmd_vel_received": 9715,
+          "surfaces_received": 2425,
+          "depth_status_received": 2425,
+          "/mission/decision_received": 873,
+          "/plan_received": 369,
+          "/mission/observed_path_received": 68,
+          "/mission/decision_oversize_drops": 202
+        },
+        "writer_counters": {
+          "frame_queued": 962,
+          "queue_high_water": 13,
+          "frame_written": 962,
+          "event_queued": 43023,
+          "event_written": 43023
+        },
+        "writer_drained": true
+      }
+    }
+  ],
+  "limitations": "Single development host and seed; stochastic control and wall budgets. No hardware calibration, held-out seed coverage, Docker rebuild or successful full autonomy implied. Raw episodes and grids remain local ignored artifacts; compact reports retain hashes, not full replay inputs."
+}

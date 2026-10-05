@@ -1,0 +1,91 @@
+{
+  "schema_version": 1,
+  "window": {
+    "start_received_monotonic_s": 434.536016522,
+    "end_received_monotonic_s": 494.536016522,
+    "anchor": "mission_end",
+    "duration_s": 60
+  },
+  "source": "artifacts/checks/entrance-support-episode/history.jsonl",
+  "topic_counts": {
+    "/cmd_vel/nav": 623,
+    "/cmd_vel": 1196,
+    "/sim/drive_command": 1196,
+    "/odom": 2988,
+    "/plan": 28,
+    "/mission/observed_path": 12,
+    "/mission/decision": 105
+  },
+  "nav_guard_disallowed_commands": 0,
+  "comparison": {
+    "method": "latest preceding Nav command with reception age <=0.15s; asynchronous, not exact pairing",
+    "matched_outputs": 696,
+    "zero_outputs_with_recent_nonzero_nav": []
+  },
+  "path_pair": {
+    "nav_time": 479.470150771,
+    "observed_time": 479.482102689,
+    "nav_points": 62,
+    "observed_points": 840,
+    "nav_length_m": 4.897681877169881,
+    "observed_length_m": 4.867233979559504,
+    "endpoints": {
+      "nav": [
+        -10.385504150390624,
+        19.39005527496338
+      ],
+      "observed": [
+        -10.385504794384067,
+        19.39005507346217
+      ]
+    },
+    "nav_first1m_end": [
+      -9.54925422799961,
+      22.9648416384292
+    ],
+    "observed_first1m_end": [
+      -9.577504092995804,
+      22.99869087891308
+    ],
+    "nav_median_spacing_m": 0.07199352471966149,
+    "observed_median_spacing_m": 0.005801236434185272,
+    "nav_first1m_distance_to_observed_max_m": 0.05026166886036572
+  },
+  "stop_transitions": [
+    {
+      "nav_zero_wall_s": 459.8327,
+      "adapter_zero_wall_s": 459.8754,
+      "odom_zero_wall_s": 460.0103,
+      "preceding_decision": 226,
+      "route_found": false,
+      "action_status": 5,
+      "action_error_code": 0
+    },
+    {
+      "nav_zero_wall_s": 482.5971,
+      "adapter_zero_wall_s": 482.6251,
+      "odom_zero_wall_s": 482.7787,
+      "preceding_decision": 235,
+      "route_found": true,
+      "next_decision": 236,
+      "next_route_found": true,
+      "action_result_wall_s": 483.8531,
+      "action_status": 5,
+      "action_error_code": 208
+    }
+  ],
+  "limitations": [
+    "No controller critic scores or error message in episode history.",
+    "Recorded costmap or nonzero-command trajectory collision replay was not performed.",
+    "Earlier stall near (-8.52,33.59) is outside this 60-second window.",
+    "Action error numeric code retained without inferred meaning.",
+    "Generic terminal reason is not treated as proof of route absence."
+  ],
+  "integrator_error_resolution": {
+    "definition": "/opt/ros/jazzy/share/nav2_msgs/action/ComputePathToPose.action",
+    "limitation": "Does not identify why the latest Nav2 grid/search differed from the earlier custom proposal.",
+    "planner_log": "GridBased plugin failed to plan from (-9.12, 23.33) to (-10.39, 19.39): no valid path found",
+    "name": "NO_VALID_PATH",
+    "code": 208
+  }
+}

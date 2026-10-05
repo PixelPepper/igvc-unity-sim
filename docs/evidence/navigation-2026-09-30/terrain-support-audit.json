@@ -1,0 +1,140 @@
+{
+  "passed": false,
+  "source_status": "stopped",
+  "completed_destinations": 4,
+  "checks": {
+    "course_identity_matches": true,
+    "completed_six_destinations": false,
+    "sensor_led_mode": true,
+    "scoring_guard": true,
+    "zero_line_blocks": true,
+    "finite_trajectory": true,
+    "obstacle_geometry_available": true,
+    "trajectory_continuous": true,
+    "speed_at_most_2_2_mps": true,
+    "sampled_obstacles_clear": true,
+    "swept_obstacles_clear": true,
+    "returned_within_0_4_m": false,
+    "all_ramps_traversed_entry_to_exit": true,
+    "all_ramps_body_contained_entry_to_departure": false,
+    "whole_footprint_paint_sweep_clear": true,
+    "ordered_world_full_loop": false,
+    "six_destinations_independently_visited_in_order": false
+  },
+  "sample_count": 19597,
+  "topology_certified": false,
+  "full_loop_certified": false,
+  "paint_crossing_certified": true,
+  "course_identity": {
+    "passed": true,
+    "expected_course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+    "observed_course_hashes": [
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2"
+    ],
+    "status": "matched"
+  },
+  "certification_status": "failed",
+  "limitations": "Offline ideal geometry evidence, not contact physics. Swept bounds assume linear translation and shortest-angle rotation between recorded poses. Gaps fail continuity. Topology uses an explicit development lateral tolerance in unpainted areas, not a competition rule. Intended direction is WORLD centerline array order; initial yaw is not assumed. Course identity requires exact manifest-byte SHA-256. Ramp axle and body-side XY containment are separate evidence. The asymmetric rectangle is not a physical wheel-support polygon; wheel contact, elevation, suspension and rollover are not certified.",
+  "ramp_traversals": [
+    {
+      "ramp_id": "ramp-001",
+      "passed": true,
+      "entry_trajectory_index": 9420.936422272516,
+      "exit_trajectory_index": 10027.027925668519,
+      "longitudinal_span_m": 8.0
+    }
+  ],
+  "ramp_body_containment": [
+    {
+      "passed": false,
+      "ramp_id": "ramp-001",
+      "reason": "Body-side containment unproven",
+      "trajectory_index": 9336.0,
+      "conservative_side_margin_m": -0.04959406310634671
+    }
+  ],
+  "wheel_support_certified": false,
+  "paint_crossing": {
+    "passed": true,
+    "geometry_available": true,
+    "painted_quad_count": 1112,
+    "contact_pose_count": 0,
+    "unproven_sweep_subsegments": 0,
+    "first_contact": null,
+    "conservative_clearance_lower_bound_m": 0.009000412150740239,
+    "numerical_allowance_m": 0.001,
+    "evaluated_pose_clearance_cap_m": 0.02
+  },
+  "world_topology": {
+    "passed": false,
+    "policy": {
+      "open_area_lateral_m": 8.0,
+      "gate_spacing_m": 2.0,
+      "start_finish_tolerance_m": 0.4,
+      "arc_motion_multiplier": 1.5,
+      "intended_direction": "WORLD centerline array order"
+    },
+    "gates_visited": 62,
+    "gates_required": 77,
+    "total_arc_m": 155.18610514980062,
+    "progress_m": 125.1818673604084,
+    "maximum_progress_m": 125.2922807717267,
+    "last_sample_index": 19596,
+    "last_lateral_m": 0.15136484244632342,
+    "reason": "Incomplete ordered WORLD loop or missing physical cross-section visits"
+  },
+  "observed_destination_visits": [
+    {
+      "destination_index": 0,
+      "sample_index": 1896,
+      "stamp": 62.56
+    },
+    {
+      "destination_index": 1,
+      "sample_index": 4834,
+      "stamp": 121.32
+    },
+    {
+      "destination_index": 2,
+      "sample_index": 9259,
+      "stamp": 209.82
+    },
+    {
+      "destination_index": 3,
+      "sample_index": 11375,
+      "stamp": 252.14
+    }
+  ],
+  "footprint": {
+    "x_min": -1.1,
+    "x_max": 0.6,
+    "y_min": -0.5,
+    "y_max": 0.5
+  },
+  "obstacle_count": 54,
+  "minimum": {
+    "clearance_m": 0.10481965806580901,
+    "trajectory_index": 7895.0,
+    "pose": [
+      26.870629034449458,
+      33.49389406098007,
+      1.6310070619039798
+    ],
+    "obstacle_id": "barrel-015"
+  },
+  "conservative_swept_clearance_lower_bound_m": 0.09911372679806318,
+  "collision_pose_count": 0,
+  "unproven_sweep_subsegments": 0,
+  "evaluated_sweep_subsegments": 21002,
+  "observed_distance_m": 123.92235272331183,
+  "maximum_interval_speed_mps": 1.2093448223527374,
+  "speed_violation_indices": [],
+  "timestamp_gap_indices": [],
+  "nonincreasing_timestamp_indices": [],
+  "final_distance_to_origin_m": 25.029823626611332,
+  "simulation_span_s": 392.06,
+  "run_sha256": "16ca4e16bea06c785d294e8ce799c60dddf6e7cc76c16e72a666c6059e3309c2",
+  "source_run": "artifacts/checks/entrance-support-run.json",
+  "evaluation_course": "artifacts/courses/seed-2027/course.json"
+}

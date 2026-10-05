@@ -1,0 +1,240 @@
+{
+  "limits": "Before/after Nav2 restart at stopped pose; asynchronous observations and memory reset confound resolution-only attribution. No motion authorized by these snapshots.",
+  "before": {
+    "global": {
+      "origin": [
+        6.6999999992549295,
+        13.299999999254938
+      ],
+      "width": 400,
+      "height": 400,
+      "resolution": 0.10000000149011612,
+      "pose": [
+        26.64024000976114,
+        33.3624767379918,
+        1.6478634484258377
+      ],
+      "goal_footprint": [
+        -1.12,
+        0.62,
+        -0.52,
+        0.52
+      ],
+      "grid_stamp_ns": 478600000000,
+      "grid_age_wall_s": 0.7737438199999929,
+      "lane_point_count": 3145,
+      "diagnosis": {
+        "footprint": [
+          -1.12,
+          0.62,
+          -0.52,
+          0.52
+        ],
+        "footprint_source": "recorded Nav2 parameters",
+        "pose": [
+          26.64024000976114,
+          33.3624767379918,
+          1.6478634484258377
+        ],
+        "inside_grid": true,
+        "center_cost": 0,
+        "center_passes": true,
+        "footprint_clear": false,
+        "blocking_cell_count": 4,
+        "blocking_cells": [
+          {
+            "cell": [
+              193,
+              203
+            ],
+            "world_xy": [
+              26.050000287592397,
+              33.65000030249357
+            ],
+            "cost": 100,
+            "nearest_remembered_paint_m": 0.02568060591617587
+          },
+          {
+            "cell": [
+              193,
+              204
+            ],
+            "world_xy": [
+              26.050000287592397,
+              33.75000030398368
+            ],
+            "cost": 100,
+            "nearest_remembered_paint_m": 0.025138146091629055
+          },
+          {
+            "cell": [
+              193,
+              205
+            ],
+            "world_xy": [
+              26.050000287592397,
+              33.8500003054738
+            ],
+            "cost": 100,
+            "nearest_remembered_paint_m": 0.04116794621544937
+          },
+          {
+            "cell": [
+              193,
+              206
+            ],
+            "world_xy": [
+              26.050000287592397,
+              33.950000306963915
+            ],
+            "cost": 100,
+            "nearest_remembered_paint_m": 0.02733530491677952
+          }
+        ],
+        "sampled_rear_clearance_m": 0.0,
+        "limits": "Observed costmap explanation, not ground truth. Paint proximity does not prove which layer created a cell. Rear checks sample at 0.05 m and do not authorize backup or establish useful forward continuation. Old snapshots may lack time alignment."
+      }
+    },
+    "local": {
+      "origin": [
+        19.699999999627504,
+        26.349999999627478
+      ],
+      "width": 280,
+      "height": 280,
+      "resolution": 0.05000000074505806,
+      "pose": [
+        26.64024000976114,
+        33.3624767379918,
+        1.6478634484258377
+      ],
+      "goal_footprint": [
+        -1.12,
+        0.62,
+        -0.52,
+        0.52
+      ],
+      "grid_stamp_ns": 479110000000,
+      "grid_age_wall_s": 0.2791128839999715,
+      "lane_point_count": 3145,
+      "diagnosis": {
+        "footprint": [
+          -1.12,
+          0.62,
+          -0.52,
+          0.52
+        ],
+        "footprint_source": "recorded Nav2 parameters",
+        "pose": [
+          26.64024000976114,
+          33.3624767379918,
+          1.6478634484258377
+        ],
+        "inside_grid": true,
+        "center_cost": 0,
+        "center_passes": true,
+        "footprint_clear": true,
+        "blocking_cell_count": 0,
+        "blocking_cells": [],
+        "sampled_rear_clearance_m": 1.8,
+        "limits": "Observed costmap explanation, not ground truth. Paint proximity does not prove which layer created a cell. Rear checks sample at 0.05 m and do not authorize backup or establish useful forward continuation. Old snapshots may lack time alignment."
+      }
+    }
+  },
+  "after": {
+    "pair_sha256": "e96f2e49d6f369955125e86716fe5eefd174d2a49c2116b57cedb38bf8f842b2",
+    "stamp_skew_s": 1.19,
+    "receipt_age_limit_s": 1.5,
+    "stamp_skew_limit_s": 1.25,
+    "global": {
+      "origin": [
+        14.649999999627472,
+        21.34999999962747
+      ],
+      "width": 480,
+      "height": 480,
+      "resolution": 0.05000000074505806,
+      "pose": [
+        26.64024000976114,
+        33.3624767379918,
+        1.6478634484258377
+      ],
+      "goal_footprint": [
+        -1.12,
+        0.62,
+        -0.52,
+        0.52
+      ],
+      "grid_stamp_ns": 1052190000000,
+      "grid_age_wall_s": 1.2028430759999083,
+      "lane_point_count": 119,
+      "diagnosis": {
+        "footprint": [
+          -1.12,
+          0.62,
+          -0.52,
+          0.52
+        ],
+        "footprint_source": "recorded Nav2 parameters",
+        "pose": [
+          26.64024000976114,
+          33.3624767379918,
+          1.6478634484258377
+        ],
+        "inside_grid": true,
+        "center_cost": 0,
+        "center_passes": true,
+        "footprint_clear": true,
+        "blocking_cell_count": 0,
+        "blocking_cells": [],
+        "sampled_rear_clearance_m": 1.55,
+        "limits": "Observed costmap explanation, not ground truth. Paint proximity does not prove which layer created a cell. Rear checks sample at 0.05 m and do not authorize backup or establish useful forward continuation. Old snapshots may lack time alignment."
+      }
+    },
+    "local": {
+      "origin": [
+        19.64999999962747,
+        26.34999999962747
+      ],
+      "width": 280,
+      "height": 280,
+      "resolution": 0.05000000074505806,
+      "pose": [
+        26.64024000976114,
+        33.3624767379918,
+        1.6478634484258377
+      ],
+      "goal_footprint": [
+        -1.12,
+        0.62,
+        -0.52,
+        0.52
+      ],
+      "grid_stamp_ns": 1053240000000,
+      "grid_age_wall_s": 0.19431912400000328,
+      "lane_point_count": 119,
+      "diagnosis": {
+        "footprint": [
+          -1.12,
+          0.62,
+          -0.52,
+          0.52
+        ],
+        "footprint_source": "recorded Nav2 parameters",
+        "pose": [
+          26.64024000976114,
+          33.3624767379918,
+          1.6478634484258377
+        ],
+        "inside_grid": true,
+        "center_cost": 0,
+        "center_passes": true,
+        "footprint_clear": true,
+        "blocking_cell_count": 0,
+        "blocking_cells": [],
+        "sampled_rear_clearance_m": 1.25,
+        "limits": "Observed costmap explanation, not ground truth. Paint proximity does not prove which layer created a cell. Rear checks sample at 0.05 m and do not authorize backup or establish useful forward continuation. Old snapshots may lack time alignment."
+      }
+    }
+  }
+}

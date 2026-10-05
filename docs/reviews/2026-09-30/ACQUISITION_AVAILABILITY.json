@@ -1,0 +1,11 @@
+{
+  "requested_stamps_ns": [
+    135500000000,
+    140150000000
+  ],
+  "frame_count": 226,
+  "first_stamp_ns": 31790000000.0,
+  "last_stamp_ns": 258580000000.0,
+  "exact_matches": [],
+  "status": "availability_check_only"
+}

@@ -1,0 +1,12 @@
+{
+  "consumer_tests": 53,
+  "consumer_suites": [
+    "navigation_replay",
+    "observed_navigation",
+    "recovery_policy",
+    "path_entry"
+  ],
+  "processing_idle_tests": 5,
+  "route_tests": 45,
+  "live": "completed_6_of_6_all_audit_checks_passed_shutdown_verified"
+}

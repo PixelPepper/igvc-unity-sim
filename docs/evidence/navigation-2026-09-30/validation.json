@@ -1,0 +1,63 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "core_tests": {
+    "tools": 236,
+    "perception": 80,
+    "gps": 4,
+    "total": 320,
+    "passed": true,
+    "log_sha256": "3204efe22e97f535f5383747e0ef1424927805b8fea1796ccae591473a20f7e0"
+  },
+  "post_suite_change": "Compact oversized per-point refresh data out of ROS decision event; full rows retained in compressed snapshots.",
+  "followup_tests": {
+    "decision_recorder_tests": 4,
+    "passed": true,
+    "one_new_regression": true
+  },
+  "live_payload_smoke": {
+    "received_events": 1,
+    "input_evidence_rows": 8000,
+    "event_bytes": 163,
+    "receive_counters": {
+      "/mission/decision_received": 1
+    },
+    "writer_counters": {
+      "frame_queued": 20,
+      "queue_high_water": 1,
+      "frame_written": 20,
+      "event_queued": 1,
+      "event_written": 1
+    },
+    "writer_drained": true,
+    "motion_commanded": false
+  },
+  "source_sha256": {
+    "tools/sensor_course.py": "43d3a1ae32c584de5eaf1d45f469dbef9f1cb35cb2284cc203212ce1b8f24f8d",
+    "tools/sensor_route_policy.py": "aed9df8f0a3a6d9b75b01b97e30d0f6c1eec88e66c832a1e575095aedf6f83b2",
+    "tools/observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+    "tools/entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+    "tools/entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+    "tools/navigation_decisions.py": "9a98752b6993ce59e9decf61fb69d638e8692ef521e237d4223af0e799abfe99",
+    "tools/record_navigation_episode.py": "a01abddc2030bf6eaf4f5dc46b9463f69c3eb1f2cba0a84c21cf2972955d493e",
+    "tools/replay_navigation_decision.py": "7492218d01815b3e3a5c971c8f181ab99bd8eaa8222ce803c8b66dbe10fe7372",
+    "tools/analyze_navigation_episode.py": "a35799a68ee570110acf885207f4dd66d1e4a6bb83c56f2d5ccacee7ac265ff4"
+  },
+  "defaults": {
+    "planning_budget_wall_s": 5.0,
+    "guidance_memory": "heading",
+    "goal_policy": "rolling",
+    "speed_cap_mps": 2.2,
+    "inflation_radius_m": 0.3
+  },
+  "runtime_scope": "Six fresh seed-2027 native WSL/Unity trials; none passed full-lap audit. Latest full trial predates isolated logging payload compaction, which passed the live ROS smoke.",
+  "pending": [
+    "reliable curved-boundary and entrance reacquisition",
+    "observed proposal versus Nav2 execution agreement",
+    "live execution of repaired final arrival",
+    "repeat and held-out seed passes",
+    "speed/critic tuning after navigation gate",
+    "Docker rebuild and remote CI",
+    "physical sensor/robot calibration"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "schema_version": 1,
+  "snapshot": "artifacts/checks/entrance-fixed-decisions/00281.json.gz",
+  "snapshot_sha256": "95b6e5cb3421a47f2566dfea527aa7158edac20b68177df0eb684ffa7314ecd5",
+  "expanded_snapshot_sha256": "97af2378f2e1d4e7096533620ae34879606a1a63d7338d18e449efd6d36f8bc1",
+  "input_pose": [
+    -0.49888199174225795,
+    -0.02951158218797381,
+    0.07187381683010931
+  ],
+  "destination": [
+    0.0,
+    0.0
+  ],
+  "before": {
+    "status": "no_route",
+    "search_wall_s": 0.5037349809999796
+  },
+  "after": {
+    "status": "route_found",
+    "goal": [
+      0.010308777189447726,
+      0.0071490513445247525
+    ],
+    "distance_to_destination_m": 0.012545111488876014,
+    "diagnostics": {
+      "expanded_cells": 3,
+      "expansion_limit": 50000,
+      "budget_exhausted": false,
+      "time_budget_exhausted": false,
+      "search_exhausted": false,
+      "endpoint": [
+        0.010308777189447726,
+        0.0071490513445247525
+      ],
+      "endpoint_progress": 0.4872090032195072,
+      "path_length": 0.5105088062083414,
+      "local_path_length": 0.5105088062083412,
+      "checked_continuation_length": 0,
+      "weighted_cost": 0.5105088062083414,
+      "robot_radius": 0.5,
+      "unknown_is_blocked": true,
+      "forward_only": true,
+      "full_footprint_sweep": true,
+      "minimum_turn_radius": 0.65,
+      "guidance": "broad_gps",
+      "guidance_target": [
+        0.0,
+        0.0
+      ]
+    },
+    "search_wall_s": 0.5191527229999338
+  },
+  "patched_source_sha256": "aed9df8f0a3a6d9b75b01b97e30d0f6c1eec88e66c832a1e575095aedf6f83b2",
+  "limitations": "Frozen observed costmap only; no actual movement or Nav2 execution in this replay. Minimum goal distance, full footprint, unknown blocking and destination radius unchanged."
+}

@@ -1,0 +1,213 @@
+{
+  "source_grid": "artifacts\\checks\\clearance-pair-aligned\\global.json",
+  "source_destination": "artifacts\\courses\\seed-2027\\diagnostic-run.observations.json",
+  "source_grid_sha256": "7b66b28326e725e3f656533425e17cea8da10060f5c73ece6c2bccaa7ae58736",
+  "pose": [
+    26.64024000976114,
+    33.3624767379918,
+    1.6478634484258377
+  ],
+  "destination": [
+    13.49324855316043,
+    44.49999999981789
+  ],
+  "grid": {
+    "origin": [
+      14.649999999627472,
+      21.34999999962747
+    ],
+    "resolution": 0.05000000074505806,
+    "width": 480,
+    "height": 480,
+    "cell_count": 230400
+  },
+  "lane_point_count": 119,
+  "heading_hint": null,
+  "settings": {
+    "robot_radius": 0.5,
+    "lookahead": 7.0,
+    "max_path_length": 14.0,
+    "min_progress": 0.1,
+    "forward_only": true,
+    "goal_footprint": [
+      -1.12,
+      0.62,
+      -0.52,
+      0.52
+    ],
+    "minimum_turn_radius": 0.65,
+    "max_expansions": 50000,
+    "max_search_seconds": 5.0,
+    "min_goal_distance": 0.4,
+    "continuation_reserve": 1.0
+  },
+  "soft_cost_multiplier": 2.0,
+  "forward": {
+    "latency_s": 0.8226571999985026,
+    "found": true,
+    "searches": [
+      {
+        "expanded": 80,
+        "expansion_limit": 50000,
+        "time_budget_exhausted": false
+      }
+    ],
+    "plan": {
+      "local_goal": [
+        26.679841096407323,
+        34.137971980493866
+      ],
+      "yaw": 1.6210885110372883,
+      "diagnostics": {
+        "expanded_cells": 80,
+        "expansion_limit": 50000,
+        "budget_exhausted": false,
+        "time_budget_exhausted": false,
+        "search_exhausted": true,
+        "endpoint": [
+          26.70200488842469,
+          35.13322814860948
+        ],
+        "endpoint_progress": 1.0376052457731433,
+        "path_length": 1.7867808217291952,
+        "local_path_length": 0.7831651664916192,
+        "checked_continuation_length": 1.0036122665153036,
+        "weighted_cost": 1.7867808217291952,
+        "robot_radius": 0.5,
+        "unknown_is_blocked": true,
+        "forward_only": true,
+        "full_footprint_sweep": true,
+        "minimum_turn_radius": 0.65,
+        "guidance": "broad_gps",
+        "guidance_target": [
+          13.49324855316043,
+          44.49999999981789
+        ]
+      },
+      "path_pose_count": 136,
+      "path_xy_decimated": [
+        [
+          26.64024000976114,
+          33.3624767379918
+        ],
+        [
+          26.638006798957985,
+          33.391396823981324
+        ],
+        [
+          26.63577358815483,
+          33.42031690997086
+        ],
+        [
+          26.633540377351675,
+          33.44923699596038
+        ],
+        [
+          26.63130716654852,
+          33.47815708194992
+        ],
+        [
+          26.629073955745366,
+          33.50707716793944
+        ],
+        [
+          26.62684074494221,
+          33.535997253928976
+        ],
+        [
+          26.624607534139056,
+          33.5649173399185
+        ],
+        [
+          26.6223743233359,
+          33.593837425908035
+        ],
+        [
+          26.620166929407343,
+          33.622759428232726
+        ],
+        [
+          26.618838160496317,
+          33.65173274983091
+        ],
+        [
+          26.61880321678422,
+          33.68073650424629
+        ],
+        [
+          26.620062167845767,
+          33.7097129435285
+        ],
+        [
+          26.62261250704535,
+          33.73860437411298
+        ],
+        [
+          26.626449156527894,
+          33.767353271691825
+        ],
+        [
+          26.63156447732913,
+          33.79590239574758
+        ],
+        [
+          26.63794828458513,
+          33.82419490352206
+        ],
+        [
+          26.64558786781093,
+          33.85217446319313
+        ],
+        [
+          26.654271148616903,
+          33.879849652879884
+        ],
+        [
+          26.662160141249178,
+          33.90775991598324
+        ],
+        [
+          26.668796200944108,
+          33.93599432235165
+        ],
+        [
+          26.67416611496929,
+          33.964496655845814
+        ],
+        [
+          26.67825919155274,
+          33.99321016686994
+        ],
+        [
+          26.681067281170787,
+          34.022077685363016
+        ],
+        [
+          26.68258479277416,
+          34.051041734627304
+        ],
+        [
+          26.682808704920063,
+          34.08004464576743
+        ],
+        [
+          26.681738571788028,
+          34.109028672512004
+        ],
+        [
+          26.679841096407323,
+          34.137971980493866
+        ]
+      ],
+      "path_xy_decimation_stride": 5,
+      "minimum_path_center_distance_to_grid_edge_m": 11.212028376761474,
+      "conservative_path_body_distance_to_grid_edge_m": 9.977200453526823
+    }
+  },
+  "limitation": "Offline observed-grid proposal only. Heading-memory state was not recorded; heading_hint=None. Latency includes return-profile instrumentation. No motion/execution or WORLD geometry input.",
+  "recovery": {
+    "attempted": false,
+    "reason": "Forward proposal found; conditional recovery was not requested"
+  },
+  "source_artifact_sha256": "03da6fc7328a4f148e48b14d36310300ee35734f7f530cde577489fae03efd50"
+}

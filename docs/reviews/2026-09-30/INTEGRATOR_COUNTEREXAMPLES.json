@@ -1,0 +1,43 @@
+{
+  "manifest_sha256": "77f2ebe7ceaa71cb58f9d014a1e3965936ca616b823c8f2485268da79319b1fa",
+  "entry_connector": {
+    "accepted": true,
+    "cross_track_m": 0.08000000000000007,
+    "first_segment_bearing_rad": -1.5707963267948966,
+    "body_yaw_rad": 0.0
+  },
+  "projection": {
+    "assumed_camera_height_m": 1.4,
+    "assumed_pitch_deg": 20,
+    "query_true_xyz": [
+      6.0,
+      0.0,
+      0.0
+    ],
+    "query_uv": [
+      320.0,
+      183.28649296376088
+    ],
+    "support_uv_offset_pixels": 7.9,
+    "support_ground_xyz": [
+      5.580598679723514,
+      0.0,
+      0.0
+    ],
+    "projected_xyz": [
+      5.613428592681885,
+      0.0,
+      0.09019995480775833
+    ],
+    "horizontal_error_m": 0.38657140731811523,
+    "height_error_m": 0.09019995480775833,
+    "exact_pixel_control_error_m": 2.220446049250313e-16,
+    "scope": "Synthetic geometry counterexample, not attribution of historical acquisitions."
+  },
+  "circle_control": {
+    "reference_curvature": 1.5384615384615383,
+    "pure_pursuit_curvature": 1.5384615384615385,
+    "absolute_curvature_difference": 2.220446049250313e-16,
+    "conclusion": "Chord sagitta is not a pure-pursuit tracking error bound; on a circle ideal pure pursuit recovers the exact curvature. Curvature switches and real dynamics still need measurement."
+  }
+}

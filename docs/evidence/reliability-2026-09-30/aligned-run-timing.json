@@ -1,0 +1,332 @@
+{
+  "source_run_sha256": "251c252b98e24cc1c0f98e797d81d682efd9264c175c1cc364592a2deea5bb9c",
+  "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+  "status": "stopped",
+  "reason": "Observed route search exceeded its time budget",
+  "completed_destinations": 2,
+  "total_destinations": 6,
+  "elapsed_wall_s": 360.00420989300005,
+  "timeout_wall_s": 360.0,
+  "streams": {
+    "clock": {
+      "count": 36923,
+      "last_stamp_ns": 598010000000,
+      "max_gap_s": 0.09313026299992089,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.020919120000144176,
+      "max_gap_including_tail_s": 0.09313026299992089,
+      "recent_interarrival_wall_s": {
+        "p50": 0.0004796609998720669,
+        "p95": 0.04625641799998448,
+        "p99": 0.055648125000061555
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.0,
+        "p95": 0.0,
+        "p99": 0.0
+      }
+    },
+    "depth_processing": {
+      "count": 1827,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.2434525430001031,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.04770738199999869,
+      "max_gap_including_tail_s": 0.2434525430001031,
+      "recent_interarrival_wall_s": {
+        "p50": 0.20008788900008767,
+        "p95": 0.21472499700007575,
+        "p99": 0.2234563760000583
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "lanes": {
+      "count": 1827,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.2444414169999618,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.052812227000003986,
+      "max_gap_including_tail_s": 0.2444414169999618,
+      "recent_interarrival_wall_s": {
+        "p50": 0.1999687150000682,
+        "p95": 0.21670561299993096,
+        "p99": 0.22402789500006293
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "rgb": {
+      "count": 4959,
+      "last_stamp_ns": 597980000000,
+      "max_gap_s": 0.1434353749998536,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 15,
+      "age_wall_s": 0.021422198999971442,
+      "max_gap_including_tail_s": 0.1434353749998536,
+      "recent_interarrival_wall_s": {
+        "p50": 0.0728940579999744,
+        "p95": 0.09883209400004489,
+        "p99": 0.12363400599997476
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.02,
+        "p99": 0.03
+      }
+    },
+    "rgb_info": {
+      "count": 4959,
+      "last_stamp_ns": 597980000000,
+      "max_gap_s": 0.16492981500005044,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 6,
+      "age_wall_s": 0.020829070999980104,
+      "max_gap_including_tail_s": 0.16492981500005044,
+      "recent_interarrival_wall_s": {
+        "p50": 0.0728766340000675,
+        "p95": 0.11112661300012405,
+        "p99": 0.12538528599998244
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.03
+      }
+    },
+    "simulator": {
+      "count": 371,
+      "last_stamp_ns": null,
+      "max_gap_s": 1.0435262549999607,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.27726377800013324,
+      "max_gap_including_tail_s": 1.0435262549999607,
+      "recent_interarrival_wall_s": {
+        "p50": 0.9901191260000815,
+        "p95": 1.0169761239999389,
+        "p99": 1.0286102249999658
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "depth": {
+      "count": 3462,
+      "last_stamp_ns": 597960000000,
+      "max_gap_s": 0.17921869099996002,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 48,
+      "age_wall_s": 0.03798956800005726,
+      "max_gap_including_tail_s": 0.17921869099996002,
+      "recent_interarrival_wall_s": {
+        "p50": 0.10129441100002623,
+        "p95": 0.13219610600003762,
+        "p99": 0.15174873000000844
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.03
+      }
+    },
+    "depth_info": {
+      "count": 3462,
+      "last_stamp_ns": 597960000000,
+      "max_gap_s": 0.18245432599997002,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 23,
+      "age_wall_s": 0.037917709000112154,
+      "max_gap_including_tail_s": 0.18245432599997002,
+      "recent_interarrival_wall_s": {
+        "p50": 0.10126339400017059,
+        "p95": 0.14352667599996494,
+        "p99": 0.1583524820000548
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.02,
+        "p95": 0.03,
+        "p99": 0.03
+      }
+    },
+    "lidar_processing": {
+      "count": 1809,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.4047203150000769,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.07693431699999564,
+      "max_gap_including_tail_s": 0.4047203150000769,
+      "recent_interarrival_wall_s": {
+        "p50": 0.20000056900016716,
+        "p95": 0.20145014000013362,
+        "p99": 0.20803012999999737
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "lane_health": {
+      "count": 1827,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.24164128400002483,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.06009792300005756,
+      "max_gap_including_tail_s": 0.24164128400002483,
+      "recent_interarrival_wall_s": {
+        "p50": 0.19996011299986094,
+        "p95": 0.21612187400000948,
+        "p99": 0.22417850199985878
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "depth_health": {
+      "count": 1827,
+      "last_stamp_ns": null,
+      "max_gap_s": 0.24474943400014126,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 0,
+      "age_wall_s": 0.04794300300000032,
+      "max_gap_including_tail_s": 0.24474943400014126,
+      "recent_interarrival_wall_s": {
+        "p50": 0.20006522099993163,
+        "p95": 0.214649055000109,
+        "p99": 0.22343160800005535
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": null,
+        "p95": null,
+        "p99": null
+      }
+    },
+    "scan": {
+      "count": 1953,
+      "last_stamp_ns": 597950000000,
+      "max_gap_s": 0.2551753230000031,
+      "stamp_regressions": 0,
+      "duplicates": 0,
+      "negative_lag_samples": 672,
+      "age_wall_s": 0.07875954900009674,
+      "max_gap_including_tail_s": 0.2551753230000031,
+      "recent_interarrival_wall_s": {
+        "p50": 0.19075124300002244,
+        "p95": 0.2145936829999755,
+        "p99": 0.2345066630000474
+      },
+      "recent_acquisition_lag_sim_s": {
+        "p50": 0.0,
+        "p95": 0.01,
+        "p99": 0.01
+      }
+    }
+  },
+  "status_reason_counts": {
+    "depth_processing": {
+      "no_new_pair": 1,
+      "valid": 1826
+    },
+    "lanes": {
+      "no_new_exact_stamp_pair": 1,
+      "waiting_for_depth_ground_or_rgb_tf": 2,
+      "valid": 1624,
+      "unknown": 200
+    },
+    "simulator": {
+      "r3a_kinematic_oracle run=0 course=seed-2027 course_hash=1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2 terrain": 371
+    },
+    "lidar_processing": {
+      "no_fresh_preceding_surface": 75,
+      "supported_ground_filter": 1718,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 228.590000 but the latest data is at time 228.5": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 231.630000 but the latest data is at time 231.6": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 271.910000 but the latest data is at time 271.9": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 283.310000 but the latest data is at time 283.3": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 315.990000 but the latest data is at time 315.9": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 385.910000 but the latest data is at time 385.9": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 426.570000 but the latest data is at time 426.5": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 429.610000 but the latest data is at time 429.6": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 467.610000 but the latest data is at time 467.6": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 493.450000 but the latest data is at time 493.4": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 496.490000 but the latest data is at time 496.4": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 557.670000 but the latest data is at time 557.6": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 566.410000 but the latest data is at time 566.4": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 575.150000 but the latest data is at time 575.1": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 581.230000 but the latest data is at time 581.2": 1,
+      "passthrough: Lookup would require extrapolation into the future.  Requested time 584.270000 but the latest data is at time 584.2": 1
+    },
+    "lane_health": {
+      "False": 3,
+      "True": 1824
+    },
+    "depth_health": {
+      "True": 1826,
+      "False": 1
+    }
+  },
+  "recoveries": [
+    {
+      "destination": 1,
+      "distance_m": 1.2,
+      "actual_distance_m": 1.2010000178521574,
+      "clearance_search": {
+        "rear_sweep_checked_m": 1.2,
+        "rear_sample_spacing_m": 0.02500000037252903,
+        "original_trap_progress_m": 6.846277889431034,
+        "elapsed_seconds": 2.4585078220000014,
+        "charged_expansions": 11297,
+        "attempts": [
+          {
+            "distance_m": 0.6,
+            "expansion_allowance": 10000,
+            "charged_expansions": 10000,
+            "proposal_found": false
+          },
+          {
+            "distance_m": 0.9,
+            "expansion_allowance": 10000,
+            "charged_expansions": 17,
+            "proposal_found": true
+          },
+          {
+            "distance_m": 1.2,
+            "expansion_allowance": 13327,
+            "charged_expansions": 1280,
+            "proposal_found": true
+          }
+        ],
+        "unknown_is_blocked": true,
+        "straight_backup_only": true
+      }
+    }
+  ],
+  "interpretation": "Actual armed duration reached the 360 s mission deadline; original message incorrectly labels it as route-search timeout. That message was corrected subsequently. Lane status.valid describes lane detection, not processing health; inspect lane_health separately. No full lap."
+}

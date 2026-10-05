@@ -1,0 +1,217 @@
+{
+  "passed": true,
+  "source_status": "completed",
+  "completed_destinations": 6,
+  "checks": {
+    "course_identity_matches": true,
+    "mission_identity_matches": true,
+    "sensor_health_latest_processing_passes": true,
+    "sensor_health_interval_verified": true,
+    "completed_six_destinations": true,
+    "sensor_led_mode": true,
+    "scoring_guard": true,
+    "zero_line_blocks": true,
+    "finite_trajectory": true,
+    "obstacle_geometry_available": true,
+    "trajectory_continuous": true,
+    "speed_at_most_2_2_mps": true,
+    "sampled_obstacles_clear": true,
+    "swept_obstacles_clear": true,
+    "returned_within_0_4_m": true,
+    "all_ramps_traversed_entry_to_exit": true,
+    "all_ramps_body_contained_entry_to_departure": true,
+    "whole_footprint_paint_sweep_clear": true,
+    "ordered_world_full_loop": true,
+    "six_destinations_independently_visited_in_order": true
+  },
+  "sample_count": 18902,
+  "topology_certified": true,
+  "full_loop_certified": true,
+  "geometric_full_loop_certified": true,
+  "paint_crossing_certified": true,
+  "course_identity": {
+    "passed": true,
+    "expected_course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+    "observed_course_hashes": [
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2"
+    ],
+    "status": "matched"
+  },
+  "mission_identity": {
+    "passed": true,
+    "expected_mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+    "observed_mission_sha256": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+    "status": "matched"
+  },
+  "sensor_health_evidence": {
+    "latest_processing_status": "pass",
+    "latest_processing_passed": true,
+    "interval_status": "pass",
+    "interval_verified": true,
+    "interval_reason": "sampled_processing_health_covers_armed_motion",
+    "complete": true,
+    "latest_processing_reason": "derived_from_recorded_streams_and_status",
+    "latest_processing": {
+      "status": "pass",
+      "fresh_successful_processing": true,
+      "checks": {
+        "lanes": {
+          "status": "pass",
+          "reason": "fresh_successful_processing_status",
+          "age_wall_s": 0.16368751200002407,
+          "acquisition_lag_sim_s": 0.31,
+          "health_topic": "lane_health",
+          "reported_healthy": true,
+          "health_age_wall_s": 0.17539900099995975
+        },
+        "depth_processing": {
+          "status": "pass",
+          "reason": "fresh_successful_processing_status",
+          "age_wall_s": 0.18556802299997344,
+          "acquisition_lag_sim_s": 0.3,
+          "health_topic": "depth_health",
+          "reported_healthy": true,
+          "health_age_wall_s": 0.18617283000003226
+        }
+      },
+      "lane_detection_visibility": {
+        "status": "sufficient",
+        "reported_valid": true,
+        "fresh_acquisition": true,
+        "meaning": "Lane status.valid means sufficient visible lane points; false can be a legitimate gap.",
+        "current_points": 1041,
+        "components": 2
+      },
+      "max_age_wall_s": 1.5,
+      "max_acquisition_lag_sim_s": 1.5,
+      "scope": "Latest lane/depth health Bools plus processed acquisition claims; not full stream health, output quality or motion authorization."
+    },
+    "telemetry_duration_wall_s": 371.057308835,
+    "mission_elapsed_wall_s": 363.3705864340001,
+    "telemetry_clock_end_sim_s": 386.31,
+    "trajectory_start_sim_s": 8.28,
+    "trajectory_end_sim_s": 386.3,
+    "interval_sample_count": 3635,
+    "interval_totals": {
+      "pass": 3635,
+      "fail": 0,
+      "unknown": 0
+    },
+    "interval_max_gap_s": 0.12456299199999421,
+    "interval_scope": "Sampled lane/depth processing health over the armed mission interval; coverage is bounded by max_gap_s. Not continuous physical health, raw-stream quality, perception accuracy or motion authorization."
+  },
+  "certification_status": "passed",
+  "limitations": "Offline ideal geometry evidence, not contact physics. Swept bounds assume linear translation and shortest-angle rotation between recorded poses. Gaps fail continuity. Topology uses an explicit development lateral tolerance in unpainted areas, not a competition rule. Intended direction is WORLD centerline array order; initial yaw is not assumed. Course and mission identity require exact file-byte SHA-256. Aggregate sensor-led acceptance also requires a trajectory-bound processing ledger with sampled coverage gaps at most 0.25 s; this is not continuous physical health. Geometric evidence is reported separately. Ramp axle and body-side XY containment are separate evidence. The asymmetric rectangle is not a physical wheel-support polygon; wheel contact, elevation, suspension and rollover are not certified.",
+  "ramp_traversals": [
+    {
+      "ramp_id": "ramp-001",
+      "passed": true,
+      "entry_trajectory_index": 8828.455044694316,
+      "exit_trajectory_index": 9504.008721067423,
+      "longitudinal_span_m": 8.0
+    }
+  ],
+  "ramp_body_containment": [
+    {
+      "passed": true,
+      "ramp_id": "ramp-001",
+      "entry_trajectory_index": 8778.0,
+      "exit_trajectory_index": 9636.0,
+      "conservative_side_margin_m": 0.7770575673969925
+    }
+  ],
+  "wheel_support_certified": false,
+  "paint_crossing": {
+    "passed": true,
+    "geometry_available": true,
+    "painted_quad_count": 1112,
+    "contact_pose_count": 0,
+    "unproven_sweep_subsegments": 0,
+    "first_contact": null,
+    "conservative_clearance_lower_bound_m": 0.009706305122612505,
+    "numerical_allowance_m": 0.001,
+    "evaluated_pose_clearance_cap_m": 0.02
+  },
+  "world_topology": {
+    "passed": true,
+    "policy": {
+      "open_area_lateral_m": 8.0,
+      "gate_spacing_m": 2.0,
+      "start_finish_tolerance_m": 0.4,
+      "arc_motion_multiplier": 1.5,
+      "intended_direction": "WORLD centerline array order"
+    },
+    "gates_visited": 77,
+    "gates_required": 77,
+    "total_arc_m": 155.18610514980062,
+    "progress_m": 154.8030372547005,
+    "maximum_progress_m": 154.8030372547005,
+    "last_sample_index": 18901,
+    "last_lateral_m": 0.09705804269698712
+  },
+  "observed_destination_visits": [
+    {
+      "destination_index": 0,
+      "sample_index": 2310,
+      "stamp": 54.48
+    },
+    {
+      "destination_index": 1,
+      "sample_index": 5359,
+      "stamp": 115.46
+    },
+    {
+      "destination_index": 2,
+      "sample_index": 8555,
+      "stamp": 179.38
+    },
+    {
+      "destination_index": 3,
+      "sample_index": 11148,
+      "stamp": 231.24
+    },
+    {
+      "destination_index": 4,
+      "sample_index": 14392,
+      "stamp": 296.12
+    },
+    {
+      "destination_index": 5,
+      "sample_index": 18901,
+      "stamp": 386.3
+    }
+  ],
+  "footprint": {
+    "x_min": -1.1,
+    "x_max": 0.6,
+    "y_min": -0.5,
+    "y_max": 0.5
+  },
+  "obstacle_count": 54,
+  "minimum": {
+    "clearance_m": 0.08559373689554112,
+    "trajectory_index": 6605.0,
+    "pose": [
+      27.105137747905683,
+      31.710683979275483,
+      1.8118496054319764
+    ],
+    "obstacle_id": "barrel-015"
+  },
+  "conservative_swept_clearance_lower_bound_m": 0.07930387700559481,
+  "collision_pose_count": 0,
+  "unproven_sweep_subsegments": 0,
+  "evaluated_sweep_subsegments": 18901,
+  "observed_distance_m": 157.33811253982248,
+  "maximum_interval_speed_mps": 0.6000000000008546,
+  "speed_violation_indices": [],
+  "timestamp_gap_indices": [],
+  "nonincreasing_timestamp_indices": [],
+  "final_distance_to_origin_m": 0.3951724634999221,
+  "simulation_span_s": 378.02000000000004,
+  "run_sha256": "d9b7dd4e19c2a691c1c471a0dc42f2e3af55479ed6dd509f992b2215c1a81558",
+  "source_run": "/mnt/c/Users/brand/Documents/ChatGPT/IGVC SIM/artifacts/iterations/2026-10-01/admissible-endpoints/run.json",
+  "evaluation_course": "/mnt/c/Users/brand/.codex/worktrees/igvc-opus-path-entry/IGVC SIM/artifacts/courses/seed-2027/course.json",
+  "evaluation_mission": "/mnt/c/Users/brand/.codex/worktrees/igvc-opus-path-entry/IGVC SIM/artifacts/courses/seed-2027/autonomy.json"
+}

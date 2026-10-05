@@ -1,0 +1,171 @@
+{
+  "schema_version": 1,
+  "date": "2026-09-30",
+  "mode": "native WSL Jazzy + Unity ideal fixture",
+  "root_cause": "Coarse ground cutouts were visible as flat pothole rims, but those rims were absent from wheel-support surfaces.",
+  "frozen_pose": [
+    -1.278669002056347,
+    41.64475523333686,
+    -2.563953
+  ],
+  "before": [
+    {
+      "current_support": true,
+      "next_step_with_rendered_rim": true,
+      "speed_mps": 0.02,
+      "timestep_s": 0.01,
+      "next_step_support": false
+    },
+    {
+      "current_support": true,
+      "next_step_with_rendered_rim": true,
+      "speed_mps": 0.05,
+      "timestep_s": 0.01,
+      "next_step_support": false
+    },
+    {
+      "current_support": true,
+      "next_step_with_rendered_rim": true,
+      "speed_mps": 0.1,
+      "timestep_s": 0.01,
+      "next_step_support": false
+    },
+    {
+      "current_support": true,
+      "next_step_with_rendered_rim": true,
+      "speed_mps": 0.5,
+      "timestep_s": 0.01,
+      "next_step_support": false
+    }
+  ],
+  "initial_regression": {
+    "passed": true,
+    "unity": "6000.3.23f1",
+    "log_sha256": "dbfb5e576b232d61d679e4383bde683fb3bdca7a691953ce5ab2b3ac8c182e74",
+    "checks": 5
+  },
+  "reproduction_log_sha256": "a17bb473090b7ed5d192f66485ba97a74e5724b388fe339766be59910de23715",
+  "recorder_tests": {
+    "command": "wsl -d Ubuntu-24.04 -- bash tools/run_ros.sh python3 -m pytest tools/tests/test_navigation_episode.py -q",
+    "passed": 15
+  },
+  "constraints": {
+    "full_footprint": true,
+    "speed_cap_mps": 2.2,
+    "inflation_m": 0.3,
+    "depression_supported": false,
+    "autonomy_reads_world_geometry": false
+  },
+  "followup": "Support defect reproduced and repaired. Later slalom execution and ramp-body containment remain unresolved; sensor-led lap gate open. Fresh run used rim repair, prior to loader overlap guard; seed-2027 geometry unchanged. Final guarded player built and six Unity checks passed. Docker/Linux player not rebuilt.",
+  "final_regression": {
+    "checks": 6,
+    "windows_player_build_passed": true,
+    "passed": true,
+    "log_sha256": "796a1d10aaecd0ed2923ec70dba72e4657dabbf1e58bd34cc4f94d43f94b264e",
+    "unity": "6000.3.23f1"
+  },
+  "generator_tests": {
+    "seeds": [
+      0,
+      7,
+      13,
+      2027,
+      2028,
+      2029
+    ],
+    "difficulties": [
+      "easy",
+      "normal",
+      "hard"
+    ],
+    "passed": 15,
+    "seed_2027_world_unchanged": true
+  },
+  "fresh_run": {
+    "reason": "No safe forward route after limited backup recovery",
+    "sim_status": "r3a_kinematic_oracle run=0 course=seed-2027 course_hash=1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2 terrain_support=True caster_suspension=True terrain_support_rejects=0 terrain_budget_rejects=0 camera_pitch=0.1745 paused=False estop=False line_guard=scoring line_blocks=0 sim=415.83 rgb requested=5545 completed=5545 errors=0 meanReadbackMs=32.6 depth completed=4004 errors=0",
+    "full_lap_passed": false,
+    "run_sha256": "16ca4e16bea06c785d294e8ce799c60dddf6e7cc76c16e72a666c6059e3309c2",
+    "decision_capture": {
+      "saved": 244,
+      "dropped": 0,
+      "errors": [],
+      "directory": "artifacts/checks/entrance-support-decisions",
+      "drained": true
+    },
+    "status": "stopped",
+    "elapsed_wall_s": 383.433835554,
+    "course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+    "recoveries": [
+      {
+        "destination": 4,
+        "distance_m": 0.6,
+        "actual_distance_m": 0.6066893208592479,
+        "clearance_search": {
+          "rear_sweep_checked_m": 0.6,
+          "rear_sample_spacing_m": 0.02500000037252903,
+          "original_trap_progress_m": 2.171923883332769,
+          "elapsed_seconds": 1.7204114080000181,
+          "charged_expansions": 704,
+          "attempts": [
+            {
+              "distance_m": 0.6,
+              "expansion_allowance": 10000,
+              "charged_expansions": 704,
+              "proposal_found": true
+            }
+          ],
+          "unknown_is_blocked": true,
+          "straight_backup_only": true
+        }
+      },
+      {
+        "destination": 4,
+        "distance_m": 0.6,
+        "actual_distance_m": 0.6020000089258277,
+        "clearance_search": {
+          "rear_sweep_checked_m": 0.6,
+          "rear_sample_spacing_m": 0.02500000037252903,
+          "original_trap_progress_m": 3.8303726115150414,
+          "elapsed_seconds": 1.5064353370000276,
+          "charged_expansions": 1024,
+          "attempts": [
+            {
+              "distance_m": 0.6,
+              "expansion_allowance": 10000,
+              "charged_expansions": 1024,
+              "proposal_found": true
+            }
+          ],
+          "unknown_is_blocked": true,
+          "straight_backup_only": true
+        }
+      }
+    ],
+    "episode_writer": {
+      "frame_queued": 1022,
+      "queue_high_water": 64,
+      "frame_written": 1022,
+      "event_queued": 87580,
+      "event_written": 87580,
+      "event_queue_drops": 62,
+      "frame_queue_drops": 1
+    },
+    "completed_destinations": 4,
+    "audit": "terrain-support-audit.json"
+  },
+  "source_sha256": {
+    "unity/IGVCSim/Assets/IGVC/Runtime/CourseVariant.cs": "f25e5284355ad4e388f064a5358de9fc1609e084ca91d120cf704fa66af668dd",
+    "unity/IGVCSim/Assets/IGVC/Runtime/TransportProbe.cs": "a69cc4363bc36c19227df53dcfc882585061c384fda82817e4830856f32c7544",
+    "tools/record_navigation_episode.py": "d410c4d8efbf2e99c050ff8c5c4da7942b00faf1d402a9958e42fd7e291f5748",
+    "tools/generate_course_variant.py": "b7f13de24f067c2d25b4a0d0dbd74708b0989af62c162c3486beaa89e19732ad",
+    "unity/IGVCSim/Assets/IGVC/Editor/CourseSupportChecks.cs": "fccc59e874294a84ee97ebc07e0cac048f461280ebd263e4d173a3a18a471d85"
+  },
+  "post_run_reporting": {
+    "live_rerun": false,
+    "mission_contract_tests_passed": 5,
+    "description": "Distinguish recovery budget exhaustion with/without a forward plan from unavailable backup action server; record recovery_limit context. No motion or recovery limit change.",
+    "python_compile_passed": true,
+    "source_sha256": "ede0a4df215fffc8388455c2a3f14f1e998f9a021db59a6b852a9762755a771d"
+  }
+}

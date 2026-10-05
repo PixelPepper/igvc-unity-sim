@@ -1,0 +1,34 @@
+{
+  "run": "20261002T035715-45c98a0f",
+  "mission_status": "completed",
+  "completed_destinations": 6,
+  "elapsed_wall_s": 376.12407639699995,
+  "processing_interval_passed": false,
+  "coverage_complete": true,
+  "sample_count": 3764,
+  "totals": {
+    "pass": 3760,
+    "fail": 4,
+    "unknown": 0
+  },
+  "max_gap_including_bounds_s": 0.11975614100038001,
+  "max_gap_limit_s": 0.25,
+  "reason_counts": {
+    "lanes:processing_health_false": 4,
+    "depth_processing:processing_health_false": 2
+  },
+  "first_fail": {
+    "monotonic_s": 3232.519751986,
+    "odom_stamp_ns": 319960000000,
+    "status": "fail",
+    "reasons": [
+      "lanes:processing_health_false",
+      "depth_processing:processing_health_false"
+    ]
+  },
+  "failure_reasons": [
+    "processing_failure_observed"
+  ],
+  "run_sha256": "f7761e657c251ab48497f08eddee3c4c1d28c3f2805030aee5e969db8427df9d",
+  "note": "WSLg/RViz recovery occurred during this run. Timing correlation is uninvestigated; causation is not established."
+}

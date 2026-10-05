@@ -1,0 +1,19 @@
+{
+    "shutdown_verified":  true,
+    "player_assembly_sha256":  "6564e85476866ef0b2d1b0a8954af7ae81280b177cb7cef8b5da50d906b429c7",
+    "audit_exit":  0,
+    "started_utc":  "2026-10-02T02:44:27.8919079Z",
+    "profile_sha256":  "14245726680bb2f4e36aef73ae32de7fb3395d2e38b01dd6d7fbe7c869edbef4",
+    "role":  "admissible-endpoints",
+    "commit":  "ac765e9091cb40c9c248df71e0b02016bb54021f",
+    "mission_exit":  0,
+    "result":  {
+                   "status":  "completed",
+                   "elapsed_wall_s":  363.3705864340001,
+                   "reason":  null,
+                   "completed_destinations":  6
+               },
+    "finished_utc":  "2026-10-02T02:51:36.6690579Z",
+    "status":  "completed",
+    "stage":  "finished"
+}

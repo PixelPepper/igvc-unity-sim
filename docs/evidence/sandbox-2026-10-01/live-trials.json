@@ -1,0 +1,40 @@
+[
+  {
+    "trajectory_samples": 464,
+    "run": "20261002T034856-807712cd",
+    "status": "stopped",
+    "controller": "mppi",
+    "reason": "Stopped by operator",
+    "max_distance_from_start_m": 2.902892392646033,
+    "completed_destinations": 0,
+    "settings": {
+      "controller": "mppi",
+      "execution": "checked-path",
+      "speed_mps": 0.4,
+      "inflation_m": 0.4,
+      "clearance_weight": 2,
+      "planning_budget_s": 0.5,
+      "lookahead_m": 0.8
+    },
+    "cleanup_errors": null
+  },
+  {
+    "trajectory_samples": 376,
+    "run": "20261002T034835-b67cc46f",
+    "status": "stopped",
+    "controller": "rpp",
+    "reason": "Stopped by operator",
+    "max_distance_from_start_m": 2.306631977754293,
+    "completed_destinations": 0,
+    "settings": {
+      "controller": "rpp",
+      "execution": "checked-path",
+      "speed_mps": 0.4,
+      "inflation_m": 0.4,
+      "clearance_weight": 2,
+      "planning_budget_s": 0.5,
+      "lookahead_m": 0.8
+    },
+    "cleanup_errors": null
+  }
+]

@@ -1,0 +1,266 @@
+{
+  "schema_version": 1,
+  "experiment": "progress-based backup rearming, seed 2027",
+  "run_sha256": "8397456d9c0ceae3a2da37d63292313f138ec1ae7cc285dd200aa10aa0b9d599",
+  "result": {
+    "status": "stopped",
+    "reason": "Backup recovery budget exhausted: no forward plan available",
+    "completed_destinations": 4,
+    "elapsed_wall_s": 423.775464616,
+    "planning_budget_wall_s": 0.5,
+    "guidance_memory": "entrance",
+    "source_sha256": {
+      "sensor_course.py": "9f921b765e4a5836b8164241e3a9001d5e9a85e9223ac68bffa9e9282e45ba6a",
+      "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+      "lane_corridor_policy.py": "98783ed407ba83de99154ee733c8bd4cce1a376f6c787a07db788ce885ada59b",
+      "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+      "sensor_route_policy.py": "aed9df8f0a3a6d9b75b01b97e30d0f6c1eec88e66c832a1e575095aedf6f83b2",
+      "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+      "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+      "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f"
+    },
+    "recoveries": [
+      {
+        "destination": 4,
+        "distance_m": 0.6,
+        "actual_distance_m": 0.6070000090023372,
+        "budget": {
+          "total_attempts": 1,
+          "total_limit": 12,
+          "local_attempts": 1,
+          "attempts_per_trap": 2,
+          "release_distance_m": 3.0,
+          "anchor": [
+            -9.256113117804675,
+            33.3489130687258
+          ],
+          "forward_distance_m": 0.0,
+          "episodes_cleared": 0
+        },
+        "clearance_search": {
+          "rear_sweep_checked_m": 0.6,
+          "rear_sample_spacing_m": 0.02500000037252903,
+          "original_trap_progress_m": 3.592369128580977,
+          "elapsed_seconds": 1.3357161540000106,
+          "charged_expansions": 1280,
+          "attempts": [
+            {
+              "distance_m": 0.6,
+              "expansion_allowance": 10000,
+              "charged_expansions": 1280,
+              "proposal_found": true
+            }
+          ],
+          "unknown_is_blocked": true,
+          "straight_backup_only": true
+        }
+      },
+      {
+        "destination": 4,
+        "distance_m": 0.6,
+        "actual_distance_m": 0.60000000889713,
+        "budget": {
+          "total_attempts": 2,
+          "total_limit": 12,
+          "local_attempts": 2,
+          "attempts_per_trap": 2,
+          "release_distance_m": 3.0,
+          "anchor": [
+            -9.256113117804675,
+            33.3489130687258
+          ],
+          "forward_distance_m": 0.6248300160402158,
+          "episodes_cleared": 0
+        },
+        "clearance_search": {
+          "rear_sweep_checked_m": 0.6,
+          "rear_sample_spacing_m": 0.02500000037252903,
+          "original_trap_progress_m": 3.2117079641854502,
+          "elapsed_seconds": 1.4758235550000336,
+          "charged_expansions": 1088,
+          "attempts": [
+            {
+              "distance_m": 0.6,
+              "expansion_allowance": 10000,
+              "charged_expansions": 1088,
+              "proposal_found": true
+            }
+          ],
+          "unknown_is_blocked": true,
+          "straight_backup_only": true
+        }
+      }
+    ],
+    "recovery_limit": {
+      "destination": 4,
+      "budget": {
+        "total_attempts": 2,
+        "total_limit": 12,
+        "local_attempts": 2,
+        "attempts_per_trap": 2,
+        "release_distance_m": 3.0,
+        "anchor": [
+          -9.256113117804675,
+          33.3489130687258
+        ],
+        "forward_distance_m": 0.6248300160402158,
+        "episodes_cleared": 0
+      },
+      "forward_plan_available": false,
+      "controller_failures": 0,
+      "stationary_seconds": 10.606901158000028
+    },
+    "decision_capture": {
+      "saved": 273,
+      "dropped": 0,
+      "errors": [],
+      "directory": "artifacts/checks/progress-recovery-decisions",
+      "drained": true
+    }
+  },
+  "audit": {
+    "passed": false,
+    "source_status": "stopped",
+    "completed_destinations": 4,
+    "checks": {
+      "course_identity_matches": true,
+      "completed_six_destinations": false,
+      "sensor_led_mode": true,
+      "scoring_guard": true,
+      "zero_line_blocks": true,
+      "finite_trajectory": true,
+      "obstacle_geometry_available": true,
+      "trajectory_continuous": true,
+      "speed_at_most_2_2_mps": true,
+      "sampled_obstacles_clear": true,
+      "swept_obstacles_clear": true,
+      "returned_within_0_4_m": false,
+      "all_ramps_traversed_entry_to_exit": true,
+      "all_ramps_body_contained_entry_to_departure": true,
+      "whole_footprint_paint_sweep_clear": true,
+      "ordered_world_full_loop": false,
+      "six_destinations_independently_visited_in_order": false
+    },
+    "sample_count": 21465,
+    "topology_certified": false,
+    "full_loop_certified": false,
+    "paint_crossing_certified": true,
+    "course_identity": {
+      "passed": true,
+      "expected_course_sha256": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+      "observed_course_hashes": [
+        "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+        "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2"
+      ],
+      "status": "matched"
+    },
+    "certification_status": "failed",
+    "limitations": "Offline ideal geometry evidence, not contact physics. Swept bounds assume linear translation and shortest-angle rotation between recorded poses. Gaps fail continuity. Topology uses an explicit development lateral tolerance in unpainted areas, not a competition rule. Intended direction is WORLD centerline array order; initial yaw is not assumed. Course identity requires exact manifest-byte SHA-256. Ramp axle and body-side XY containment are separate evidence. The asymmetric rectangle is not a physical wheel-support polygon; wheel contact, elevation, suspension and rollover are not certified.",
+    "ramp_traversals": [
+      {
+        "ramp_id": "ramp-001",
+        "passed": true,
+        "entry_trajectory_index": 15176.168181062652,
+        "exit_trajectory_index": 16274.795548848553,
+        "longitudinal_span_m": 8.0
+      }
+    ],
+    "ramp_body_containment": [
+      {
+        "passed": true,
+        "ramp_id": "ramp-001",
+        "entry_trajectory_index": 15110.0,
+        "exit_trajectory_index": 16469.0,
+        "conservative_side_margin_m": 0.6918249709690371
+      }
+    ],
+    "wheel_support_certified": false,
+    "paint_crossing": {
+      "passed": true,
+      "geometry_available": true,
+      "painted_quad_count": 1112,
+      "contact_pose_count": 0,
+      "unproven_sweep_subsegments": 0,
+      "first_contact": null,
+      "conservative_clearance_lower_bound_m": 0.009008457969882398,
+      "numerical_allowance_m": 0.001,
+      "evaluated_pose_clearance_cap_m": 0.02
+    },
+    "world_topology": {
+      "passed": false,
+      "policy": {
+        "open_area_lateral_m": 8.0,
+        "gate_spacing_m": 2.0,
+        "start_finish_tolerance_m": 0.4,
+        "arc_motion_multiplier": 1.5,
+        "intended_direction": "WORLD centerline array order"
+      },
+      "gates_visited": 57,
+      "gates_required": 77,
+      "total_arc_m": 155.18610514980062,
+      "progress_m": 114.54333429753444,
+      "maximum_progress_m": 115.15275224848995,
+      "last_sample_index": 21464,
+      "last_lateral_m": 0.027533115395568686,
+      "reason": "Incomplete ordered WORLD loop or missing physical cross-section visits"
+    },
+    "observed_destination_visits": [
+      {
+        "destination_index": 0,
+        "sample_index": 2073,
+        "stamp": 64.2
+      },
+      {
+        "destination_index": 1,
+        "sample_index": 10044,
+        "stamp": 223.62
+      },
+      {
+        "destination_index": 2,
+        "sample_index": 15005,
+        "stamp": 322.84
+      },
+      {
+        "destination_index": 3,
+        "sample_index": 17668,
+        "stamp": 376.1
+      }
+    ],
+    "footprint": {
+      "x_min": -1.1,
+      "x_max": 0.6,
+      "y_min": -0.5,
+      "y_max": 0.5
+    },
+    "obstacle_count": 54,
+    "minimum": {
+      "clearance_m": 0.07083489379047886,
+      "trajectory_index": 10475.0,
+      "pose": [
+        28.930286897266303,
+        23.15663225624163,
+        0.7576751908239587
+      ],
+      "obstacle_id": "barrel-002"
+    },
+    "conservative_swept_clearance_lower_bound_m": 0.06801214415780957,
+    "collision_pose_count": 0,
+    "unproven_sweep_subsegments": 0,
+    "evaluated_sweep_subsegments": 22189,
+    "observed_distance_m": 117.22259463378637,
+    "maximum_interval_speed_mps": 1.307517166382009,
+    "speed_violation_indices": [],
+    "timestamp_gap_indices": [],
+    "nonincreasing_timestamp_indices": [],
+    "final_distance_to_origin_m": 35.18341537848859,
+    "simulation_span_s": 429.28,
+    "run_sha256": "8397456d9c0ceae3a2da37d63292313f138ec1ae7cc285dd200aa10aa0b9d599",
+    "source_run": "artifacts/checks/progress-recovery-run.json",
+    "evaluation_course": "artifacts/courses/seed-2027/course.json"
+  },
+  "notes": [
+    "All 469 frames and 81377 events saved; recorder interrupted after mission stop, writer drained.",
+    "Current audit clips footprint to finite ramp; prior entrance-support ramp result was a scoring false positive.",
+    "This trial remains partial; no full-loop success."
+  ]
+}

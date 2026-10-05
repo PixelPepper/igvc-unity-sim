@@ -1,0 +1,415 @@
+{
+  "schema_version": 1,
+  "scope": "Sensor-led experiments; no full loop established",
+  "trials": [
+    {
+      "name": "checked-path",
+      "run_sha256": "346349d160c4b80cc41787ad741b2d74ae55be7627d95c7f2269794cc1aeb1fe",
+      "result": {
+        "status": "stopped",
+        "reason": "Backup recovery budget exhausted: no forward plan available",
+        "completed_destinations": 2,
+        "elapsed_wall_s": 266.4827403620002,
+        "requested_speed_mps": 2.2,
+        "guidance_memory": "entrance",
+        "path_execution": "checked-path",
+        "planning_budget_wall_s": 0.5,
+        "source_sha256": {
+          "sensor_course.py": "53864b7c722ed08f1a9661507233e1350d5b63a4357d28e698c1d0a7d6e43eae",
+          "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+          "lane_corridor_policy.py": "b7d0bc877aa993d1e4d252243830925b62c9fe765382619ea3e39e987e88b4d0",
+          "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+          "sensor_route_policy.py": "14972b0bd485e279b7602c37d232d26e46787176cf338ef73a50872cdb684452",
+          "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+          "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+          "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f",
+          "execution_path.py": "7825e45ea582e12e95cbdad79430eef13d3085c9ebf1cc6caa8fbdb130da368d"
+        },
+        "recoveries": [
+          {
+            "destination": 1,
+            "distance_m": 0.6,
+            "actual_distance_m": 0.6090000090298479,
+            "budget": {
+              "total_attempts": 1,
+              "total_limit": 12,
+              "local_attempts": 1,
+              "attempts_per_trap": 2,
+              "release_distance_m": 3.0,
+              "anchor": [
+                28.126905706994947,
+                21.444909866354088
+              ],
+              "forward_distance_m": 0.0,
+              "episodes_cleared": 0
+            },
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.6,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 0.5292927242666582,
+              "elapsed_seconds": 0.8363395700000638,
+              "charged_expansions": 704,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 704,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          },
+          {
+            "destination": 1,
+            "distance_m": 0.9,
+            "actual_distance_m": 0.9060000134561892,
+            "budget": {
+              "total_attempts": 2,
+              "total_limit": 12,
+              "local_attempts": 2,
+              "attempts_per_trap": 2,
+              "release_distance_m": 3.0,
+              "anchor": [
+                28.126905706994947,
+                21.444909866354088
+              ],
+              "forward_distance_m": 0.4736406591649146,
+              "episodes_cleared": 0
+            },
+            "clearance_search": {
+              "rear_sweep_checked_m": 0.9,
+              "rear_sample_spacing_m": 0.02500000037252903,
+              "original_trap_progress_m": 1.3606225076621619,
+              "elapsed_seconds": 1.7270448260001103,
+              "charged_expansions": 11216,
+              "attempts": [
+                {
+                  "distance_m": 0.6,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 10000,
+                  "proposal_found": false
+                },
+                {
+                  "distance_m": 0.9,
+                  "expansion_allowance": 10000,
+                  "charged_expansions": 1216,
+                  "proposal_found": true
+                }
+              ],
+              "unknown_is_blocked": true,
+              "straight_backup_only": true
+            }
+          }
+        ]
+      },
+      "audit_sha256": "52e31d04d7b425648e57f7aa6ae1479f3f93bbc1af0f6e44efe03ae91f426ef5",
+      "audit": {
+        "passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum": {
+          "clearance_m": 0.09356534318342291,
+          "trajectory_index": 12814.0,
+          "pose": [
+            27.542203450193387,
+            22.1383868892367,
+            2.376450920311158
+          ],
+          "obstacle_id": "barrel-002"
+        },
+        "maximum_interval_speed_mps": 0.8457726067815844
+      },
+      "recording": {
+        "status": "interrupted",
+        "frames_attempted": 451,
+        "writer_counters": {
+          "frame_queued": 451,
+          "queue_high_water": 25,
+          "frame_written": 451,
+          "event_queued": 75006,
+          "event_written": 75006
+        }
+      }
+    },
+    {
+      "name": "rpp-path",
+      "run_sha256": "df9f5b31bf11826ae6e3ddbb5ea5ddbd25deb8b2334bb66bc113df26a1398a45",
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 1,
+        "elapsed_wall_s": 42.312151148999874,
+        "requested_speed_mps": 2.2,
+        "guidance_memory": "entrance",
+        "path_execution": "checked-path",
+        "planning_budget_wall_s": 0.5,
+        "source_sha256": {
+          "sensor_course.py": "53864b7c722ed08f1a9661507233e1350d5b63a4357d28e698c1d0a7d6e43eae",
+          "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+          "lane_corridor_policy.py": "b7d0bc877aa993d1e4d252243830925b62c9fe765382619ea3e39e987e88b4d0",
+          "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+          "sensor_route_policy.py": "14972b0bd485e279b7602c37d232d26e46787176cf338ef73a50872cdb684452",
+          "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+          "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+          "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f",
+          "execution_path.py": "7825e45ea582e12e95cbdad79430eef13d3085c9ebf1cc6caa8fbdb130da368d"
+        },
+        "recoveries": null
+      },
+      "audit_sha256": "1d3ea64f5fef0ba830650cda47c9ec2a33b847e1ac9cff77086d84405fc0d7ac",
+      "audit": {
+        "passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": false,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": false,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum": {
+          "clearance_m": 2.9083350519144138,
+          "trajectory_index": 1800.0,
+          "pose": [
+            25.668165758143097,
+            1.3708642299955924,
+            1.4075186270242672
+          ],
+          "obstacle_id": "barricade-003"
+        },
+        "maximum_interval_speed_mps": 2.200000000000446
+      },
+      "recording": {
+        "status": "interrupted",
+        "frames_attempted": 119,
+        "writer_counters": {
+          "frame_queued": 119,
+          "queue_high_water": 16,
+          "frame_written": 119,
+          "event_queued": 18876,
+          "event_written": 18876
+        }
+      }
+    },
+    {
+      "name": "rpp-slow",
+      "run_sha256": "0588d9971b60b53c40cd9d29496e3edbc84243ff95caa2e5b77d452a448e9a36",
+      "result": {
+        "status": "stopped",
+        "reason": "Autonomy gate stopped: Autonomy latched off: perception freshness expired (require_lanes=True, require_depth=True, unmarked_mode=True, camera_age=0.755s, lane_age=0.755s, depth_age=0.741s, clock_age=0.047s; limit=0.750s). Explicit autonomy enable is required after healthy observations return.",
+        "completed_destinations": 1,
+        "elapsed_wall_s": 78.4988078069996,
+        "requested_speed_mps": 0.6,
+        "guidance_memory": "entrance",
+        "path_execution": "checked-path",
+        "planning_budget_wall_s": 0.5,
+        "source_sha256": {
+          "sensor_course.py": "53864b7c722ed08f1a9661507233e1350d5b63a4357d28e698c1d0a7d6e43eae",
+          "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+          "lane_corridor_policy.py": "b7d0bc877aa993d1e4d252243830925b62c9fe765382619ea3e39e987e88b4d0",
+          "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+          "sensor_route_policy.py": "14972b0bd485e279b7602c37d232d26e46787176cf338ef73a50872cdb684452",
+          "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+          "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+          "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f",
+          "execution_path.py": "7825e45ea582e12e95cbdad79430eef13d3085c9ebf1cc6caa8fbdb130da368d"
+        },
+        "recoveries": null
+      },
+      "audit": "not run",
+      "recording": {
+        "status": "interrupted",
+        "frames_attempted": 233,
+        "writer_counters": {
+          "frame_queued": 232,
+          "queue_high_water": 64,
+          "frame_written": 232,
+          "event_queued": 26010,
+          "event_written": 26010,
+          "event_queue_drops": 324,
+          "frame_queue_drops": 1
+        }
+      }
+    },
+    {
+      "name": "rpp-entry",
+      "run_sha256": "30cfe2a36c4f5b29d3c470ac72268736f09830ff0d803081acd48d90fa84a52e",
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 1,
+        "elapsed_wall_s": 122.25658902299983,
+        "requested_speed_mps": 0.6,
+        "guidance_memory": "entrance",
+        "path_execution": "checked-path",
+        "planning_budget_wall_s": 0.5,
+        "source_sha256": {
+          "sensor_course.py": "70c48274cf8ed99c827878a940065a089963241d3ac234db614898b0f40b8667",
+          "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+          "lane_corridor_policy.py": "b7d0bc877aa993d1e4d252243830925b62c9fe765382619ea3e39e987e88b4d0",
+          "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+          "sensor_route_policy.py": "14972b0bd485e279b7602c37d232d26e46787176cf338ef73a50872cdb684452",
+          "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+          "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+          "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f",
+          "execution_path.py": "7825e45ea582e12e95cbdad79430eef13d3085c9ebf1cc6caa8fbdb130da368d",
+          "path_entry.py": "f0305b5b414c6f443cc90df6b3fef70aa90180b2492d48b10d07092813fb1574"
+        },
+        "recoveries": null
+      },
+      "audit_sha256": "2db1266fee635e99e360a9fffa6da44e39b8a8d72af199bae9121b7b877d0e06",
+      "audit": {
+        "passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum": {
+          "clearance_m": 0.1916345758876925,
+          "trajectory_index": 5209.0,
+          "pose": [
+            29.24800955246261,
+            10.82191682933009,
+            0.8549295991885826
+          ],
+          "obstacle_id": "barrel-001"
+        },
+        "maximum_interval_speed_mps": 0.600000000000526
+      },
+      "recording": {
+        "status": "finished",
+        "frames_attempted": 198,
+        "writer_counters": {
+          "frame_queued": 198,
+          "queue_high_water": 48,
+          "frame_written": 198,
+          "event_queued": 32889,
+          "event_written": 32889
+        }
+      }
+    },
+    {
+      "name": "directed-sweep",
+      "run_sha256": "a7b3fc241a1033276ac5d2f1c34c93c49b3a3a477343d0fb9520744844680bfd",
+      "result": {
+        "status": "stopped",
+        "reason": "No observed collision-free backup with useful forward clearance",
+        "completed_destinations": 1,
+        "elapsed_wall_s": 138.58383351500004,
+        "requested_speed_mps": 0.6,
+        "guidance_memory": "entrance",
+        "path_execution": "checked-path",
+        "planning_budget_wall_s": 0.5,
+        "source_sha256": {
+          "sensor_course.py": "12577baf986973b1c6d12a18cb6f023d9a1b932d827d224edcfc64abeca8303b",
+          "observed_navigation.py": "f9ebb99bbfd119e9d4d82dfffd3ea354206f0846f04e04c5fa3012d0d05a2914",
+          "lane_corridor_policy.py": "b7d0bc877aa993d1e4d252243830925b62c9fe765382619ea3e39e987e88b4d0",
+          "lane_heading_memory.py": "97844944e1923abf548517929dfd54ab9fe84261f0115c086df2dbfcc0c448ed",
+          "sensor_route_policy.py": "d62cd853dee71b99d4815a2b343946eb1dc6e4dc3320bc3ce142a380da1768dd",
+          "entrance_memory.py": "09c282ac17f2feef263eb70f5443fdd8525e646ecb0f169aa637e6b046cfea28",
+          "entrance_support.py": "274263b8efde982b985e14ec0482ebf1955b5b90a8ed0452dd45f1adba504294",
+          "recovery_budget.py": "1180903143281bcfec4c69baf00f81df9e29ade821a4d40f1833cf951cd6878f",
+          "execution_path.py": "7825e45ea582e12e95cbdad79430eef13d3085c9ebf1cc6caa8fbdb130da368d",
+          "path_entry.py": "aa05d94a0bc4a98fe541ed590c1d124ddb6e4a28311fc1438ebaf7e714168fc8",
+          "swept_footprint.py": "9d09fc8fe0ed286b27052fa069c8c0a8187dc0e9130100cd37194714d206d611"
+        },
+        "recoveries": null
+      },
+      "audit_sha256": "46cd4f261933fbea3f6cac0fa141127137fa78fc82910b67f2e579a0ac8a5d72",
+      "audit": {
+        "passed": false,
+        "checks": {
+          "course_identity_matches": true,
+          "completed_six_destinations": false,
+          "sensor_led_mode": true,
+          "scoring_guard": true,
+          "zero_line_blocks": true,
+          "finite_trajectory": true,
+          "obstacle_geometry_available": true,
+          "trajectory_continuous": true,
+          "speed_at_most_2_2_mps": true,
+          "sampled_obstacles_clear": true,
+          "swept_obstacles_clear": true,
+          "returned_within_0_4_m": false,
+          "all_ramps_traversed_entry_to_exit": false,
+          "all_ramps_body_contained_entry_to_departure": false,
+          "whole_footprint_paint_sweep_clear": true,
+          "ordered_world_full_loop": false,
+          "six_destinations_independently_visited_in_order": false
+        },
+        "minimum": {
+          "clearance_m": 0.07916274638014759,
+          "trajectory_index": 5037.0,
+          "pose": [
+            29.458124851030647,
+            11.017380150270153,
+            1.10285614970627
+          ],
+          "obstacle_id": "barrel-001"
+        },
+        "maximum_interval_speed_mps": 0.6000000000002719
+      },
+      "recording": {
+        "status": "interrupted",
+        "frames_attempted": 240,
+        "writer_counters": {
+          "frame_queued": 240,
+          "queue_high_water": 30,
+          "event_queued": 40002,
+          "frame_written": 240,
+          "event_written": 40002
+        }
+      }
+    }
+  ],
+  "limitations": [
+    "Large observations and recordings remain ignored local artifacts; these hashes cannot reproduce a run from a clean checkout.",
+    "RPP profile was local experimental YAML; production controller remains MPPI.",
+    "No Docker rebuild, Linux player validation, held-out seed or physical robot claim."
+  ]
+}

@@ -1,0 +1,245 @@
+{
+  "source_artifact_sha256": "f0388387cc40274eb0ab637a3520b88f87565514a375f3e4ba8f66d2453d99d8",
+  "profile_id": "igvc-2027-autonav-v1",
+  "provenance": {
+    "url": "https://gl-systems-technology.net/uploads/3/4/7/2/34727963/igvc_2027_rules_version_7_july_26.pdf",
+    "revision": "7 July 26 Version",
+    "retrieved_date": "2026-09-30",
+    "sha256": "4a7162913bce181839228041f1a79512035f597861514cd9edfe7d7181d080b3",
+    "sections": [
+      "I",
+      "II"
+    ]
+  },
+  "status": "fail",
+  "certification": false,
+  "checks": [
+    {
+      "id": "sanitized_autonomy_keys",
+      "status": "pass",
+      "scope": "configuration",
+      "detail": "Runtime accepts exactly four top-level keys; profile metadata belongs in a separate settings receipt.",
+      "observed": [
+        "goals",
+        "max_speed_mps",
+        "origin",
+        "schema_version"
+      ],
+      "expected": [
+        "goals",
+        "max_speed_mps",
+        "origin",
+        "schema_version"
+      ]
+    },
+    {
+      "id": "course_units",
+      "status": "pass",
+      "scope": "configuration",
+      "detail": "Legacy course dimensions require an explicit metres declaration.",
+      "observed": "m",
+      "expected": "m"
+    },
+    {
+      "id": "configured_speed_cap",
+      "status": "pass",
+      "scope": "configuration",
+      "detail": "Declared software cap only; hardware governor remains unverified.",
+      "observed": 2.2,
+      "expected": 2.2352
+    },
+    {
+      "id": "configured_run_timeout",
+      "status": "unknown",
+      "scope": "configuration",
+      "detail": "Checks the declared overall run budget, not an individual goal timeout.",
+      "observed": null,
+      "expected": 360
+    },
+    {
+      "id": "requested_speed_cap",
+      "status": "unknown",
+      "scope": "configuration",
+      "detail": "Requested runtime ceiling; this is not a measured qualification speed.",
+      "observed": null,
+      "expected": 2.2352
+    },
+    {
+      "id": "organizer_waypoint_count",
+      "status": "fail",
+      "scope": "configuration",
+      "detail": "Two supplied waypoint pairs correspond to four destinations; count alone does not prove provenance.",
+      "observed": 6,
+      "expected": 4
+    },
+    {
+      "id": "organizer_waypoint_pairing",
+      "status": "unknown",
+      "scope": "configuration",
+      "detail": "Pairs index the four goals exactly once.",
+      "observed": null,
+      "expected": [
+        [
+          0,
+          1
+        ],
+        [
+          2,
+          3
+        ]
+      ]
+    },
+    {
+      "id": "organizer_waypoint_guidance",
+      "status": "unknown",
+      "scope": "configuration",
+      "detail": "A declared source of organizer waypoints is required; six sampled training regions are different guidance.",
+      "observed": null,
+      "expected": "organizer_waypoints"
+    },
+    {
+      "id": "ramp_grade_0",
+      "status": "pass",
+      "scope": "configuration",
+      "detail": "Grade is rise/horizontal run; 15 percent is about 8.53 degrees, not 15 degrees.",
+      "observed": 0.13333333333333333,
+      "expected": 0.15
+    },
+    {
+      "id": "pothole_diameter_52",
+      "status": "fail",
+      "scope": "configuration",
+      "detail": "Rule simulated potholes have two-foot diameter.",
+      "observed": [
+        0.8958293002356071,
+        0.8958293002356071
+      ],
+      "expected": 0.6096
+    },
+    {
+      "id": "pothole_representation_52",
+      "status": "fail",
+      "scope": "configuration",
+      "detail": "Dark physical depressions are training hazards; rule potholes are solid white circles.",
+      "observed": {
+        "representation": null,
+        "color": null,
+        "depth": 0.1335840081161457
+      },
+      "expected": "solid_white_circle"
+    },
+    {
+      "id": "pothole_diameter_53",
+      "status": "fail",
+      "scope": "configuration",
+      "detail": "Rule simulated potholes have two-foot diameter.",
+      "observed": [
+        1.0272083389475213,
+        1.0272083389475213
+      ],
+      "expected": 0.6096
+    },
+    {
+      "id": "pothole_representation_53",
+      "status": "fail",
+      "scope": "configuration",
+      "detail": "Dark physical depressions are training hazards; rule potholes are solid white circles.",
+      "observed": {
+        "representation": null,
+        "color": null,
+        "depth": 0.19735996086668328
+      },
+      "expected": "solid_white_circle"
+    },
+    {
+      "id": "minimum_passage",
+      "status": "unknown",
+      "scope": "configuration",
+      "detail": "Requires declared obstacle-edge to boundary-edge clear openings; lane width alone is insufficient.",
+      "observed": null,
+      "expected": 1.524
+    },
+    {
+      "id": "opening_speed_window",
+      "status": "unknown",
+      "scope": "judges",
+      "detail": "Rulebook narrative and traffic table disagree; organizer clarification required.",
+      "observed": {
+        "status": "unresolved",
+        "narrative": {
+          "distance_ft": 44,
+          "time_s": 30,
+          "reference": "II.2 p10; II.4 narrative p13 also uses 44 ft"
+        },
+        "table": {
+          "distance_ft": 88,
+          "time_s": 60,
+          "reference": "II.4 hold-up traffic table p13"
+        },
+        "action": "Obtain organizer clarification; do not treat either window as definitive."
+      },
+      "expected": null
+    },
+    {
+      "id": "external_requirement_0",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Measured physical vehicle dimensions and payload security/weight (I.2-I.4)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_1",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Hardware maximum-speed governor and qualification speed (I.2/I.4)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_2",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Hardware mechanical and wireless E-stops, their locations/range/function (I.2/I.4)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_3",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Physical safety light behavior (I.2/I.4)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_4",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Onboard-only processing/control, no base stations or course memorization (I.2)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_5",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Qualification, autonomous lane/obstacle/waypoint performance (I.4)",
+      "observed": null,
+      "expected": null
+    },
+    {
+      "id": "external_requirement_6",
+      "status": "unknown",
+      "scope": "hardware_or_judges",
+      "detail": "Judge-defined start/finish, waypoint crossing, penalties and termination (II.3-II.6)",
+      "observed": null,
+      "expected": null
+    }
+  ],
+  "input_hashes": {
+    "course": "1126a9439558aad6201cd2df235df67d664f90c188ee93652c82cfef6245acb2",
+    "autonomy": "21f168de29ff528274fe94150b426896d3849b1adda39064366c5c59c1f6eff5",
+    "profile": "8b95a9cf925401e191489d92be22dd8d92ec9b2e11b9813b781a16d477e9d091"
+  }
+}
