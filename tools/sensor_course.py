@@ -37,6 +37,9 @@ from replacement_path import (ActivePathRecord, SEND_REVALIDATED, replacement_ou
                               snapshot_revalidator)
 from session_paths import session_dir
 
+# Recovery lane-entry gate: station step when the selected far gate has no clear body position.
+RECOVERY_GATE_RETREAT_STEP_M = .5
+
 
 def destinations(config):
     def finite_number(value):
@@ -603,7 +606,10 @@ def run(args):
                             selection_diagnostics.get('corridor'),
                             (recovery_grid.info.origin.position.x,recovery_grid.info.origin.position.y),
                             recovery_grid.info.resolution,recovery_grid.info.width,recovery_grid.info.height,
-                            recovery_grid.data, goal_footprint)
+                            recovery_grid.data, goal_footprint,
+                            # Recovery only: a far gate can sit where the observed grid ends; also try
+                            # nearer stations of the same observed corridor with unchanged checks.
+                            station_retreat_step=RECOVERY_GATE_RETREAT_STEP_M)
                         decision_event('recovery_gate_selection', diagnostics=gate_selection)
                         if selected is None:
                             raise RuntimeError('No observed clear lane-entry position for recovery')

@@ -21,7 +21,7 @@ def valid_guidance(value):
 
 
 def refine_corridor_guidance(selection, corridor, origin, resolution, width,
-                             height, costs, footprint):
+                             height, costs, footprint, *, station_retreat_step=None):
     """Return (selection or None, evidence) for a fresh observed corridor gate.
 
     A blocked midpoint does not block every lateral position. Sample at most
@@ -31,6 +31,15 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
     costs check the entire padded body, including its portion before support.
     This admits a goal footprint, not a route: the caller must still plan/check
     the continuous path. None means no checked gate target, never GPS fallback.
+
+    Optional ``station_retreat_step`` (metres, default off): if no lateral
+    position is clear at the selected station, repeat the same lateral search
+    at stations stepped back toward the start of the shared observed support,
+    returning the farthest station with a clear body. A far gate station can
+    lie where the observed grid ends (unknown cells), while nearer stations of
+    the same observed corridor are known and clear. Every check is unchanged:
+    unknown and lethal cells still block, and nothing beyond the observed
+    boundaries is used.
     """
     evidence = {'original_target': list(selection['target']),
                 'selected_lateral_offset_m': None, 'candidates_checked': 0,
@@ -75,29 +84,53 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
         a,b = segment
         return dot(a,normal)+(t-dot(a,direction))*(dot(b,normal)-dot(a,normal))/(dot(b,direction)-dot(a,direction))
 
-    # Account for boundary slopes over the body's observed longitudinal portion.
-    # Full footprint clearance against costs covers the unobserved portion.
-    stations = [station,max(lo,min(hi,station+footprint[0])),
-                max(lo,min(hi,station+footprint[1]))]
-    sides = [sorted(lateral(segment,t) for segment in segments) for t in stations]
-    lower = max(pair[0] for pair in sides)-footprint[2]
-    upper = min(pair[1] for pair in sides)-footprint[3]
-    center = sum(lateral(segment,station) for segment in segments)/len(segments)
-    evidence['admissible_lateral_span_m'] = [lower,upper]
-    if lower > upper:
+    def lateral_search(station):
+        """((target, offset from center) or None, [lower, upper]); lower > upper means no body width."""
+        # Account for boundary slopes over the body's observed longitudinal portion.
+        # Full footprint clearance against costs covers the unobserved portion.
+        stations = [station,max(lo,min(hi,station+footprint[0])),
+                    max(lo,min(hi,station+footprint[1]))]
+        sides = [sorted(lateral(segment,t) for segment in segments) for t in stations]
+        lower = max(pair[0] for pair in sides)-footprint[2]
+        upper = min(pair[1] for pair in sides)-footprint[3]
+        center = sum(lateral(segment,station) for segment in segments)/len(segments)
+        if lower > upper:
+            return None, [lower,upper]
+        step = max(.25,(upper-lower)/32)
+        samples = {lower,upper,min(upper,max(lower,center))}
+        samples.update(lower+k*step for k in range(1,33) if lower+k*step < upper)
+        for offset in sorted(samples,key=lambda value:(abs(value-center),value)):
+            target = [direction[k]*station+normal[k]*offset for k in range(2)]
+            evidence['candidates_checked'] += 1
+            if clear(target):
+                return (target, offset-center), [lower,upper]
+        return None, [lower,upper]
+
+    found, span = lateral_search(station)
+    evidence['admissible_lateral_span_m'] = span
+    has_width = span[0] <= span[1]
+    if not has_width and not station_retreat_step:
         evidence['reason'] = 'no_body_width_inside_observed_gate'
         return None, evidence
-    step = max(.25,(upper-lower)/32)
-    samples = {lower,upper,min(upper,max(lower,center))}
-    samples.update(lower+k*step for k in range(1,33) if lower+k*step < upper)
-    for offset in sorted(samples,key=lambda value:(abs(value-center),value)):
-        target = [direction[k]*station+normal[k]*offset for k in range(2)]
-        evidence['candidates_checked'] += 1
-        if clear(target):
-            evidence.update(reason='clear_lateral_gate_target',selected_target=target,
-                            selected_lateral_offset_m=offset-center)
-            return {**selection,'target':target}, evidence
-    evidence['reason'] = 'observed_gate_blocked'
+    if found is None and station_retreat_step:
+        retreats = []
+        k = 1
+        while found is None and station-k*station_retreat_step >= lo and k <= 64:
+            nearer = station-k*station_retreat_step
+            found, nearer_span = lateral_search(nearer)
+            retreats.append(round(nearer, 6))
+            if found is not None:
+                evidence.update(station_m=nearer, station_retreat_m=k*station_retreat_step,
+                                admissible_lateral_span_m=nearer_span)
+            k += 1
+        evidence['retreat_stations_checked'] = len(retreats)
+    if found is not None:
+        target, offset = found
+        evidence.update(reason='clear_lateral_gate_target' if not evidence.get('station_retreat_m')
+                        else 'clear_gate_target_at_nearer_observed_station',
+                        selected_target=target, selected_lateral_offset_m=offset)
+        return {**selection,'target':target}, evidence
+    evidence['reason'] = 'observed_gate_blocked' if has_width else 'no_body_width_inside_observed_gate'
     return None, evidence
 
 

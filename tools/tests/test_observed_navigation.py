@@ -406,5 +406,84 @@ class FrontMembershipHandoffTests(unittest.TestCase):
         self.assertEqual(targets[0], targets[1])
 
 
+class GateStationRetreatTests(unittest.TestCase):
+    """Recovery gate: a far station where observation ends may retreat along the same observed corridor."""
+    footprint = (-1.12, .62, -.52, .52)
+    size, res = 110, .2
+    # Observed boundaries along +x at y=4 and y=10 from x=1 to x=12; far gate selected at x=10.
+    corridor = {'direction': [1., 0.], 'diagnostics': {'segments': [[[1., 4.], [12., 4.]], [[1., 10.], [12., 10.]]]}}
+    selection = {'guidance': 'observed_lane_corridor', 'target': [10., 7.], 'yaw': 0.}
+
+    def costs(self, fills=()):
+        grid = [0]*(self.size*self.size)
+        for (x1, x2), value in fills:  # x range in metres, full height
+            for iy in range(self.size):
+                for ix in range(int(round(x1/self.res)), int(round(x2/self.res))):
+                    grid[iy*self.size+ix] = value
+        return grid
+
+    def refine(self, costs, selection=None, corridor=None, step=.5):
+        return refine_corridor_guidance(selection or self.selection, corridor or self.corridor, (0., 0.), self.res,
+                                        self.size, self.size, costs, self.footprint, station_retreat_step=step)
+
+    def body_clear(self, target, costs):
+        return _rectangle_clear(*target, 0., self.footprint, costs, self.size, self.size, self.res, (0., 0.))
+
+    def test_unknown_beyond_observation_retreats_to_the_farthest_clear_known_station(self):
+        costs = self.costs([((8., 22.), -1)])  # the grid is unobserved from x=8
+        default, default_evidence = self.refine(costs, step=None)
+        self.assertIsNone(default)
+        self.assertEqual(default_evidence['reason'], 'observed_gate_blocked')
+        self.assertNotIn('retreat_stations_checked', default_evidence)  # default behavior unchanged
+        selected, evidence = self.refine(costs)
+        self.assertEqual(evidence['reason'], 'clear_gate_target_at_nearer_observed_station')
+        self.assertAlmostEqual(evidence['station_m'], 7.)  # 7.5 + front 0.62 would overlap unknown cells
+        self.assertAlmostEqual(evidence['station_retreat_m'], 3.)
+        self.assertAlmostEqual(selected['target'][0], 7.)
+        self.assertEqual(selected['yaw'], 0.)
+        self.assertTrue(self.body_clear(selected['target'], costs))
+        self.assertTrue(4.52 <= selected['target'][1] <= 9.48)  # inside both observed boundaries
+        for offset in (4.6, 5.5, 7., 8.5, 9.4):  # one step farther is not clear anywhere: unknown still blocks
+            self.assertFalse(self.body_clear([7.5, offset], costs))
+
+    def test_lethal_barrier_selects_a_station_before_it_never_beyond(self):
+        costs = self.costs([((6., 6.2), 100), ((8., 22.), -1)])
+        selected, evidence = self.refine(costs)
+        self.assertLess(selected['target'][0]+self.footprint[1], 6.)
+        self.assertAlmostEqual(evidence['station_m'], 5.)
+        self.assertTrue(self.body_clear(selected['target'], costs))
+
+    def test_no_clear_station_in_the_observed_corridor_still_fails_closed(self):
+        for name, fills in {'all unknown': [((0., 22.), -1)], 'all lethal': [((0., 22.), 100)]}.items():
+            with self.subTest(name):
+                selected, evidence = self.refine(self.costs(fills))
+                self.assertIsNone(selected)
+                self.assertEqual(evidence['reason'], 'observed_gate_blocked')
+                self.assertEqual(evidence['retreat_stations_checked'], 18)  # 9.5 .. 1.0, never before support
+
+    def test_clear_far_station_is_kept_with_or_without_retreat(self):
+        costs = self.costs()
+        for step in (None, .5):
+            selected, evidence = self.refine(costs, step=step)
+            self.assertEqual(selected, self.selection)
+            self.assertEqual(evidence['reason'], 'original_target_clear')
+            self.assertNotIn('station_retreat_m', evidence)
+
+    def test_corridor_too_narrow_for_the_body_is_rejected_at_every_station(self):
+        narrow = {'direction': [1., 0.], 'diagnostics': {'segments': [[[1., 6.6], [12., 6.6]], [[1., 7.4], [12., 7.4]]]}}
+        # The original far target must be blocked: a clear original target is accepted before any width check.
+        costs = self.costs([((8., 22.), -1)])
+        for step in (None, .5):
+            selected, evidence = self.refine(costs, corridor=narrow, step=step)
+            self.assertIsNone(selected)
+            self.assertEqual(evidence['reason'], 'no_body_width_inside_observed_gate')
+
+    def test_non_corridor_intent_is_never_retargeted(self):
+        other = {'guidance': 'broad_gps', 'target': [10., 7.], 'yaw': None}
+        selected, evidence = self.refine([-1]*(self.size*self.size), selection=other)
+        self.assertEqual(selected, other)
+        self.assertEqual(evidence['reason'], 'no_fresh_corridor_or_footprint')
+
+
 if __name__ == '__main__':
     unittest.main()
