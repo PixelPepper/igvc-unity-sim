@@ -31,7 +31,8 @@ from action_cancellation import cancel_action_and_wait
 from sensor_telemetry import attach_sensor_telemetry
 from mission_health import MissionHealthLedger
 from mission_completion import MissionCompletionRecorder
-from replacement_path import ActivePathRecord, RETAIN, replacement_outcome
+from replacement_path import (ActivePathRecord, SEND_REVALIDATED, replacement_outcome, running_action,
+                              snapshot_revalidator)
 from session_paths import session_dir
 
 
@@ -217,8 +218,9 @@ def run(args):
     active_goal_id = None
     # Opt-in replacement continuity (tools/replacement_path.py); off reproduces the old behavior.
     active_path_record = None
-    state['replacement_fallback'] = {'mode': 'on' if args.revalidate_active_path else 'off',
-                                     'evaluated': 0, 'retained': 0, 'reasons': {}}
+    revalidate_active_path = getattr(args, 'revalidate_active_path', False) is True
+    state['replacement_fallback'] = {'mode': 'on' if revalidate_active_path else 'off',
+                                     'evaluated': 0, 'sent': 0, 'reasons': {}}
 
     def sample_mission_health():
         if mission_health.active:
@@ -711,42 +713,34 @@ def run(args):
                     grid_stamp_ns=stamps.get('grid'), input_age_wall_s=time.monotonic()-submitted_at)
                 outcomes.update(decision_sequence, admitted=admitted is not None)
                 if admitted is None:
-                    def revalidate(active_plan):
-                        # Same admission, latest pose and latest observed grid; no stored map.
-                        fresh_grid = latest['grid'][1]
-                        return prepare_controller_plan(active_plan, latest['pose'],
-                            (fresh_grid.info.origin.position.x, fresh_grid.info.origin.position.y),
-                            fresh_grid.info.resolution, fresh_grid.info.width, fresh_grid.info.height,
-                            fresh_grid.data, goal_footprint)
-
-                    def still_fresh():
-                        check_live(time.monotonic(), armed_at, initial_run)  # stale data stops the mission
-                        return True
-                    # Identity comes from the running handle itself, so a BackUp action can never match.
-                    running_id = bytes(handle.goal_id.uuid).hex() if handle is not None else None
-                    choice, fallback = replacement_outcome(None, enabled=args.revalidate_active_path,
+                    # Opt-in: re-admit the running action's own plan on this same pose/grid snapshot and,
+                    # only if it passes, send exactly that checked connector+suffix (never keep old geometry).
+                    running_id, running = running_action(handle, result)
+                    choice, fallback_plan, fallback = replacement_outcome(None, enabled=revalidate_active_path,
                         active=active_path_record, active_goal_id=running_id,
-                        destination=state['completed_destinations'],
-                        action_running=handle is not None and result is not None and not result.done(),
-                        revalidate=revalidate, still_fresh=still_fresh)
-                    if args.revalidate_active_path:
+                        destination=state['completed_destinations'], action_running=running,
+                        revalidate=snapshot_revalidator(prepare_controller_plan, entry_pose, entry_grid,
+                                                        goal_footprint),
+                        still_fresh=lambda: check_live(time.monotonic(), armed_at, initial_run) or True)
+                    if revalidate_active_path:
                         summary = state['replacement_fallback']
                         summary['evaluated'] += int(fallback['evaluated'])
                         summary['reasons'][fallback['reason']] = summary['reasons'].get(fallback['reason'], 0)+1
                         decision_event('replacement_fallback', choice=choice, diagnostics=fallback)
-                    if choice == RETAIN:
-                        state['replacement_fallback']['retained'] += 1
-                        outcomes.update(decision_sequence, action='not_sent',
-                                        retained_active_goal_id=active_path_record.goal_id)
-                        target = active_path_record.target  # the running action's goal stays current
+                    if choice == SEND_REVALIDATED:
+                        state['replacement_fallback']['sent'] += 1
+                        outcomes.update(decision_sequence, fallback_from_goal_id=active_path_record.goal_id,
+                                        fallback_from_sequence=active_path_record.sequence)
+                        target = active_path_record.target  # same destination goal as the running action
+                        admitted = fallback_plan
+                    else:
+                        # The robot may have turned away from the worker's starting
+                        # pose. Do not ask the controller to invent a connection.
+                        if handle is not None:
+                            cancel_action(handle); handle = None
+                        active_path_record = None
+                        result = None; target = None
                         continue
-                    # The robot may have turned away from the worker's starting
-                    # pose. Do not ask the controller to invent a connection.
-                    if handle is not None:
-                        cancel_action(handle); handle = None
-                    active_path_record = None
-                    result = None; target = None
-                    continue
                 plan = admitted
                 path.poses = [pose(px, py, pyaw, grid.header)
                               for px, py, pyaw in controller_path(plan)]
@@ -900,9 +894,10 @@ if __name__ == '__main__':
     parser.add_argument('--path-execution', choices=('nav2-goal', 'checked-path'), default='nav2-goal',
                         help='Experimental checked-path sends the observed swept path to FollowPath')
     parser.add_argument('--revalidate-active-path', action='store_true',
-                        help='Experimental (checked-path): when a replacement is rejected, keep the running '
-                             'FollowPath only if its own path re-passes unchanged admission from the latest '
-                             'pose and costmap for the same action and destination; otherwise cancel as before')
+                        help='Experimental (checked-path): when a replacement is rejected, re-admit the running '
+                             'FollowPath plan on the same pose/costmap snapshot with unchanged limits and, for the '
+                             'same action and destination, send exactly that checked connector+suffix; otherwise '
+                             'cancel as before')
     args = parser.parse_args()
     if not math.isfinite(args.speed) or not 0 < args.speed <= 2.2 or not math.isfinite(args.timeout) or args.timeout <= 0:
         parser.error('Use speed (0, 2.2] m/s and a positive finite timeout')
