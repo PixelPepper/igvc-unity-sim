@@ -101,6 +101,9 @@ namespace IGVC
             if (r3aMode && (leftWheel == null || rightWheel == null || lidarFrame == null || cameraMount == null))
                 throw new InvalidOperationException("R3-a wheel/lidar references missing; rebuild the scene.");
             ros = ROSConnection.GetOrCreateInstance();
+            // Explicit diagnostic opt-in; ordinary launches create no tracing component.
+            if (Environment.GetEnvironmentVariable("IGVC_TRANSPORT_TIMING_TRACE") == "1")
+                gameObject.AddComponent<TransportTimingTrace>().Initialize(this, ros);
             string variantPath = Arg("--course-manifest", "");
             scoreLinesOnly = Arg("--line-guard", "enforce") == "scoring";
             if (!string.IsNullOrEmpty(variantPath))
