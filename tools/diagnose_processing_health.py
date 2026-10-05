@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Explain processing-health failures in a saved sensor-led run, read-only.
+"""Report what a saved run can and cannot say about its processing-health failures.
 
-Reconstructs the failing interval from what run.json retains: the armed health
-ledger, per-stream telemetry, status reason counts, mission decisions and the
-odometry trajectory. Rolling event buffers are bounded, so the report states
-which timing fields were not retained for the failure instead of guessing them.
-Never changes thresholds or rejudges samples; audit acceptance is unaffected.
+Read-only. Uses only what run.json retains: the armed health ledger, per-stream
+telemetry, whole-run status reason counts, mission decisions and the odometry
+trajectory. Rolling event buffers are bounded; when they no longer cover the
+first failure, its cause is reported as undetermined and the missing timing
+fields are listed. Whole-run counts are descriptive and are never matched to
+failing samples. Never changes thresholds, samples or audit results.
 """
 
 import argparse
@@ -13,118 +14,144 @@ import json
 from pathlib import Path
 import sys
 
-# Failure-type reasons the perception nodes publish (lane_node.py / depth_node.py).
-# Anything else in status_reason_counts is a successful or benign status.
-PAIRING_REASONS = {'no_new_exact_stamp_pair', 'no_new_pair', 'waiting_for_depth_ground_or_rgb_tf',
-                   'acquisition_tf_not_ready'}
-BENIGN_REASONS = {'valid', 'unknown', 'supported_ground_filter'}
-NODE_TICK_S = 0.2           # create_timer(.2) in both perception nodes
-SUCCESS_FRESH_SIM_S = 0.5   # success_is_fresh acquisition bound (500_000_000 ns)
-SUCCESS_FRESH_WALL_S = 0.5  # success_is_fresh receipt bound
+UNDETERMINED = 'undetermined: per-failure telemetry does not cover the first failure'
+# Constants restated from lane_node.py / depth_node.py for the illustration only.
+NODE_TICK_WALL_S = 0.2       # steady-clock create_timer(.2)
+SUCCESS_FRESH_SIM_S = 0.5    # acquisition bound, simulation clock
+SUCCESS_FRESH_WALL_S = 0.5   # receipt bound, wall (monotonic) clock
+
+
+def get(value, *path):
+    """Nested lookup that returns None instead of raising on absent or mistyped fields."""
+    for key in path:
+        if isinstance(value, dict):
+            value = value.get(key)
+        elif isinstance(value, list) and isinstance(key, int) and -len(value) <= key < len(value):
+            value = value[key]
+        else:
+            return None
+    return value
+
+
+def _number(value):
+    return value if isinstance(value, (int, float)) and not isinstance(value, bool) else None
 
 
 def _sim_wall_ratio(decisions, lo, hi):
-    window = [d for d in decisions if lo <= d['odom_stamp_ns']/1e9 <= hi]
+    window = [d for d in decisions
+              if _number(get(d, 'odom_stamp_ns')) is not None and _number(get(d, 'monotonic_s')) is not None
+              and lo <= d['odom_stamp_ns']/1e9 <= hi]
     if len(window) < 2 or window[-1]['monotonic_s'] <= window[0]['monotonic_s']:
         return None
     return ((window[-1]['odom_stamp_ns']-window[0]['odom_stamp_ns'])/1e9
             / (window[-1]['monotonic_s']-window[0]['monotonic_s']))
 
 
-def classify_reasons(reason_counts):
-    """Split each processing stream's status reasons into pairing waits, faults and benign."""
-    result = {}
-    for stream in ('lanes', 'depth_processing'):
-        counts = reason_counts.get(stream, {})
-        result[stream] = {
-            'pairing_or_tf_wait': {k: v for k, v in counts.items() if k in PAIRING_REASONS},
-            'processing_fault': {k: v for k, v in counts.items()
-                                 if k not in PAIRING_REASONS and k not in BENIGN_REASONS},
-            'benign': {k: v for k, v in counts.items() if k in BENIGN_REASONS},
-        }
-    return result
-
-
 def diagnose(run, window_s=6.0):
-    interval = run['mission_health_interval']
-    first = interval.get('first_fail')
-    health = run['sensor_health']
-    report = {'passed': interval.get('passed'), 'totals': interval.get('totals'),
-              'reason_counts': interval.get('reason_counts'), 'first_fail': first,
-              'unavailable': []}
+    unavailable = []
+    interval = get(run, 'mission_health_interval')
+    health = get(run, 'sensor_health')
+    report = {'passed': get(interval, 'passed'), 'totals': get(interval, 'totals'),
+              'health_sample_reason_counts': get(interval, 'reason_counts'),
+              'first_fail': get(interval, 'first_fail'), 'unavailable': unavailable}
+    if not isinstance(interval, dict):
+        unavailable.append('mission_health_interval (armed health ledger)')
+    if not isinstance(health, dict):
+        unavailable.append('sensor_health (stream telemetry and status reasons)')
+
+    first = report['first_fail']
+    fail_mono = _number(get(first, 'monotonic_s'))
+    fail_ns = _number(get(first, 'odom_stamp_ns'))
     if not first:
-        report['finding'] = 'no failing health sample recorded'
-        return report
-    fail_sim = first['odom_stamp_ns']/1e9
-    fail_mono = first['monotonic_s']
+        report['first_failure_cause'] = ('no failing health sample recorded' if isinstance(interval, dict)
+                                         else 'undetermined: health ledger unavailable')
+    elif fail_mono is None or fail_ns is None:
+        unavailable.append('first_fail monotonic_s/odom_stamp_ns')
+        report['first_failure_cause'] = UNDETERMINED
 
-    # Bounded rings: say whether they still cover the failure.
-    ledger_events = interval.get('recent_events') or []
-    if not ledger_events or ledger_events[0]['monotonic_s'] > fail_mono:
-        report['unavailable'].append(
-            'per-sample health ledger at failure (ring of %d starts at odom %.2f s)'
-            % (len(ledger_events), ledger_events[0]['odom_stamp_ns']/1e9 if ledger_events else float('nan')))
-    status_events = health.get('recent_events') or []
-    start_mono = interval['start']['monotonic_s']
-    if not status_events or status_events[0]['elapsed_s'] > fail_mono-start_mono:
-        report['unavailable'].append(
-            'per-message perception status/health events at failure: node reason, pairing stamps, '
-            'receipt age, TF wait, processing duration (status ring holds only the final events)')
-    report['unavailable'] += [
-        'per-frame image interarrival and acquisition lag at failure (only whole-run max and final-window percentiles)',
-        'perception node CPU/scheduling and Unity frame time (not recorded by the run)',
-        'WSLg/compositor restart time (not recorded by the run)']
+    # Bounded rings: do they still cover the first failure?
+    covered = False
+    if fail_mono is not None:
+        ledger = get(interval, 'recent_events')
+        ledger_start = _number(get(ledger, 0, 'monotonic_s'))
+        if ledger_start is None or ledger_start > fail_mono:
+            unavailable.append('per-sample health ledger at first failure (ring starts at monotonic %s s)'
+                               % ledger_start)
+        status_start = _number(get(health, 'recent_events', 0, 'elapsed_s'))
+        armed_start = _number(get(interval, 'start', 'monotonic_s'))
+        if status_start is None or armed_start is None:
+            unavailable.append('per-message perception status events at first failure (ring or armed start missing)')
+        elif status_start > fail_mono-armed_start:
+            # UNVERIFIED alignment: elapsed_s is assumed relative to the armed interval start.
+            unavailable.append('per-message perception status events at first failure: node reason, pairing '
+                               'stamps, receipt age, TF wait, processing duration (ring starts too late)')
+        else:
+            covered = True
+        report['first_failure_cause'] = (
+            'per-failure status events retained; inspect sensor_health.recent_events' if covered else UNDETERMINED)
+    unavailable += ['per-frame image interarrival and acquisition lag at first failure',
+                    'node-side processing duration and scheduling; Unity frame time',
+                    'WSLg/compositor restart time']
 
-    report['status_reasons'] = classify_reasons(health.get('status_reason_counts', {}))
-    report['health_topic_false_counts'] = {
-        name: health.get('status_reason_counts', {}).get(name, {}).get('False', 0)
-        for name in ('lane_health', 'depth_health')}
+    reasons = get(health, 'status_reason_counts')
+    report['whole_run_status_reason_counts'] = {
+        'descriptive_only': 'whole-session status-message counts; not tied to or reconciled with failing samples',
+        'counts': ({name: reasons.get(name) for name in ('lanes', 'depth_processing', 'lane_health', 'depth_health')}
+                   if isinstance(reasons, dict) else None)}
+    if not isinstance(reasons, dict):
+        unavailable.append('status_reason_counts')
 
-    streams = health['streams']
-    report['input_streams'] = {
-        name: {'max_gap_wall_s': streams[name]['max_gap_s'],
-               'interarrival_wall_s_final_window': streams[name]['recent_interarrival_wall_s'],
-               'negative_lag_samples': streams[name]['negative_lag_samples']}
-        for name in ('clock', 'rgb', 'depth') if name in streams}
+    streams = get(health, 'streams')
+    report['input_streams_whole_run'] = {}
+    for name in ('clock', 'rgb', 'depth'):
+        stream = get(streams, name)
+        if not isinstance(stream, dict):
+            unavailable.append(f'stream telemetry: {name}')
+            continue
+        report['input_streams_whole_run'][name] = {
+            'max_gap_wall_s_unlocalized': stream.get('max_gap_s'),
+            'interarrival_wall_s_final_window': stream.get('recent_interarrival_wall_s'),
+            'negative_lag_samples': stream.get('negative_lag_samples')}
 
-    # Freshness margin: an idle tick keeps health only if the last success
-    # acquisition is <= 0.5 s sim old. Lag at processing + one tick consumes it.
-    checks = health.get('processing_health_summary', {}).get('checks', {})
-    lags = {name: check.get('acquisition_lag_sim_s') for name, check in checks.items()}
-    report['freshness_margin'] = {
-        'bound_sim_s': SUCCESS_FRESH_SIM_S, 'bound_wall_s': SUCCESS_FRESH_WALL_S, 'tick_s': NODE_TICK_S,
-        'final_output_acquisition_lag_sim_s': lags,
-        'margin_after_one_idle_tick_sim_s': {
-            name: None if lag is None else round(SUCCESS_FRESH_SIM_S-lag-NODE_TICK_S, 3)
-            for name, lag in lags.items()},
-        'note': 'lag measured at mission receipt in the final window only; at-failure lag unavailable'}
+    lags = {name: get(health, 'processing_health_summary', 'checks', name, 'acquisition_lag_sim_s')
+            for name in ('lanes', 'depth_processing')}
+    report['freshness_illustration'] = {
+        'illustrative_only': 'not an observed margin at the failure',
+        'success_bound': {'acquisition_sim_s': SUCCESS_FRESH_SIM_S, 'receipt_wall_s': SUCCESS_FRESH_WALL_S},
+        'node_tick_wall_s': NODE_TICK_WALL_S,
+        'final_window_subscriber_lag_sim_s': lags,
+        'assumptions': ['lag is measured at the mission subscriber in the final window, not node-side or at failure',
+                        'a wall-clock tick spans about tick * sim/wall-ratio simulation seconds']}
 
-    trajectory_times = [point[0] for point in run.get('trajectory', [])]
-    near = [(b-a, a) for a, b in zip(trajectory_times, trajectory_times[1:])
-            if fail_sim-window_s <= a <= fail_sim+window_s]
-    report['odometry'] = {
-        'max_gap_sim_s_near_failure': round(max((g for g, _ in near), default=0.0), 4),
-        'max_gap_sim_s_whole_run': round(max((b-a for a, b in zip(trajectory_times, trajectory_times[1:])),
-                                             default=0.0), 4)}
+    trajectory = get(run, 'trajectory')
+    times = [p[0] for p in trajectory if isinstance(p, list) and p and _number(p[0]) is not None] \
+        if isinstance(trajectory, list) else []
+    if len(times) < 2:
+        unavailable.append('odometry trajectory')
+        report['odometry_sim_stamps'] = None
+    else:
+        gaps = list(zip(times, times[1:]))
+        near = [b-a for a, b in gaps if fail_ns is not None and abs(a-fail_ns/1e9) <= window_s]
+        report['odometry_sim_stamps'] = {
+            'max_gap_sim_s_near_failure': round(max(near), 4) if near else None,
+            'max_gap_sim_s_whole_run': round(max(b-a for a, b in gaps), 4),
+            'scope': 'simulation-stamp continuity only; cannot exclude short wall-time scheduling or transport stalls'}
 
-    decisions = run.get('decisions', [])
+    decisions = get(run, 'decisions')
+    decisions = [d for d in decisions if isinstance(d, dict)] if isinstance(decisions, list) else []
+    if not decisions:
+        unavailable.append('mission decisions')
     report['sim_wall_ratio'] = {
-        'near_failure': _sim_wall_ratio(decisions, fail_sim-window_s, fail_sim+window_s),
+        'near_failure': None if fail_ns is None else _sim_wall_ratio(decisions, fail_ns/1e9-window_s,
+                                                                     fail_ns/1e9+window_s),
         'whole_run': _sim_wall_ratio(decisions, float('-inf'), float('inf'))}
-    report['decision_inputs_near_failure'] = [
-        {'sequence': d['sequence'], 'dt_from_fail_wall_s': round(d['monotonic_s']-fail_mono, 3),
-         'odom_s': d['odom_stamp_ns']/1e9,
-         'lane_age_wall_s': d['input_metadata'].get('lane_age_wall_s'),
-         'grid_age_wall_s': d['input_metadata'].get('grid_age_wall_s')}
-        for d in decisions if d['phase'] == 'requested' and d.get('input_metadata')
+    report['decision_inputs_near_failure'] = [] if fail_mono is None else [
+        {'sequence': d.get('sequence'), 'dt_from_fail_wall_s': round(d['monotonic_s']-fail_mono, 3),
+         'odom_s': d['odom_stamp_ns']/1e9 if _number(d.get('odom_stamp_ns')) is not None else None,
+         'lane_age_wall_s': get(d, 'input_metadata', 'lane_age_wall_s'),
+         'grid_age_wall_s': get(d, 'input_metadata', 'grid_age_wall_s')}
+        for d in decisions if d.get('phase') == 'requested' and _number(d.get('monotonic_s')) is not None
         and abs(d['monotonic_s']-fail_mono) <= window_s]
-
-    faults = sum(sum(v['processing_fault'].values()) for v in report['status_reasons'].values())
-    waits = sum(sum(v['pairing_or_tf_wait'].values()) for v in report['status_reasons'].values())
-    report['finding'] = (
-        'pairing/freshness wait, no processing fault recorded' if waits and not faults else
-        'processing fault reasons recorded; inspect processing_fault' if faults else
-        'no failure reason retained; cause undetermined')
     return report
 
 
