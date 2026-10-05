@@ -176,7 +176,9 @@ def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m
         for index, (a, b) in enumerate(zip(samples, samples[1:]), 1):
             delta = math.dist(a[1:3], b[1:3])
             lo, hi = max(0., progress-1.5*delta), min(total, progress+1.5*delta)
-            first = max(0, bisect.bisect_right(arcs, lo)-1)
+            # Both ends index segments, not vertices. At the finish (lo == total)
+            # bisect_right returns the last vertex, so clamp as at() and `last` do.
+            first = min(len(points)-2, max(0, bisect.bisect_right(arcs, lo)-1))
             last = min(len(points)-2, bisect.bisect_left(arcs, hi))
             candidates = []
             for i in range(first, last+1):
@@ -189,6 +191,9 @@ def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m
                 arc = arcs[i]+t*length
                 p, _, width = at(arc)
                 candidates.append((math.dist(b[1:3], p), abs(arc-progress), arc, width))
+            if not candidates:
+                # Fail closed with an explicit reason rather than an opaque exception.
+                raise ValueError(f'No reachable WORLD projection at sample {index}')
             lateral, _, progress, width = min(candidates)
             if lateral > width+.001:
                 raise ValueError(f'Outside ordered WORLD corridor at sample {index}')

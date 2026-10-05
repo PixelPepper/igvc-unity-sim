@@ -283,6 +283,39 @@ class SensorRunAuditTests(unittest.TestCase):
         self.assertFalse(report['checks']['ordered_world_full_loop'])
         self.assertEqual(report['world_topology']['progress_m'], 0.)
 
+    def tail(self, *points, repeats=0):
+        """Full loop, then extra samples continuing in time after reaching the origin."""
+        samples = copy.deepcopy(self.samples)
+        for x, y in points:
+            samples += walk([tuple(samples[-1][1:3]), (x, y)])[1:]
+        for _ in range(repeats):
+            samples.append([samples[-1][0]+.1, *samples[-1][1:]])
+        return samples
+
+    def test_stationary_terminal_samples_after_full_loop_pass_and_are_all_scored(self):
+        # T-0010 regression: progress == total and zero motion made the projection window empty.
+        samples = self.tail(repeats=5)
+        result = topology_evidence(samples, self.course)
+        self.assertTrue(result['passed'], result.get('reason'))
+        self.assertEqual(result['last_sample_index'], len(samples)-1)
+        self.assertEqual(result['gates_visited'], result['gates_required'])
+
+    def test_post_finish_excursion_outside_corridor_still_fails(self):
+        result = topology_evidence(self.tail((0, -4), (0, 0), repeats=2), self.course)
+        self.assertFalse(result['passed'])
+        self.assertIn('Outside ordered WORLD corridor', result.get('reason', ''))
+
+    def test_retreat_from_finish_without_return_still_fails(self):
+        result = topology_evidence(self.tail((0, 3), repeats=3), self.course)
+        self.assertFalse(result['passed'])
+        self.assertLess(result['progress_m'], result['total_arc_m']-.4)
+
+    def test_retreat_and_return_to_finish_is_scored_and_passes(self):
+        samples = self.tail((0, 3), (0, 0), repeats=2)
+        result = topology_evidence(samples, self.course)
+        self.assertTrue(result['passed'], result.get('reason'))
+        self.assertEqual(result['last_sample_index'], len(samples)-1)
+
     def test_diagonal_shortcut_and_reverse_loop_rejected(self):
         shortcut = walk([(0, 0), (20, 20), (0, 0)])
         reverse = walk([(0, 0), (0, 20), (20, 20), (20, 0), (0, 0)])
