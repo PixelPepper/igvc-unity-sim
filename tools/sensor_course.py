@@ -30,6 +30,7 @@ from path_entry import prepare_controller_plan
 from action_cancellation import cancel_action_and_wait
 from sensor_telemetry import attach_sensor_telemetry
 from mission_health import MissionHealthLedger
+from mission_completion import MissionCompletionRecorder
 from session_paths import session_dir
 
 
@@ -139,6 +140,21 @@ def run(args):
 
     telemetry = attach_sensor_telemetry(node)
     mission_health = MissionHealthLedger(max_gap_s=.25)
+    # Observation only: records how the mission finishes; never alters arrival or cleanup.
+    completion = MissionCompletionRecorder(goals)
+
+    completion_errors = []
+
+    def record_completion(method, *args, pose=None, **kwargs):
+        # Evidence must never interrupt the mission loop or skip a cleanup step.
+        try:
+            context = (time.monotonic(), latest.get('pose') if pose is None else pose, stamps.get('odom'),
+                       latest['odom'][0] if 'odom' in latest else None, state['completed_destinations'],
+                       len(state['trajectory'])-1)
+            getattr(completion, method)(*args, *context, **kwargs)
+        except Exception as exc:  # noqa: BLE001 - recorded, never raised
+            if len(completion_errors) < 8:
+                completion_errors.append(f'{method}: {type(exc).__name__}: {exc}'[:200])
     # Spawn a clean worker: do not fork an initialized ROS/DDS context, and do
     # not make Python collision search compete with callbacks for the GIL.
     planner = ProcessPoolExecutor(max_workers=1, mp_context=multiprocessing.get_context('spawn'))
@@ -185,7 +201,8 @@ def run(args):
                      'lane_heading_memory.py', 'sensor_route_policy.py',
                      'entrance_memory.py', 'entrance_support.py', 'recovery_budget.py', 'recovery_policy.py',
                      'execution_path.py', 'path_entry.py', 'swept_footprint.py', 'recovery_intent.py',
-                     'action_cancellation.py', 'mission_health.py', 'sensor_telemetry.py')
+                     'action_cancellation.py', 'mission_health.py', 'sensor_telemetry.py',
+                     'mission_completion.py')
                      + (('trap_memory.py',) if trap_memory is not None else ())}
     latest = {}
     entrance_tracking = args.guidance_memory == 'entrance'
@@ -408,6 +425,7 @@ def run(args):
             now = time.monotonic()
             check_live(now, armed_at, initial_run)
             x, y, yaw = latest['pose']; gx, gy, radius = goals[state['completed_destinations']]
+            record_completion('observe_loop', pose=(x, y, yaw))
             preserved_guidance((x,y,yaw), now, state['completed_destinations'])
             if trap_memory is not None:
                 for expired in trap_memory.observe((x,y,yaw), now, state['completed_destinations']):
@@ -430,6 +448,7 @@ def run(args):
                     'last_guidance': state['plans'][-1]['diagnostics'].get('guidance') if state['plans'] else None})+'\n')
                 last_checkpoint = now
             if math.hypot(gx-x, gy-y) <= radius:
+                record_completion('arrival', pose=(x, y, yaw))  # the exact pose that was compared
                 state['completed_destinations'] += 1
                 print(f"Destination {state['completed_destinations']}/{len(goals)}", flush=True)
                 if state['completed_destinations'] == len(goals):
@@ -739,6 +758,7 @@ def run(args):
         print(state['reason'], flush=True)
     finally:
         finishing = True
+        record_completion('phase', 'cleanup_start')
         # Capture before cleanup waits obscure the timing around the actual stop.
         state['sensor_health'] = telemetry.report()
         state['recovery_budget'] = recovery_budget.report()
@@ -756,10 +776,14 @@ def run(args):
             except RuntimeError as exc:
                 state.setdefault('cleanup_errors', []).append(label+': '+str(exc))
                 state['status'] = 'stopped'
+                record_completion('phase', label, ok=False, error=exc)
+            else:
+                record_completion('phase', label)
         if mission_health.active:
             sample_mission_health()
             stopped_at = time.monotonic()
             state['mission_health_interval'] = mission_health.end(stopped_at, stamps.get('odom'))
+            record_completion('phase', 'mission_health_end')
             state['health_trajectory_end_index'] = len(state['trajectory'])-1
             state['elapsed_wall_s'] = stopped_at-armed_at
             state['sensor_health'] = telemetry.report()
@@ -783,6 +807,12 @@ def run(args):
                 if goal_footprint is not None:
                     snapshot['goal_footprint'] = list(goal_footprint)
                 Path(args.report).with_suffix('.observations.json').write_text(json.dumps(snapshot)+'\n')
+            try:
+                state['mission_completion'] = completion.report(state['trajectory'])
+            except Exception as exc:  # noqa: BLE001 - evidence must not block saving the run
+                completion_errors.append(f'report: {type(exc).__name__}: {exc}'[:200])
+            if completion_errors:
+                state['mission_completion_errors'] = list(completion_errors)
             output = Path(args.report)
             if recorder:
                 outcomes.close(latest['pose'][:2] if 'pose' in latest else None)
