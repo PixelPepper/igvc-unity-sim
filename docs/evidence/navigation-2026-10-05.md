@@ -1,5 +1,32 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## New recovery build: passing2028 regression, mechanism unexercised
+
+[T0032](../agents/tasks/T-0032-lane-entry-recovery.md) adds a recovery-only search
+for nearer clear targets within the same observed corridor. It retains body,
+unknown-space and downstream backup/continuation checks, and keeps newly retreated
+targets ahead of the trap by a nominal front offset. Both reviews accepted it.
+The integrated source d6519e1 passed643 combined checks (554tools,85perception,4GPS).
+
+[T0033](../agents/tasks/T-0033-nearer-gate-regression.md) then completed
+**6/6 and all20 audit checks in382.932130s** on the same2028 inputs/profile/player
+as the failed attempt below. All3831 health samples passed; maximum gap0.139015862s.
+Final distance0.396002088m leaves only3.998mm return margin; conservative swept
+obstacle clearance was0.215131121m, with zero collision poses.
+
+Both reviewers verified the raw source/input identity, audit and cleanup.
+**No recovery was requested or charged, so the new retreat behavior was not
+exercised live.** The result establishes no causal benefit or explanation of the
+earlier failure. This is a development regression:2028 observations informed the
+change. The original failure remains below and in the ledger.
+
+Old-version2027 passes do not qualify this source. T0034 starts its fixed-version
+2027 checks;2029 remains preselected and untested. Promotion remains pending.
+No speed improvement or hardware fidelity is claimed.
+
+Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2028-1.
+Run SHA256: 56aae5b4e290a515905d1f8f1316d283c31d1c27c64dde19cf4053c8c27d1b99.
+
 ## Held-out2028 failed: promotion blocked
 
 [T0031](../agents/tasks/T-0031-heldout-2028.md) ran the first preselected2028

@@ -35,8 +35,10 @@ integration. The first preselected held-out2028 trial T0031 failed at1/6 after
 111.67s: no observed clear lane-entry position for recovery. Audit14/20, processing
 health passed; zero charged backup. Both reviews accepted the failure evidence.
 Promotion is blocked. T0032's reviewed recovery-only nearer observed target selection
-is integrated at d6519e1. All643 combined integration tests passed. T0033 is testing
-one new-version2028 regression; no live benefit is established yet. This seed now
+is integrated at d6519e1. All643 combined integration tests passed. T0033 completed
+6/6/all20 in382.93s with zero charged backups and no recovery-gate event; both
+reviews accepted the regression, but the changed mechanism was not exercised.
+T0034 begins new-version2027 qualification. This seed2028 now
 informs development, while2029 remains untested. Old-version2027 passes do not
 qualify the new source. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
