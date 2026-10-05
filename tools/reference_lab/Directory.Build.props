@@ -1,0 +1,10 @@
+<Project>
+  <!-- Build output stays under ignored artifacts/. REFLAB_ONLY (all | pathfinding | vehicles) lets two
+       workers compile their own model folders in parallel, each with separate intermediate files. -->
+  <PropertyGroup>
+    <RefLabOnly>$(REFLAB_ONLY)</RefLabOnly>
+    <RefLabOnly Condition="'$(RefLabOnly)'==''">all</RefLabOnly>
+    <BaseOutputPath>$(MSBuildThisFileDirectory)../../artifacts/reference_lab/$(RefLabOnly)/bin/</BaseOutputPath>
+    <BaseIntermediateOutputPath>$(MSBuildThisFileDirectory)../../artifacts/reference_lab/$(RefLabOnly)/obj/</BaseIntermediateOutputPath>
+  </PropertyGroup>
+</Project>

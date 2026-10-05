@@ -1,0 +1,21 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Compiles only the engine-free Reference Lab model shared with Unity (C# 9 = Unity 6 language level). -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>9</LangVersion>
+    <Nullable>disable</Nullable>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <ModelDir>../../unity/IGVCSim/Assets/IGVC/Runtime/Reference/Model</ModelDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(RefLabOnly)'=='pathfinding'"><DefineConstants>$(DefineConstants);REFLAB_ONLY_PATHFINDING</DefineConstants></PropertyGroup>
+  <PropertyGroup Condition="'$(RefLabOnly)'=='vehicles'"><DefineConstants>$(DefineConstants);REFLAB_ONLY_VEHICLES</DefineConstants></PropertyGroup>
+  <ItemGroup>
+    <Compile Include="Program.cs" />
+    <Compile Include="$(ModelDir)/*.cs;$(ModelDir)/Checks/*.cs" />
+    <Compile Include="$(ModelDir)/Pathfinding/**/*.cs" Condition="'$(RefLabOnly)'!='vehicles'" />
+    <Compile Include="$(ModelDir)/RacingLine/**/*.cs;$(ModelDir)/Drivers/**/*.cs" Condition="'$(RefLabOnly)'!='pathfinding'" />
+    <Compile Include="$(ModelDir)/Teacher/**/*.cs" Condition="'$(RefLabOnly)'=='all'" />
+  </ItemGroup>
+</Project>
