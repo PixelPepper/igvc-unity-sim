@@ -109,6 +109,38 @@ the stale task board and repairing the continuation command environment. The
 initial full-script failure is preserved in T-0015 integration evidence; this was
 not a single clean full-script pass. A fresh live comparison remains pending.
 
+### Live connector comparison
+
+[T-0016](../agents/tasks/T-0016-connector-live-comparison.md) tested the reviewed
+arithmetic correction at launch commit `a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7`.
+The hidden Unity/native ROS lap reached **6/6 in 380.348777 s**, with all **20/20
+audit checks passing**. Its recorded recovery budget charged zero attempts;
+the missing `recoveries` field alone is not evidence of zero backups.
+
+Processing health recorded 3,806 passing samples, zero failed/unknown samples,
+and complete sampled coverage with a maximum 0.130448 s gap. The swept obstacle
+clearance lower bound was 0.263685 m. Return distance was 0.392594 m, leaving
+only 7.4 mm inside the unchanged 0.4 m limit. Managed shutdown and lease release
+were independently verified.
+
+Profile, player, course and mission match T-0009/T-0010. Of 16 recorded runtime
+sources, only `path_entry.py` changed; the separately reviewed T-0013 auditor
+fix remains in use. This lap was 14.21 s faster than T-0010 and 18.88 s faster
+than T-0009, but slower than the historical 363.37 s lap. Host load was not
+controlled, and fewer recoveries are not proof of causation. This is one passing
+comparison, not promotion. Sonnet and Sol reviewed the recorded evidence.
+
+Evidence: `artifacts/iterations/2026-10-05/connector-numerics-1/`; run SHA-256
+`f05a5f07593f7d1739189905e4a9525b35d2d5560fc69c43289efbd0149ea772`.
+T-0018 repeats the exact source commit and profile in a frozen checkout.
+
+The T-0017 proposal to continue forward after entering the finish radius was
+rejected: bounded continuation can still leave the passing region. Its claimed
+stopping-distance interval was illustrative, and cleanup callbacks continue
+recording before the audited endpoint. T-0019 adds evidence to distinguish the
+arrival decision from cleanup and the final recorded pose; it does not change
+arrival behavior or audit thresholds.
+
 ## Outcome
 
 The fresh baseline **stopped at 1/6 destinations and failed the independent audit**.
