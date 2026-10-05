@@ -5,13 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0039** `review`: Summarize bounded Unity timing captures without inferring a cause (REVIEW-START by gpt-6-astra at 2026-10-05T08:25:22.831705-07:00)
+- **T-0039** `changes-requested`: Summarize bounded Unity timing captures without inferring a cause (REVISION by gpt-6-astra at 2026-10-05T08:26:21.571955-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `review` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 138386416f884eb834a95fcde8b37afe4715d7af | REVIEW-START by gpt-6-astra at 2026-10-05T08:25:22.831705-07:00 |
+| [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 138386416f884eb834a95fcde8b37afe4715d7af | REVISION by gpt-6-astra at 2026-10-05T08:26:21.571955-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
