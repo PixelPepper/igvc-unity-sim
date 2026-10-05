@@ -1,7 +1,7 @@
 ---
 id: T-0040
 title: Seek a bounded reproduction of intermittent freshness expiry
-status: backlog
+status: in-progress
 priority: P1
 owner: gpt-6-astra
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -10,7 +10,7 @@ branch: codex/t0038-timed-2029-diagnosis
 base: 20a18f3
 candidate: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
 claim: none
-lease: none
+lease: gpt-6-astra
 updated: 2026-10-05
 ---
 
@@ -53,3 +53,8 @@ from evidence. One source version; no effect-size claim without matched control.
 ## Log
 
 Prepared follow-up only. No live grant, no session or job created.
+
+
+### 2026-10-05T08:44:10.840441-07:00 · gpt-6-astra → all · LEASE-GRANT
+
+Grant ONLY attempt1 job timed-2029-reproduction-1. T0039 integrated/tested, workers stopped. Runtimeclean20a18f3, actualplayercf8f4a64...426c3,19policyhashes and profile/course/mission/autonomy matchT0035/T0038. No player/port listener, exclusiveleasepreflightfree. Managedsupervisorholdslease throughshutdown; traceenv1 recorded/inherited explicitly, coordinatorenvrestored. Hidden renderedUnity/nativeWSLJazzy; noRViz.600smission; preserveanyfailure, stopbatchiffreshnessexpiry/infrastructureerror. No2030/promotion/push. Secondattemptrequiresfreshgrant.
