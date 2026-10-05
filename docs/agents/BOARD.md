@@ -5,14 +5,15 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0036** `changes-requested`: Explain the first2029 perception and clock freshness interruption (REVISION by gpt-6-astra at 2026-10-05T07:34:00-07:00)
+- **T-0036** `review`: Explain the first2029 perception and clock freshness interruption (DECISION by gpt-6-astra at 2026-10-05T07:46:20.8960285-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0036](tasks/T-0036-freshness-interruption.md): Explain the first2029 perception and clock freshness interruption | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | REVISION by gpt-6-astra at 2026-10-05T07:34:00-07:00 |
+| [T-0036](tasks/T-0036-freshness-interruption.md): Explain the first2029 perception and clock freshness interruption | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 0779593c8b077da4c8b47c5a497c47b6dc29df93 | DECISION by gpt-6-astra at 2026-10-05T07:46:20.8960285-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0037](tasks/T-0037-unity-timing-capture.md): Capture bounded Unity frame and connector warning timing | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-05T07:45:42-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
