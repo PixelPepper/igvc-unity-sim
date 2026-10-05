@@ -1,6 +1,13 @@
 param([Parameter(Mandatory=$true)][string]$Config)
 $ErrorActionPreference='Stop'
 $cfg=Get-Content -LiteralPath $Config -Raw | ConvertFrom-Json
+# Optional opt-in (T-0021): absent means off; only a JSON boolean is accepted, before any lease or runtime work.
+$revalidateActivePath=$false
+if($null -ne $cfg.PSObject.Properties['revalidate_active_path']){
+ if($cfg.revalidate_active_path -isnot [bool]){throw 'revalidate_active_path must be a JSON boolean (true or false)'}
+ $revalidateActivePath=$cfg.revalidate_active_path
+ if($revalidateActivePath -and $cfg.record_episode){throw 'revalidate_active_path is not supported with record_episode'}
+}
 $job=$cfg.job
 $state=@{status='running';stage='waiting_for_lease';role=$cfg.role;started_utc=[DateTime]::UtcNow.ToString('o')}
 function Save-State { $state | ConvertTo-Json -Depth 8 | Set-Content -LiteralPath (Join-Path $job 'live.json') }
@@ -58,6 +65,7 @@ try {
  } else {
  $missionArgs=@('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/sensor_course.py",'--mission',"$linuxRoot/artifacts/courses/seed-2027/autonomy.json",'--report',"$linuxJob/run.json",'--capture-dir',"$linuxJob/decisions",'--timeout','600','--speed','0.6','--planning-budget','0.5','--path-execution','checked-path')
  if($null -ne $cfg.body_clearance_weight){$missionArgs+=@('--body-clearance-weight',[string]$cfg.body_clearance_weight)}
+ if($revalidateActivePath){$missionArgs+='--revalidate-active-path'}
  $state.mission_exit=Wsl-Step 'mission' $missionArgs -AllowFailure
  }
  Stage 'audit'
