@@ -38,7 +38,11 @@ function Get-TrialCommands {
 
 function Read-SeededJson([string]$Path,[int]$Seed) {
  # The whole file must parse as one JSON object whose top-level "seed" is exactly the selected integer.
- try {$json=Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json}
+ # The root is checked in the text itself: ConvertFrom-Json unwraps a one-element root array
+ # ([{"seed":N}]) into its object, so the parsed value alone cannot prove an object root.
+ $text=Get-Content -LiteralPath $Path -Raw
+ if($null -eq $text -or !$text.TrimStart([char]0xFEFF,' ',"`t","`r","`n").StartsWith('{')){throw "$Path root is not a JSON object"}
+ try {$json=$text | ConvertFrom-Json}
  catch {throw "$Path is not valid JSON: $($_.Exception.Message)"}
  if($json -isnot [Management.Automation.PSCustomObject]){throw "$Path is not a JSON object"}
  $property=$json.PSObject.Properties['seed']

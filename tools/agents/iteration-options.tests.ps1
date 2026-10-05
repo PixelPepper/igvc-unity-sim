@@ -12,6 +12,12 @@ function Throws([scriptblock]$Block){
  # Discard the block's own output: only $true (it threw) or $false (it returned) may come back.
  try{& $Block | Out-Null;return $false}catch{return $true}
 }
+# Harness controls: Throws must tell a throwing block from returning ones, whatever they return.
+Check ((Throws {throw 'control'}) -is [bool] -and (Throws {throw 'control'})) 'control: throwing block detected'
+foreach($control in @({2028},{@{seed=2028}},{$null},{@(1,2)},{$false})){
+ $result=Throws $control
+ Check ($result -is [bool] -and !$result) "control: returning block is not a throw ($control)"
+}
 
 # Seed validation (as ConvertFrom-Json types it).
 $valid=[ordered]@{'{}'=2027;'{"seed":2027}'=2027;'{"seed":2028}'=2028;'{"seed":2029}'=2029;'{"seed":0}'=0;'{"seed":2147483647}'=2147483647}
@@ -46,7 +52,7 @@ foreach($seed in @(2027,2028,2029)){
 $tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
 $tmp=Join-Path $tempRoot ('t0029-'+[guid]::NewGuid())
 function Make-Inputs([int]$Folder,[string]$CourseSeed='2028',[string]$MissionSeed='2028',[string]$CourseText,
-                     [switch]$BadHash,[switch]$UpperHash,[switch]$NoAutonomy){
+                     [switch]$BadHash,[switch]$UpperHash,[switch]$NoAutonomy,[switch]$MissionRootArray){
  # Seed values are raw JSON text so non-integer metadata can be written exactly.
  $dir=Join-Path $tmp "artifacts/courses/seed-$Folder"; New-Item -ItemType Directory -Force $dir | Out-Null
  $course=Join-Path $dir 'course.json'
@@ -54,7 +60,9 @@ function Make-Inputs([int]$Folder,[string]$CourseSeed='2028',[string]$MissionSee
  Set-Content -LiteralPath $course -Value $CourseText -Encoding Ascii
  $sha=(Get-FileHash -LiteralPath $course -Algorithm SHA256).Hash.ToLowerInvariant()
  if($BadHash){$sha='0'*64}; if($UpperHash){$sha=$sha.ToUpperInvariant()}
- Set-Content -LiteralPath (Join-Path $dir 'mission.json') -Value "{`"seed`": $MissionSeed, `"course_sha256`": `"$sha`"}" -Encoding Ascii
+ $missionText="{`"seed`": $MissionSeed, `"course_sha256`": `"$sha`"}"
+ if($MissionRootArray){$missionText="[$missionText]"}
+ Set-Content -LiteralPath (Join-Path $dir 'mission.json') -Value $missionText -Encoding Ascii
  $autonomy=Join-Path $dir 'autonomy.json'
  if($NoAutonomy){Remove-Item -LiteralPath $autonomy -ErrorAction SilentlyContinue}else{Set-Content -LiteralPath $autonomy -Value '{"goals": []}' -Encoding Ascii}
 }
@@ -72,7 +80,10 @@ try {
  Make-Inputs 2029 -MissionSeed '2029' -CourseText "{`n  `"generation`": {`"seed`": 2029},`n  `"centerline`": []`n}"
  Check (Throws {Test-SeedInputs $tmp 2029}) 'nested-only course seed rejected (no top-level seed)'
  Make-Inputs 2029 -MissionSeed '2029' -CourseText "{`n  `"seed`": 2029,`n  `"centerline`": [" ; Check (Throws {Test-SeedInputs $tmp 2029}) 'malformed course.json rejected'
- Make-Inputs 2029 -MissionSeed '2029' -CourseText '[{"seed": 2029}]'; Check (Throws {Test-SeedInputs $tmp 2029}) 'non-object course.json rejected'
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText '[{"seed": 2029}]'; Check (Throws {Test-SeedInputs $tmp 2029}) 'single-element root array course.json rejected'
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText " `r`n [{`"seed`": 2029}]"; Check (Throws {Test-SeedInputs $tmp 2029}) 'whitespace-prefixed root array course.json rejected'
+ Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -MissionRootArray; Check (Throws {Test-SeedInputs $tmp 2029}) 'single-element root array mission.json rejected'
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText '2029'; Check (Throws {Test-SeedInputs $tmp 2029}) 'scalar root course.json rejected'
  Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -BadHash; Check (Throws {Test-SeedInputs $tmp 2029}) 'unbound course rejected'
  Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -UpperHash; Check (Throws {Test-SeedInputs $tmp 2029}) 'non-canonical course hash rejected'
  Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -NoAutonomy; Check (Throws {Test-SeedInputs $tmp 2029}) 'missing autonomy rejected'
