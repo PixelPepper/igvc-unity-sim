@@ -1,5 +1,28 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Reviewed diagnostic build: first passing lap
+
+[T-0027](../agents/tasks/T-0027-recovery-instrumented-trial.md) ran the integrated
+recovery-diagnostic build at f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f, with fallback
+off and unchanged navigation settings. It completed **6/6 with all 20 audit
+checks passing in 364.386478 s**, with zero charged backup attempts.
+
+Processing-health coverage was complete: 3646 passing samples, no failed/unknown
+samples, maximum observed gap 0.154392 s against the configured 0.25 s limit.
+All 19 runtime fingerprints match the frozen checkout. Player, profile, course
+and mission match the prior control, but the diagnostic source differs.
+The final recorded distance was 0.394471883 m, only 5.53 mm inside the return bound;
+conservative swept obstacle clearance was 0.163087777 m across 18,221 samples.
+
+Both reviewers accepted this single-run evidence. Independent player/port/lease
+checks corroborated shutdown. No recovery-search event or failure capture occurred:
+**the new failed-search capture branch remains unexercised live**. No causal
+speed gain, recovery fix, calibrated hardware claim or promotion is established.
+This is the first pass on this exact version; T0028 is a separately bounded repeat.
+
+Artifacts: artifacts/iterations/2026-10-05/recovery-instrumented-1.
+Run SHA256: 057b7662370e2ebe320c697295bfd478b62300ecfbc60e68009cf942eb6c7843.
+
 ## Enabled fallback: logged acceptance, but another failed lap
 
 [T-0025](../agents/tasks/T-0025-replacement-enabled-trial.md) enabled only the
@@ -31,7 +54,7 @@ does not contain their new exact-input failure capture. Staged validation covers
 630 distinct tests after repairing generated-board freshness and the remaining
 suite environment. The malformed new knowledge-log heading was also repaired;
 strict knowledge validation reports 8 concepts and zero errors/warnings. All failed
-check logs are retained. Live wiring is pending the separate T0027 trial.
+check logs are retained. The T0027 normal-path trial is recorded above; its failed-capture branch was not exercised.
 
 ## Default-off control after instrumentation: one audited pass
 

@@ -23,7 +23,10 @@ but 23 ended aborted and three succeeded. Source/profile/player/course/mission
 matched the control; causality and benefit remain unverified. Keep default off.
 Failed recovery diagnostics and a cleanup guard are integrated at f1a6ae4
 under T0023/T0026, without changing recovery behavior. Validation covers 630
-distinct tests after targeted board/environment repairs; live wiring is pending T0027. Opus now owns complete
+distinct tests after targeted board/environment repairs. T0027 then passed 6/6
+and all 20 audit checks in 364.39 s with zero charged backups. It did not exercise
+the failed-capture branch. This is the first pass on f1a6ae4; T0028 is an unchanged
+repeat, and T0029 prepares explicit seed selection for the later held-out gate. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the
