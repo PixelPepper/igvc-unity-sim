@@ -27,6 +27,17 @@ ungenerated/uninspected and is not a replacement for this failure.
 Artifacts: artifacts/iterations/2026-10-05/nearer-gate-2029-1.
 Run SHA256: `1443e227c0347e767f5ed7e962c961ffbcb92d83cdfd8deeb3c9db9544249fe6`.
 
+[T0036](../agents/tasks/T-0036-freshness-interruption.md) added an offline
+diagnostic section showing open receipt gaps at the bound first-failure snapshot,
+separate from completed interarrival maxima. Clock age at that snapshot was
+0.394011062s against a0.104247074s completed maximum. This is a different observer
+and instant from the adapter's0.907s latch report; final telemetry tail0.926s is
+also separate. Both reviewers accepted the report change, integrated asb1aada7,
+and36 focused tests passed in the primary checkout. This repairs evidence
+presentation, not runtime delivery. Unity/connector/network/subscriber scheduling
+remain unresolved alternatives. T0037 prepares bounded opt-in Unity timing capture;
+it has not been built or tested live.
+
 ## Three verified seed2027 passes
 
 [T0034](../agents/tasks/T-0034-nearer-gate-qualification.md) qualified the

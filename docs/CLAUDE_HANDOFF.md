@@ -18,7 +18,9 @@ blocked lane-entry target) remains preserved. T0035's first preselected2029 atte
 stopped2/6 after121.43s: perception and clock freshness expired, correctly latching
 autonomy off. Both reviewers accepted the failed evidence (12/20 audit;
 1209 health passes,7 failures,0 unknown; complete sampling coverage). Upstream
-cause remains undetermined; T0036 investigates the retained timing evidence.
+cause remains undetermined. T0036 added reviewed offline open-gap reporting
+(b1aada7,36 focused tests passed); T0037 is preparing bounded opt-in Unity frame
+and connector-warning timing capture. No runtime fix or new trial is claimed.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,
