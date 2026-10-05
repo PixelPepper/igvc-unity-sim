@@ -432,6 +432,56 @@ class DeferredCaptureTest(unittest.TestCase):
             captures.flush()
         self.assertFalse(record['capture']['matches_worker_digest'])
 
+    def cleanup(self, failing):
+        """Mission-style command-stop cleanup: errors are collected, never raised (as in sensor_course)."""
+        report = {'recovery_failures': []}
+
+        def cancel():
+            if failing:
+                raise RuntimeError('action cancel was not acknowledged')
+        for label, operation in (('disable autonomy', lambda: None), ('cancel action', cancel)):
+            try:
+                operation()
+            except RuntimeError as exc:
+                report.setdefault('cleanup_errors', []).append(label+': '+str(exc))
+        return report
+
+    def test_failed_command_stop_cleanup_skips_the_writer_and_saves_the_reason(self):
+        costs, worker_digest = self.failed_search()
+        writer = Mock(side_effect=AssertionError('writer must not run'))
+        captures = DeferredCapture(writer=writer)
+        report = self.cleanup(failing=True)
+        failure = {'reason': 'search_ended_without_escape', 'evidence': {'returned_stage': 'rear_sweep_blocked'}}
+        with tempfile.TemporaryDirectory() as directory:
+            captures.defer(Path(directory)/'recovery-00149.json.gz', search_args(costs), mission_kwargs(), {},
+                           worker_digest, failure)
+            report['recovery_failures'].append(failure)
+            captures.flush(cleanup_errors=list(report.get('cleanup_errors', [])))
+            self.assertEqual(list(Path(directory).iterdir()), [])
+        writer.assert_not_called()
+        saved = json.loads(json.dumps(report, allow_nan=False))  # the final run.json write
+        self.assertEqual(saved['recovery_failures'][0]['capture'],
+                         'skipped: command-stop cleanup reported errors: cancel action: action cancel was not acknowledged')
+        self.assertEqual(saved['recovery_failures'][0]['evidence'], {'returned_stage': 'rear_sweep_blocked'})
+        self.assertEqual(captures.pending, [])
+
+    def test_successful_command_stop_cleanup_still_writes_the_bound_capture(self):
+        costs, worker_digest = self.failed_search()
+        captures = DeferredCapture()
+        report = self.cleanup(failing=False)
+        failure = {}
+        with tempfile.TemporaryDirectory() as directory:
+            captures.defer(Path(directory)/'recovery-00149.json.gz', search_args(costs), mission_kwargs(), {},
+                           worker_digest, failure)
+            report['recovery_failures'].append(failure)
+            captures.flush(cleanup_errors=list(report.get('cleanup_errors', [])))
+            saved = json.loads(json.dumps(report, allow_nan=False))
+            capture = saved['recovery_failures'][0]['capture']
+            self.assertTrue(capture['matches_worker_digest'])
+            payload = json.loads(gzip.decompress(Path(directory, capture['file']).read_bytes()))
+            self.assertEqual(describe_search_inputs(*load_capture_inputs(payload))['digest'], worker_digest)
+        self.assertNotIn('cleanup_errors', report)
+
     def test_capture_failures_and_cap_are_recorded(self):
         records = [{} for _ in range(MAX_CAPTURES+1)]
         captures = DeferredCapture(writer=Mock(side_effect=OSError('disk full')))

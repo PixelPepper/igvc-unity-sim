@@ -889,10 +889,11 @@ def run(args):
             state['elapsed_wall_s'] = stopped_at-armed_at
             state['sensor_health'] = telemetry.report()
         node.destroy_timer(health_timer)
-        # Deferred recovery captures: autonomy is disabled, the action cancelled and the
-        # health interval closed above, so the slow write cannot open a live health gap.
+        # Deferred recovery captures: the command-stop cleanup above was attempted and the health
+        # interval closed, so the slow write cannot open a live health gap. If that cleanup reported
+        # errors, command authority may remain, so no capture is written (each record says why).
         try:
-            recovery_captures.flush()
+            recovery_captures.flush(cleanup_errors=list(state.get('cleanup_errors', [])))
         except Exception as exc:  # noqa: BLE001 - never blocks saving the run
             state['recovery_evidence_error'] = f'capture flush: {type(exc).__name__}: {exc}'[:200]
         try:

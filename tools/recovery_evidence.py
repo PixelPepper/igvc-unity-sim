@@ -237,10 +237,12 @@ class DeferredCapture:
 
     `defer` is O(1): it keeps references to the frozen argument objects and marks
     the report record deferred, so a failure never blocks the mission's live
-    callbacks. `flush` (called once command authority is released and the health
-    interval has ended, before the report is saved) writes the capture and updates
-    the same report record, including whether the inputs still match the worker's
-    digest. Errors are recorded in the record, never raised.
+    callbacks. `flush` (called after the command-stop cleanup was attempted and the
+    health interval has ended, before the report is saved) writes the capture and
+    updates the same report record, including whether the inputs still match the
+    worker's digest. If that cleanup reported errors, command authority may not be
+    released, so the writer is never invoked and each record says why. Errors are
+    recorded in the record, never raised.
     """
 
     def __init__(self, writer=None):
@@ -254,9 +256,14 @@ class DeferredCapture:
         else:
             record['capture'] = 'unavailable: capture cap reached'
 
-    def flush(self, clock=time.monotonic):
+    def flush(self, cleanup_errors=(), clock=time.monotonic):
+        """Write pending captures, or skip them all (no writer call) when command-stop cleanup failed."""
         pending, self.pending = self.pending, []
+        reason = '; '.join(str(error) for error in cleanup_errors)
         for path, args, kwargs, context, worker_digest, record in pending:
+            if cleanup_errors:
+                record['capture'] = ('skipped: command-stop cleanup reported errors: '+reason)[:MAX_STRING]
+                continue
             started = clock()
             try:
                 digest, size = self.writer(path, args, kwargs, context)
