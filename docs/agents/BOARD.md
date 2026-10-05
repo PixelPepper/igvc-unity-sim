@@ -5,14 +5,15 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0031** `review`: First preselected held-out seed2028 validation (LEASE-RELEASE by gpt-6-astra at 2026-10-05T06:21:48.4343476-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | LEASE-GRANT by gpt-6-astra at 2026-10-05T06:16:39.6127372-07:00 |
+| [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | LEASE-RELEASE by gpt-6-astra at 2026-10-05T06:21:48.4343476-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-05T06:22:05-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
