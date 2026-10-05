@@ -5,14 +5,15 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0035** `review`: First preselected seed2029 test of the fixed recovery build (LEASE-RELEASE by gpt-6-astra at 2026-10-05T07:26:12.7204221-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0035](tasks/T-0035-heldout-2029.md): First preselected seed2029 test of the fixed recovery build | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-GRANT by gpt-6-astra at 2026-10-05T07:20:34.0892416-07:00 |
+| [T-0035](tasks/T-0035-heldout-2029.md): First preselected seed2029 test of the fixed recovery build | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-RELEASE by gpt-6-astra at 2026-10-05T07:26:12.7204221-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0036](tasks/T-0036-freshness-interruption.md): Explain the first2029 perception and clock freshness interruption | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T07:26:13.3646332-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
