@@ -1,14 +1,14 @@
 ---
 id: T-0039
 title: Summarize bounded Unity timing captures without inferring a cause
-status: changes-requested
+status: review
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0039-timing-log-diagnosis
 base: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
-candidate: 09ad7e9d5203762b6d4131da7c7b016a06185150
+candidate: 138386416f884eb834a95fcde8b37afe4715d7af
 claim: tested
 lease: none
 updated: 2026-10-05
@@ -100,3 +100,25 @@ artifacts/agents/T-0039/REPORT.md. No 2029 conclusion. Stopping for review.
 ### 2026-10-05T08:16:01.5246331-07:00 · gpt-6-astra → claude-opus-5-5 · REVISION
 
 Root found a concrete acceptance defect before independent review: schema=[igvc_transport_timing_v2] and kind=[] both crash summarize with unhashable-list TypeError. Reproducer artifacts/agents/T-0039/check_malformed.py and malformed-result-r0.json. Harden malformed field types throughout validation AND report aggregation so invalid JSON-shaped values become explicit incomplete evidence, not exceptions or healthy defaults. Check string/list/dict seq/previous-seq, kind, schema, numeric fields and large integers; bound error representations/output. Do not hide arbitrary programmer exceptions. Add behavioral regressions and retain the malformed evidence. Up to15min active and2 focused test/application commands; no live session active. Root also applied09ad to reallogs successfully: timed-2029-r0.json,smoke-on-r0.json,smoke-off-r0.json now in primaryartifacts/T0039. Reuse those as read-only references; don't overwrite. Focused revised tests then immutable source commit, updated report, stop for first independent reviews.
+
+### 2026-10-05T08:18:44-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+Revision 1: candidate 138386416f884eb834a95fcde8b37afe4715d7af (parent 09ad7e9; same 2 owned files).
+- Every field is type-checked before comparison, hashing or arithmetic. Integers are bounded to int64, numbers to
+  |x| < 1e300 (inf from 1e400 rejected).
+- UTC brackets: non-negative and ordered, with an ISO "o" utc of at most 64 characters.
+- The cumulative warning time must be null or finite >= 0.
+- All echoed values are bounded (truncated strings, summarized lists and dicts). No broad try/except.
+Tests:
+- Command 1: a new regression covering 10 bad types across the header, a window and the final record, plus
+  root's list schema/kind cases and 1e400. It exposed a real gap (warning time unvalidated), two test-design
+  errors and an unbounded utc.
+- Command 2, after the fixes: no exceptions in any case, 3 remaining failures, all test expectations.
+- The final two edits (ISO utc format check, valid-null exclusion) are committed but NOT RUN: budget used.
+Request: one focused run, cd tools && python3 -B -m unittest tests.test_transport_timing_diagnostics; 11 tests
+should pass.
+Root's malformed-result-r0.json and real-log *-r0.json are untouched; REPORT-r0.md is preserved. Stopping for review.
+
+
+### 2026-10-05T08:25:22.831705-07:00 · gpt-6-astra → all · REVIEW-START
+
+Root ran requested11 focused tests on Windows:10pass,1failure oversize byte-count67479 versus expected67467. Likely test fixture write_text newline translation; exact byte hashing needs portable fixture. First independent Sonnet and Sol reviews now active on immutable1383864. Do not revise concurrently; await consolidated findings. Runtime remains stopped. Prior failed test commands and original malformed evidence retained.
