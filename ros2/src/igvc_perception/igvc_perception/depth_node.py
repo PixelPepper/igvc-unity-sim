@@ -24,6 +24,11 @@ class DepthNode(Node):
         self.tf=Buffer();self.listener=TransformListener(self.tf,self)
         self.images,self.infos=OrderedDict(),OrderedDict()
         self.last_stamp=0
+        self.processing_healthy=False
+        self.last_success_receipt=float('-inf')
+        self.last_success_stamp=0
+        self.last_tick_wall=None
+        self.last_tick_ros=None
         self.ground_prior=None
         self.ground_prior_wall=float('-inf')
         self.ground_prior_stamp=0
@@ -43,6 +48,7 @@ class DepthNode(Node):
 
     def reset(self, request, response):
         self.images.clear();self.infos.clear();self.last_stamp=0
+        self.processing_healthy=False
         self.ground_prior=None
         self.ground_prior_wall=float('-inf');self.ground_prior_stamp=0
         self.healthy.publish(Bool(data=False))
@@ -55,6 +61,8 @@ class DepthNode(Node):
         if store is self.images and stamp<self.last_stamp:
             self.images.clear();self.infos.clear();self.last_stamp=0
             self.ground_prior=None
+            self.processing_healthy=False
+            self.healthy.publish(Bool(data=False))
         store[stamp]=(m,time.monotonic())
         while len(store)>8:store.popitem(last=False)
 
@@ -67,10 +75,22 @@ class DepthNode(Node):
 
     def tick(self):
         now=time.monotonic()
+        acquisition_now=self.get_clock().now().nanoseconds
+        regressed=((self.last_tick_wall is not None and now<self.last_tick_wall)
+                   or (self.last_tick_ros is not None and acquisition_now<self.last_tick_ros))
+        self.last_tick_wall,self.last_tick_ros=now,acquisition_now
+        if regressed:
+            self.images.clear();self.infos.clear();self.last_stamp=0
+            self.ground_prior=None;self.processing_healthy=False
+            self.healthy.publish(Bool(data=False))
+            self.status.publish(String(data=json.dumps({'valid':False,'reason':'clock_regression'})))
+            return
         if now-self.ground_prior_wall>.75:
             self.ground_prior=None
         common=[s for s in self.images.keys() & self.infos.keys() if s>self.last_stamp and now-max(self.images[s][1],self.infos[s][1])>=.04]
         if not common:
+            if self.success_is_fresh(now,acquisition_now):return
+            self.processing_healthy=False
             self.healthy.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid':False,'reason':'no_new_pair'})))
             return
@@ -81,6 +101,8 @@ class DepthNode(Node):
                and self.tf.can_transform('odom',self.images[s][0].header.frame_id,
                                          Time.from_msg(self.images[s][0].header.stamp))]
         if not ready:
+            if self.success_is_fresh(now,acquisition_now):return
+            self.processing_healthy=False
             self.healthy.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid':False,'reason':'acquisition_tf_not_ready'})))
             return
@@ -117,11 +139,22 @@ class DepthNode(Node):
                 fields=[PointField(name=name,offset=i*4,datatype=PointField.FLOAT32,count=1) for i,name in enumerate(('x','y','z','ground'))],
                 point_step=16,row_step=len(surface_points)*16,is_dense=True,data=surface_points.tobytes()))
             self.obstacles.publish(self.message(obstacles,Header(stamp=image.header.stamp,frame_id='odom')))
+            self.last_success_receipt=min(arrival,info_wall)
+            self.last_success_stamp=stamp
+            self.processing_healthy=True
             self.healthy.publish(Bool(data=True))
             self.status.publish(String(data=json.dumps({'valid':True,'stamp_ns':stamp,'points':len(points),'obstacle_points':len(obstacles),'ground_points':int(ground.sum()),'ground':plane})))
         except (ValueError,TransformException) as exc:
+            self.processing_healthy=False
             self.healthy.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid':False,'reason':str(exc)})))
+
+    def success_is_fresh(self, now, acquisition_now):
+        # Idle ticks must not republish a successful acquisition or extend its
+        # freshness. Receipt and acquisition clocks retain the existing .5s bound.
+        return (self.processing_healthy
+                and 0<=now-self.last_success_receipt<=.5
+                and 0<=acquisition_now-self.last_success_stamp<=500_000_000)
 
 
 def main():

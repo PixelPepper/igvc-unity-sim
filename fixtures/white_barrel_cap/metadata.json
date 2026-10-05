@@ -1,0 +1,212 @@
+{
+  "schema_version": 1,
+  "kind": "recorded_ideal_unity_simulation_fixture",
+  "source_frame": "entrance-baseline-episode/frames/000580",
+  "anchor_acquisition_stamp_ns": 748010000000,
+  "projection_ground_stamp_ns": 747690000000,
+  "depth_pairing_purpose": "projection_source",
+  "observations": {
+    "rgb": {
+      "acquisition_stamp_ns": 748010000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 748010000000,
+        "skew_ns": 0
+      },
+      "frame_id": "camera_color_optical_frame"
+    },
+    "rgb_info": {
+      "acquisition_stamp_ns": 748010000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 748010000000,
+        "skew_ns": 0
+      },
+      "frame_id": "camera_color_optical_frame"
+    },
+    "mask": {
+      "acquisition_stamp_ns": 748010000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 748010000000,
+        "skew_ns": 0
+      },
+      "frame_id": "camera_color_optical_frame"
+    },
+    "lane_status": {
+      "acquisition_stamp_ns": 748010000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 748010000000,
+        "skew_ns": 0
+      },
+      "frame_id": ""
+    },
+    "depth": {
+      "acquisition_stamp_ns": 747690000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 747690000000,
+        "skew_ns": 0
+      },
+      "frame_id": "camera_color_optical_frame"
+    },
+    "depth_info": {
+      "acquisition_stamp_ns": 747690000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 747690000000,
+        "skew_ns": 0
+      },
+      "frame_id": "camera_color_optical_frame"
+    },
+    "surfaces": {
+      "acquisition_stamp_ns": 747690000000,
+      "pairing": {
+        "status": "exact",
+        "synchronized": true,
+        "target_stamp_ns": 747690000000,
+        "skew_ns": 0
+      },
+      "frame_id": "odom"
+    }
+  },
+  "rgb_camera": {
+    "valid": true,
+    "width": 640,
+    "height": 480,
+    "k": [
+      471.02652132123615,
+      0.0,
+      319.5,
+      0.0,
+      471.02652132123615,
+      239.5,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "d": [
+      0.0,
+      0.0,
+      0.0,
+      0.0,
+      0.0
+    ],
+    "r": [
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "p": [
+      471.02652132123615,
+      0.0,
+      319.5,
+      0.0,
+      0.0,
+      471.02652132123615,
+      239.5,
+      0.0,
+      0.0,
+      0.0,
+      1.0,
+      0.0
+    ],
+    "distortion_model": "plumb_bob"
+  },
+  "rgb_transform": {
+    "available": true,
+    "acquisition_stamp_ns": 748010000000,
+    "source_frame": "camera_color_optical_frame",
+    "target_frame": "odom",
+    "translation": [
+      17.5650267417223,
+      47.715619361594676,
+      1.1000286154176266
+    ],
+    "quaternion_xyzw": [
+      -0.6055279746858516,
+      -0.4692120636839962,
+      0.393715669580945,
+      0.5080983002261312
+    ]
+  },
+  "depth_transform": {
+    "available": true,
+    "acquisition_stamp_ns": 747690000000,
+    "source_frame": "camera_color_optical_frame",
+    "target_frame": "odom",
+    "translation": [
+      17.5650267417223,
+      47.715619361594676,
+      1.1000286154176266
+    ],
+    "quaternion_xyzw": [
+      -0.6055279746858516,
+      -0.4692120636839962,
+      0.393715669580945,
+      0.5080983002261312
+    ]
+  },
+  "lane_status": {
+    "valid": true,
+    "stamp_ns": 748010000000,
+    "components": 3,
+    "pixels": 4445,
+    "current_points": 2888,
+    "accumulated_points": 5613,
+    "hazard_components": 0,
+    "hazard_points": 0,
+    "ground": {
+      "normal": [
+        -9.418347397419538e-05,
+        0.00018303664785083906,
+        0.9999999788135292
+      ],
+      "offset": -0.007741995552873514,
+      "inlier_fraction": 0.92,
+      "rms_m": 0.002105207772248429,
+      "slope_deg": 0.011794157970965159,
+      "support_scope": "full"
+    },
+    "ground_stamp_ns": 747690000000,
+    "ground_age_s": 0.32
+  },
+  "white_barrel_cap": {
+    "bbox_xywh": [
+      278,
+      192,
+      79,
+      11
+    ],
+    "accepted_mask_pixels": 811
+  },
+  "files_sha256": {
+    "rgb.png": "3b2e7311d468baf4936e1b0d09da1dc421cd2886579bbcba58c6e2dddd5c2177",
+    "surfaces.npz": "49a6052fbc595c2eef8f3c0ada01668b6cbf91f63cd4a2a82cc0b9926b3c6370"
+  },
+  "source_sha256": {
+    "rgb.png": "3b2e7311d468baf4936e1b0d09da1dc421cd2886579bbcba58c6e2dddd5c2177",
+    "mask.png": "3c3bb00b4abd378e2c18a81209ba1d2ba9fb87c4caa64ec02d262c508a42269c",
+    "arrays.npz": "c0d01e20c223668a1c96e5d4730dcaa2893bb02383270ce61ebc028f71a5c674",
+    "metadata.json": "af023e0aaea5dd00db802b03b93051ec0e928401adb51b67fee6a3d126e9df8e"
+  },
+  "surface_data_sha256": "0615d37a0a088c9b7d84cc09b64c570b49c823c616528bfe3120a4d834b30dc3",
+  "source_code_sha256_at_extraction": {
+    "lanes.py": "75a51a502b57492421191fb72dbab5989f1fb5d2f9a6b0ac9fab9cbc768a8be6",
+    "surface_projection.py": "315e8f569bc1f99cad95cd6dad1ba53b9ec106cbfd789d42fe12ed801ceaeae9"
+  },
+  "limitations": "Ideal simulation evidence, not hardware calibration or full-course success. Only the exact recorded projection source is retained. A known 2D barrel-cap candidate is rejected by eligible observed depth; this fixture does not fix lane re-entry."
+}

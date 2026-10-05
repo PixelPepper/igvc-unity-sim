@@ -34,10 +34,16 @@ class LaneNode(Node):
         self.hazard_points = PointMemory(self.ttl, 4000)
         self.last_stamp = 0
         self.last_success = float('-inf')
+        self.processing_healthy = False
+        self.last_success_receipt = float('-inf')
+        self.last_success_stamp = 0
+        self.last_tick_wall = None
+        self.last_tick_ros = None
         self.last_arrival_stamp = 0
         self.run_id = None
         self.debug = self.create_publisher(Image, '/perception/lanes/debug', qos_profile_sensor_data)
         self.cloud = self.create_publisher(PointCloud2, '/perception/lanes/points', qos_profile_sensor_data)
+        self.evidence = self.create_publisher(PointCloud2, '/perception/lanes/evidence', qos_profile_sensor_data)
         self.hazard_cloud = self.create_publisher(PointCloud2, '/perception/hazards/points', qos_profile_sensor_data)
         self.hazard_debug = self.create_publisher(Image, '/perception/hazards/debug', qos_profile_sensor_data)
         self.valid = self.create_publisher(Bool, '/perception/lanes/valid', 1)
@@ -87,7 +93,10 @@ class LaneNode(Node):
             status=json.loads(message.data)
             if not isinstance(status,dict):raise ValueError('Expected ground status object')
             self.ground_history.update(status,time.monotonic())
+            if status.get('valid') is not True:
+                self.processing_healthy = False
         except (ValueError,TypeError):
+            self.processing_healthy = False
             self.ground_history.clear()
 
     def surface_cloud(self,message):
@@ -100,6 +109,7 @@ class LaneNode(Node):
             if not np.isfinite(values).all() or not np.isin(values[:,3],[0,1]).all():raise ValueError('surface_values')
             self.cache(self.surfaces,self.stamp(message),values)
         except ValueError:
+            self.processing_healthy = False
             self.surfaces.clear();self.ground_history.clear()
 
     def clear(self):
@@ -112,6 +122,7 @@ class LaneNode(Node):
         self.ground_history.clear()
         self.last_stamp = 0
         self.last_success = float('-inf')
+        self.processing_healthy = False
 
     def reset(self, request, response):
         self.clear()
@@ -131,11 +142,23 @@ class LaneNode(Node):
 
     def tick(self):
         now = time.monotonic()
+        acquisition_now = self.get_clock().now().nanoseconds
+        regressed = ((self.last_tick_wall is not None and now < self.last_tick_wall)
+                     or (self.last_tick_ros is not None and acquisition_now < self.last_tick_ros))
+        self.last_tick_wall, self.last_tick_ros = now, acquisition_now
+        if regressed:
+            self.clear()
+            self.valid.publish(Bool(data=False))
+            self.status.publish(String(data=json.dumps({'valid':False,'reason':'clock_regression'})))
+            return
         self.points.expire(now)
         self.hazard_points.expire(now)
         common = {stamp for stamp in self.images.keys() & self.infos.keys()
                   if now-max(self.images[stamp][1], self.infos[stamp][1]) >= .04}
         if not common or max(common) <= self.last_stamp:
+            if self.success_is_fresh(now, acquisition_now):
+                return
+            self.processing_healthy = False
             self.healthy.publish(Bool(data=False))
             self.valid.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid': False, 'reason': 'no_new_exact_stamp_pair',
@@ -154,6 +177,9 @@ class LaneNode(Node):
             if self.tf.can_transform('odom',m.header.frame_id,Time.from_msg(m.header.stamp)):
                 ready.append(candidate)
         if not ready:
+            if self.success_is_fresh(now, acquisition_now):
+                return
+            self.processing_healthy = False
             self.healthy.publish(Bool(data=False));self.valid.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid':False,'reason':'waiting_for_depth_ground_or_rgb_tf'})))
             return
@@ -186,12 +212,28 @@ class LaneNode(Node):
                 ((tuple(np.floor(point[:2]/.075).astype(int)), point) for point in projected), stamp, now)
             self.last_stamp = stamp
             self.last_success = now
+            self.last_success_receipt = min(arrival, info_arrival,
+                self.surfaces[ground_stamp][1], self.ground_history.samples[ground_stamp][1])
+            self.last_success_stamp = stamp
+            self.processing_healthy = True
             self.healthy.publish(Bool(data=True))
             valid = len(projected) >= 12 and components >= 1
             self.valid.publish(Bool(data=valid))
             self.debug.publish(Image(header=image.header, height=image.height, width=image.width,
                                      encoding='mono8', is_bigendian=0, step=image.width, data=mask.tobytes()))
             self.publish_cloud(Header(stamp=image.header.stamp, frame_id='odom'))
+            # Keep navigation's point interface unchanged. Diagnostic subscribers
+            # can distinguish old retained points from this frame's observations.
+            if self.evidence.get_subscription_count():
+                names = ('x', 'y', 'z', 'age_wall_s', 'observations', 'confirmed', 'stamp_sec', 'stamp_nanosec')
+                values = np.array(self.points.evidence_rows(now),
+                    dtype=[(name, '<f4' if i < 4 else '<u4') for i, name in enumerate(names)])
+                fields = [PointField(name=name, offset=i*4,
+                    datatype=PointField.FLOAT32 if i < 4 else PointField.UINT32, count=1)
+                    for i, name in enumerate(names)]
+                self.evidence.publish(PointCloud2(header=Header(stamp=image.header.stamp, frame_id='odom'),
+                    height=1, width=len(values), fields=fields, is_bigendian=False,
+                    point_step=32, row_step=len(values)*32, is_dense=True, data=values.tobytes()))
             self.publish_cloud(Header(stamp=image.header.stamp, frame_id='odom'),self.hazard_points,self.hazard_cloud)
             self.hazard_debug.publish(Image(header=image.header,height=image.height,width=image.width,encoding='mono8',is_bigendian=0,step=image.width,data=hazard_mask.tobytes()))
             self.status.publish(String(data=json.dumps({'valid': valid, 'stamp_ns': stamp, 'components': components,
@@ -201,9 +243,17 @@ class LaneNode(Node):
                                                         'ground_stamp_ns':ground_stamp,
                                                         'ground_age_s':(stamp-ground_stamp)/1e9})))
         except (ValueError, TransformException, np.linalg.LinAlgError) as exc:
+            self.processing_healthy = False
             self.healthy.publish(Bool(data=False))
             self.valid.publish(Bool(data=False))
             self.status.publish(String(data=json.dumps({'valid': False, 'reason': str(exc)})))
+
+    def success_is_fresh(self, now, acquisition_now):
+        # Processing success is independent of lane visibility. An idle tick
+        # retains the original output stamps; it never refreshes publication age.
+        return (self.processing_healthy
+                and 0 <= now-self.last_success_receipt <= .5
+                and 0 <= acquisition_now-self.last_success_stamp <= 500_000_000)
 
 
 def main(args=None):

@@ -1,0 +1,12 @@
+{
+  "date": "2026-10-01",
+  "files_sha256": {
+    "post_ramp_oblique.json.gz": "380474ffa38e6a760aaf336ee90d6088395b7509d8433d33e01759129d166e15",
+    "corner.json.gz": "0fe82146fc55585836a823c354b6a1ca902e35993e04c85821cab0bc8aa1fd11",
+    "near_straight.json.gz": "8243454fcd674a171d4f598daa1dfa878492676219e3c334fccc530f893f39d9"
+  },
+  "source_snapshot": "00a3e703a449ceb8c65c3e81a3cb04a4318ada52",
+  "limitations": "Saved ideal simulator observations, not a calibrated robot. No WORLD/guide route input. These replays do not prove live controller tracking or full lap completion.",
+  "schema_version": 1,
+  "kind": "recorded_observation_only_navigation_decisions"
+}

@@ -21,6 +21,13 @@ class PointMemory:
     def values(self):
         return ((record['point'], record['last']) for record in self.records.values())
 
+    def evidence_rows(self, now):
+        """Diagnostic provenance, retaining each point's actual acquisition."""
+        return [(*record['point'], max(0., now-record['last']), record['count'],
+                 int(record['confirmed']), record['stamp']//1_000_000_000,
+                 record['stamp'] % 1_000_000_000)
+                for record in self.records.values()]
+
     def expire(self, now):
         for key, record in list(self.records.items()):
             lifetime = self.ttl if record['confirmed'] else min(self.ttl, self.candidate_ttl)
