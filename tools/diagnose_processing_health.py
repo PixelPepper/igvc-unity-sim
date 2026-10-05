@@ -19,6 +19,9 @@ UNDETERMINED = 'undetermined: per-failure telemetry does not cover the first fai
 NODE_TICK_WALL_S = 0.2       # steady-clock create_timer(.2)
 SUCCESS_FRESH_SIM_S = 0.5    # acquisition bound, simulation clock
 SUCCESS_FRESH_WALL_S = 0.5   # receipt bound, wall (monotonic) clock
+# Monotonic time at telemetry initialization, if a future schema records it
+# (sensor_telemetry.py keeps `started` internally; schema v1 does not export it).
+TELEMETRY_ORIGIN_KEY = 'started_monotonic_s'
 
 
 def get(value, *path):
@@ -62,33 +65,47 @@ def diagnose(run, window_s=6.0):
     first = report['first_fail']
     fail_mono = _number(get(first, 'monotonic_s'))
     fail_ns = _number(get(first, 'odom_stamp_ns'))
+    fail_count = _number(get(interval, 'totals', 'fail'))
     if not first:
-        report['first_failure_cause'] = ('no failing health sample recorded' if isinstance(interval, dict)
-                                         else 'undetermined: health ledger unavailable')
+        if not isinstance(interval, dict):
+            report['first_failure_cause'] = 'undetermined: health ledger unavailable'
+        elif fail_count is None:
+            report['first_failure_cause'] = 'undetermined: first_fail missing and failing-sample count unavailable'
+        elif fail_count > 0:
+            report['first_failure_cause'] = ('contradiction: totals report %d failing samples but first_fail '
+                                             'is missing' % fail_count)
+        else:
+            report['first_failure_cause'] = 'no failing health sample recorded'
     elif fail_mono is None or fail_ns is None:
         unavailable.append('first_fail monotonic_s/odom_stamp_ns')
         report['first_failure_cause'] = UNDETERMINED
 
-    # Bounded rings: do they still cover the first failure?
-    covered = False
+    # Bounded rings, judged independently. The ledger shares the failure's
+    # monotonic clock. Status events use elapsed_s from telemetry
+    # initialization; schema v1 does not export that origin, and the mission
+    # arm time is a different event, so status alignment is unknown unless a
+    # recorded origin exists.
+    coverage = {'health_ledger': 'unavailable', 'status_events': 'unavailable'}
     if fail_mono is not None:
-        ledger = get(interval, 'recent_events')
-        ledger_start = _number(get(ledger, 0, 'monotonic_s'))
-        if ledger_start is None or ledger_start > fail_mono:
+        ledger_start = _number(get(interval, 'recent_events', 0, 'monotonic_s'))
+        if ledger_start is not None:
+            coverage['health_ledger'] = 'covers_failure' if ledger_start <= fail_mono else 'evicted_before_failure'
+        if coverage['health_ledger'] != 'covers_failure':
             unavailable.append('per-sample health ledger at first failure (ring starts at monotonic %s s)'
                                % ledger_start)
         status_start = _number(get(health, 'recent_events', 0, 'elapsed_s'))
-        armed_start = _number(get(interval, 'start', 'monotonic_s'))
-        if status_start is None or armed_start is None:
-            unavailable.append('per-message perception status events at first failure (ring or armed start missing)')
-        elif status_start > fail_mono-armed_start:
-            # UNVERIFIED alignment: elapsed_s is assumed relative to the armed interval start.
+        origin = _number(get(health, TELEMETRY_ORIGIN_KEY))
+        if status_start is not None:
+            coverage['status_events'] = ('alignment_unknown' if origin is None else
+                                         'covers_failure' if origin+status_start <= fail_mono
+                                         else 'evicted_before_failure')
+        if coverage['status_events'] != 'covers_failure':
             unavailable.append('per-message perception status events at first failure: node reason, pairing '
-                               'stamps, receipt age, TF wait, processing duration (ring starts too late)')
-        else:
-            covered = True
+                               'stamps, receipt age, TF wait, processing duration (%s)' % coverage['status_events'])
         report['first_failure_cause'] = (
-            'per-failure status events retained; inspect sensor_health.recent_events' if covered else UNDETERMINED)
+            'per-failure status events retained; inspect sensor_health.recent_events'
+            if coverage['status_events'] == 'covers_failure' else UNDETERMINED)
+    report['retained_event_coverage'] = coverage
     unavailable += ['per-frame image interarrival and acquisition lag at first failure',
                     'node-side processing duration and scheduling; Unity frame time',
                     'WSLg/compositor restart time']
@@ -164,10 +181,12 @@ def main(argv=None):
     report = diagnose(json.loads(args.run.read_text(encoding='utf-8')), args.window_s)
     text = json.dumps(report, indent=2, sort_keys=True)
     if args.output:
-        if args.output.exists():
+        try:
+            with args.output.open('x', encoding='utf-8') as handle:  # atomic no-overwrite
+                handle.write(text + '\n')
+        except FileExistsError:
             print(f'refusing to overwrite {args.output}', file=sys.stderr)
             return 1
-        args.output.write_text(text + '\n', encoding='utf-8')
     else:
         print(text)
     return 0

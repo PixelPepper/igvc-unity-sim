@@ -40,27 +40,48 @@ class DiagnoseTest(unittest.TestCase):
         self.assertIn('per-sample health ledger at first failure', joined)
         self.assertIn('per-message perception status events at first failure', joined)
 
-    def test_retained_rings_are_reported_as_covering_the_failure(self):
+    def test_status_alignment_is_unknown_without_a_recorded_telemetry_origin(self):
+        # Ledger covers the failure, but status elapsed_s has no exported origin;
+        # the mission arm time must not be substituted for it.
         report = diag.diagnose(run_fixture(ring_start_mono=110.0, status_start_elapsed=5.0))
-        self.assertIn('retained', report['first_failure_cause'])
-        self.assertFalse(any('ledger at first failure' in item for item in report['unavailable']))
+        self.assertEqual(report['retained_event_coverage'],
+                         {'health_ledger': 'covers_failure', 'status_events': 'alignment_unknown'})
+        self.assertEqual(report['first_failure_cause'], diag.UNDETERMINED)
+
+    def test_mixed_coverage_without_odometry_claims_only_status_events(self):
+        run = run_fixture(ring_start_mono=500.0, status_start_elapsed=5.0)
+        run['sensor_health'][diag.TELEMETRY_ORIGIN_KEY] = 110.0
+        run['trajectory'] = []
+        report = diag.diagnose(run)
+        self.assertEqual(report['retained_event_coverage'],
+                         {'health_ledger': 'evicted_before_failure', 'status_events': 'covers_failure'})
+        self.assertIn('status events retained', report['first_failure_cause'])
+        self.assertIsNone(report['odometry_sim_stamps'])
+        self.assertIn('odometry trajectory', report['unavailable'])
+        self.assertIn('per-sample health ledger at first failure', ' '.join(report['unavailable']))
 
     def test_incomplete_run_reports_unavailable_instead_of_raising_or_zero_gaps(self):
         run = run_fixture()
-        del run['sensor_health']['streams']['depth'], run['mission_health_interval']['start']
+        del run['sensor_health']['streams']['depth'], run['sensor_health']['recent_events']
         run['trajectory'] = [[19.9, 0, 0, 0]]
         run['decisions'].append({'phase': 'requested'})
         report = diag.diagnose(run)
         joined = ' '.join(report['unavailable'])
-        for missing in ('stream telemetry: depth', 'odometry trajectory', 'ring or armed start missing'):
+        for missing in ('stream telemetry: depth', 'odometry trajectory', 'status events at first failure'):
             self.assertIn(missing, joined)
+        self.assertEqual(report['retained_event_coverage']['status_events'], 'unavailable')
         self.assertIsNone(report['odometry_sim_stamps'])
         self.assertEqual(diag.diagnose({})['first_failure_cause'], 'undetermined: health ledger unavailable')
 
-    def test_run_without_failures_says_so(self):
-        run = run_fixture()
-        run['mission_health_interval']['first_fail'] = None
-        self.assertEqual(diag.diagnose(run)['first_failure_cause'], 'no failing health sample recorded')
+    def test_missing_first_fail_is_judged_against_the_failure_total(self):
+        cases = {1: 'contradiction: totals report 1 failing samples but first_fail is missing',
+                 0: 'no failing health sample recorded',
+                 None: 'undetermined: first_fail missing and failing-sample count unavailable'}
+        for fail, expected in cases.items():
+            run = run_fixture()
+            run['mission_health_interval']['first_fail'] = None
+            run['mission_health_interval']['totals']['fail'] = fail
+            self.assertEqual(diag.diagnose(run)['first_failure_cause'], expected, fail)
 
     def test_decision_window_and_odometry_scope(self):
         report = diag.diagnose(run_fixture())
