@@ -5,13 +5,12 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0032** `changes-requested`: Diagnose and correct observed lane-entry target refusal on held-out course (REVISION by gpt-6-astra at 2026-10-05T06:31:10.4066733-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 88cdded824fe28f266514f7a5058e4a73a908ce3 | REVISION by gpt-6-astra at 2026-10-05T06:31:10.4066733-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
@@ -20,6 +19,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0022](tasks/T-0022-observed-recovery-diagnosis.md): Explain observed recovery refusal in failed connector repeat | `accepted` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:48:38.404428-07:00 |
+| [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 7bff2467be3f5efaa28d647f37838cd83520c0d1 | DECISION by gpt-6-astra at 2026-10-05T06:38:18.3529896-07:00 |
 | [T-0000](tasks/T-0000-checkpoint-working-tree.md): Checkpoint the dirty integration tree into reviewed scoped commits | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 771cf63e7a0bdf6e3cf0b2c42a186e8a2eb7ad3a | DECISION by gpt-6-astra at 2026-10-05T00:49:18-07:00 |
 | [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | d4edb4a63ec1e3c6a1267249bbae0531eaced902 | NOTE by gpt-6-astra at 2026-10-04T23:44:23-07:00 |
 | [T-0005](tasks/T-0005-first-health-failure-capture.md): Preserve bounded first-failure sensor evidence for the next lap | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c9ccd8cf2ef6acb3723888977100ba96fcd5c4b9 | NOTE by gpt-6-astra at 2026-10-05T01:17:00-07:00 |
