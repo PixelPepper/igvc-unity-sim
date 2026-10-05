@@ -97,6 +97,47 @@ def _validate_snapshot(snapshot, kind, ledger_first, telemetry_origin):
             'interpretation': 'Retained subscriber evidence; an unhealthy Bool does not establish why.'}
 
 
+def _first_failure_stream_receipt(fail_snapshot):
+    """Per-stream silence at the bound first-failure snapshot instant, beside closed inter-arrival maxima.
+
+    ``receipt_age_wall_s`` is the time since that stream's last message at the
+    snapshot (an open, possibly still-growing gap). ``max_gap_wall_s_so_far``
+    counts only closed inter-arrival intervals, so it cannot show a silence that
+    had not ended. Both come from the same snapshot; ages recorded elsewhere
+    (for example a later autonomy-latch message) are a different instant and
+    are never used here. A missing, non-numeric, non-finite or negative value is
+    reported as unavailable. Descriptive only: no threshold and no cause.
+    """
+    if not fail_snapshot.get('valid'):
+        return {'available': False, 'reason': 'no valid first-failure snapshot: %s' % fail_snapshot.get('reason')}
+    clocks = fail_snapshot['clocks']
+    observations = fail_snapshot['subscriber_observations']
+    streams, exceeding = {}, []
+    for name in sorted(observations):
+        record = observations[name] if isinstance(observations[name], dict) else {}
+        age, closed = record.get('receipt_age_wall_s'), record.get('max_gap_wall_s_so_far')
+        age = age if _finite(age) and age >= 0 else None
+        closed = closed if _finite(closed) and closed >= 0 else None
+        entry = {'receipt_age_wall_s': age if age is not None else 'unavailable',
+                 'max_closed_gap_wall_s_so_far': closed if closed is not None else 'unavailable',
+                 'open_silence_exceeds_closed_max': (age > closed) if age is not None and closed is not None
+                 else 'unavailable'}
+        streams[name] = entry
+        if entry['open_silence_exceeds_closed_max'] is True:
+            exceeding.append(name)
+    return {'available': True,
+            'provenance': {'source': 'first_verdict_snapshots.fail.subscriber_observations',
+                           'instant_monotonic_s': clocks['monotonic_s'],
+                           'telemetry_elapsed_s': clocks['telemetry_elapsed_s'],
+                           'latest_sim_clock_ns': clocks.get('latest_sim_clock_ns')},
+            'streams': streams,
+            'streams_open_silence_exceeding_closed_max': exceeding,
+            'semantics': 'receipt_age_wall_s is an open gap at the snapshot instant (wall/monotonic clock); '
+                         'max_closed_gap_wall_s_so_far counts only completed inter-arrival intervals. Exceeding '
+                         'means the silence then in progress was longer than any completed gap; it does not '
+                         'locate or explain the silence.'}
+
+
 def get(value, *path):
     """Nested lookup that returns None instead of raising on absent or mistyped fields."""
     for key in path:
@@ -190,6 +231,7 @@ def diagnose(run, window_s=6.0):
     report['first_failure_evidence'] = (
         'bound_snapshot_retained' if report['first_verdict_snapshots']['fail']['valid']
         else 'no_valid_snapshot: ' + report['first_verdict_snapshots']['fail']['reason'])
+    report['first_failure_stream_receipt'] = _first_failure_stream_receipt(report['first_verdict_snapshots']['fail'])
     if snapshots is None:
         unavailable.append('first-verdict snapshots (not recorded by this run)')
     unavailable += ['per-frame image interarrival and acquisition lag at first failure',
@@ -213,6 +255,8 @@ def diagnose(run, window_s=6.0):
             continue
         report['input_streams_whole_run'][name] = {
             'max_gap_wall_s_unlocalized': stream.get('max_gap_s'),
+            'max_gap_scope': 'closed inter-arrival intervals only; a silence still open at the end of telemetry is '
+                             'excluded (see first_failure_stream_receipt for the open gap at the first failure)',
             'interarrival_wall_s_final_window': stream.get('recent_interarrival_wall_s'),
             'negative_lag_samples': stream.get('negative_lag_samples')}
 

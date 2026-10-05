@@ -24,12 +24,14 @@ class Rig:
         self.odom_ns = 50_000_000_000
         self.ledger.begin(self.now, self.odom_ns)
 
-    def step(self, lane_healthy=True, depth_healthy=True, lane_reason=None, health=True, odom_step=100_000_000):
+    def step(self, lane_healthy=True, depth_healthy=True, lane_reason=None, health=True, odom_step=100_000_000,
+             inputs=True):
         self.now += .1
         self.odom_ns += odom_step
         stamp = self.odom_ns - 200_000_000
-        self.telemetry.observe_clock(self.odom_ns)
-        self.telemetry.observe('depth', stamp)
+        if inputs:  # False: clock and depth input messages stop arriving while processing statuses continue
+            self.telemetry.observe_clock(self.odom_ns)
+            self.telemetry.observe('depth', stamp)
         lanes = {'valid': True, 'stamp_ns': stamp} if lane_reason is None else {'valid': False, 'reason': lane_reason}
         self.telemetry.status('lanes', lanes)
         self.telemetry.status('depth_processing', {'valid': True, 'stamp_ns': stamp})
@@ -239,6 +241,79 @@ class DiagnosticSnapshotTest(unittest.TestCase):
         self.assertTrue(check['valid'], check)
         self.assertEqual(check['summary_status'], 'pass')
         self.assertIn('odom_clock_regression', check['ledger_sample']['reasons'])
+
+    def silent_run(self, silent_steps=4, resume=False):
+        """Inputs arrive every 0.1 s, then stop; the failure is in that silence.
+
+        resume=False: the silence never ends before telemetry stops (as in a run shut down while silent).
+        resume=True: inputs return afterwards, closing the gap.
+        """
+        rig = Rig()
+        for _ in range(3):
+            rig.step()
+        for _ in range(silent_steps-1):
+            rig.step(inputs=False)
+        rig.step(inputs=False, lane_healthy=False, lane_reason='no_new_exact_stamp_pair')
+        for _ in range(10):
+            rig.step(inputs=resume)
+        interval, report = rig.finish()
+        return {'mission_health_interval': interval, 'sensor_health': report}
+
+    def test_closed_later_silence_is_counted_by_the_whole_run_maximum(self):
+        result = diag.diagnose(self.silent_run(resume=True))
+        receipt = result['first_failure_stream_receipt']['streams']['clock']
+        self.assertAlmostEqual(receipt['receipt_age_wall_s'], .4)  # the snapshot still shows the open gap then
+        self.assertAlmostEqual(result['input_streams_whole_run']['clock']['max_gap_wall_s_unlocalized'], .5)
+
+    def test_open_silence_longer_than_any_closed_gap_is_reported_at_the_snapshot(self):
+        run = self.silent_run()
+        result = diag.diagnose(run)
+        receipt = result['first_failure_stream_receipt']
+        self.assertTrue(receipt['available'], receipt)
+        clock = receipt['streams']['clock']
+        self.assertAlmostEqual(clock['receipt_age_wall_s'], .4)       # open gap at the failure instant
+        self.assertAlmostEqual(clock['max_closed_gap_wall_s_so_far'], .1)
+        self.assertTrue(clock['open_silence_exceeds_closed_max'])
+        self.assertIn('clock', receipt['streams_open_silence_exceeding_closed_max'])
+        self.assertIn('depth', receipt['streams_open_silence_exceeding_closed_max'])
+        first_fail = run['mission_health_interval']['first_fail']
+        self.assertEqual(receipt['provenance']['instant_monotonic_s'], first_fail['monotonic_s'])
+        self.assertEqual(receipt['provenance']['source'], 'first_verdict_snapshots.fail.subscriber_observations')
+        # The whole-run closed maximum alone understates that silence; its scope now says so.
+        whole = result['input_streams_whole_run']['clock']
+        self.assertLess(whole['max_gap_wall_s_unlocalized'], clock['receipt_age_wall_s'])
+        self.assertIn('closed inter-arrival intervals only', whole['max_gap_scope'])
+        self.assertNotIn('cause', receipt['semantics'].split('does not')[0])  # descriptive, no causal claim
+
+    def test_normal_fresh_snapshot_reports_no_exceeding_silence(self):
+        receipt = diag.diagnose(self.run_record())['first_failure_stream_receipt']
+        self.assertTrue(receipt['available'])
+        self.assertAlmostEqual(receipt['streams']['clock']['receipt_age_wall_s'], 0.)
+        self.assertIs(receipt['streams']['clock']['open_silence_exceeds_closed_max'], False)
+        self.assertNotIn('clock', receipt['streams_open_silence_exceeding_closed_max'])
+
+    def test_missing_invalid_or_mismatched_snapshots_leave_receipt_unavailable(self):
+        run = self.silent_run()
+        del run['sensor_health']['first_health_snapshots']
+        self.assertEqual(diag.diagnose(run)['first_failure_stream_receipt'],
+                         {'available': False, 'reason': 'no valid first-failure snapshot: absent'})
+        run = self.silent_run()  # clock binding mismatch: never trusted
+        run['sensor_health']['first_health_snapshots']['fail']['clocks']['monotonic_s'] += 1.
+        receipt = diag.diagnose(run)['first_failure_stream_receipt']
+        self.assertFalse(receipt['available'])
+        self.assertIn('clock_binding_missing_or_mismatched', receipt['reason'])
+        for bad in (None, -.1, float('nan'), float('inf'), True, '0.4', [0.4]):
+            with self.subTest(bad=bad):
+                run = self.silent_run()
+                run['sensor_health']['first_health_snapshots']['fail']['subscriber_observations']['clock'][
+                    'receipt_age_wall_s'] = bad
+                clock = diag.diagnose(run)['first_failure_stream_receipt']['streams']['clock']
+                self.assertEqual(clock['receipt_age_wall_s'], 'unavailable')
+                self.assertEqual(clock['open_silence_exceeds_closed_max'], 'unavailable')
+        run = self.silent_run()
+        run['sensor_health']['first_health_snapshots']['fail']['subscriber_observations']['clock'] = 'garbled'
+        clock = diag.diagnose(run)['first_failure_stream_receipt']['streams']['clock']
+        self.assertEqual(clock['max_closed_gap_wall_s_so_far'], 'unavailable')
 
     def test_schema_one_run_without_snapshots_keeps_historical_result(self):
         run = self.run_record()
