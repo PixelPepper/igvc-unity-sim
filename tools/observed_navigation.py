@@ -20,8 +20,13 @@ def valid_guidance(value):
         return False
 
 
+def _finite_number(value):
+    return type(value) in (int, float) and math.isfinite(value)
+
+
 def refine_corridor_guidance(selection, corridor, origin, resolution, width,
-                             height, costs, footprint, *, station_retreat_step=None):
+                             height, costs, footprint, *, station_retreat_step=None,
+                             retreat_ahead_of=None):
     """Return (selection or None, evidence) for a fresh observed corridor gate.
 
     A blocked midpoint does not block every lateral position. Sample at most
@@ -39,8 +44,20 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
     lie where the observed grid ends (unknown cells), while nearer stations of
     the same observed corridor are known and clear. Every check is unchanged:
     unknown and lethal cells still block, and nothing beyond the observed
-    boundaries is used.
+    boundaries is used. Enabling it requires ``retreat_ahead_of``, the robot's
+    actual (x, y): a retreated station must lie strictly ahead of that body's
+    front along the observed corridor (axle station + footprint front), so a
+    retreat never targets the trap itself or a point behind it. Invalid values
+    raise ValueError rather than extrapolating.
     """
+    if station_retreat_step is not None:
+        if not _finite_number(station_retreat_step) or station_retreat_step <= 0:
+            raise ValueError('station_retreat_step must be a finite positive number')
+        if (retreat_ahead_of is None or len(retreat_ahead_of) != 2
+                or not all(_finite_number(v) for v in retreat_ahead_of)):
+            raise ValueError('station_retreat_step requires retreat_ahead_of as the finite robot (x, y)')
+    elif retreat_ahead_of is not None:
+        raise ValueError('retreat_ahead_of is only meaningful with station_retreat_step')
     evidence = {'original_target': list(selection['target']),
                 'selected_lateral_offset_m': None, 'candidates_checked': 0,
                 'collision_checked': False}
@@ -108,22 +125,34 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
 
     found, span = lateral_search(station)
     evidence['admissible_lateral_span_m'] = span
-    has_width = span[0] <= span[1]
+    has_width = span[0] <= span[1]  # becomes True if ANY station actually checked had body width
     if not has_width and not station_retreat_step:
         evidence['reason'] = 'no_body_width_inside_observed_gate'
         return None, evidence
     if found is None and station_retreat_step:
-        retreats = []
-        k = 1
-        while found is None and station-k*station_retreat_step >= lo and k <= 64:
+        # Retreated stations stay inside the shared observed support AND strictly ahead of the robot's front.
+        front_station = dot(retreat_ahead_of,direction)+footprint[1]
+        floor = max(lo, front_station)
+        checked = 0
+        stop = 'retreat_limit_64'
+        for k in range(1, 65):
             nearer = station-k*station_retreat_step
+            if nearer < lo:
+                stop = 'observed_support_start'
+                break
+            if nearer <= front_station:
+                stop = 'robot_front'
+                break
+            checked += 1
             found, nearer_span = lateral_search(nearer)
-            retreats.append(round(nearer, 6))
+            has_width = has_width or nearer_span[0] <= nearer_span[1]
             if found is not None:
                 evidence.update(station_m=nearer, station_retreat_m=k*station_retreat_step,
                                 admissible_lateral_span_m=nearer_span)
-            k += 1
-        evidence['retreat_stations_checked'] = len(retreats)
+                stop = 'found'
+                break
+        evidence.update(retreat_stations_checked=checked, retreat_stop=stop,
+                        retreat_floor_station_m=floor, robot_front_station_m=front_station)
     if found is not None:
         target, offset = found
         evidence.update(reason='clear_lateral_gate_target' if not evidence.get('station_retreat_m')

@@ -609,7 +609,7 @@ def run(args):
                             recovery_grid.data, goal_footprint,
                             # Recovery only: a far gate can sit where the observed grid ends; also try
                             # nearer stations of the same observed corridor with unchanged checks.
-                            station_retreat_step=RECOVERY_GATE_RETREAT_STEP_M)
+                            station_retreat_step=RECOVERY_GATE_RETREAT_STEP_M, retreat_ahead_of=(rx,ry))
                         decision_event('recovery_gate_selection', diagnostics=gate_selection)
                         if selected is None:
                             raise RuntimeError('No observed clear lane-entry position for recovery')
