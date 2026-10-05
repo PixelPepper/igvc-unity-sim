@@ -5,15 +5,14 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0034** `review`: Qualify the new recovery build with three fixed-version seed2027 laps (LEASE-RELEASE by gpt-6-astra at 2026-10-05T07:16:17.9012771-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0034](tasks/T-0034-nearer-gate-qualification.md): Qualify the new recovery build with three fixed-version seed2027 laps | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-RELEASE by gpt-6-astra at 2026-10-05T07:16:17.9012771-07:00 |
+| [T-0035](tasks/T-0035-heldout-2029.md): First preselected seed2029 test of the fixed recovery build | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-GRANT by gpt-6-astra at 2026-10-05T07:20:34.0892416-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0035](tasks/T-0035-heldout-2029.md): First preselected seed2029 test of the fixed recovery build | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d6519e1ee323db0e66fd5953959f07cc56508cc5 | NOTE by gpt-6-astra at 2026-10-05T07:13:41.0677143-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -47,6 +46,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T06:24:28.0016616-07:00 |
 | [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 7bff2467be3f5efaa28d647f37838cd83520c0d1 | NOTE by gpt-6-astra at 2026-10-05T06:41:12.9114666-07:00 |
 | [T-0033](tasks/T-0033-nearer-gate-regression.md): Test reviewed nearer observed recovery gate on the failed 2028 course | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | d6519e1ee323db0e66fd5953959f07cc56508cc5 | DECISION by gpt-6-astra at 2026-10-05T06:52:30.0588600-07:00 |
+| [T-0034](tasks/T-0034-nearer-gate-qualification.md): Qualify the new recovery build with three fixed-version seed2027 laps | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | d6519e1ee323db0e66fd5953959f07cc56508cc5 | DECISION by gpt-6-astra at 2026-10-05T07:20:33.7641952-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
