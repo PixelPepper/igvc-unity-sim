@@ -1,6 +1,6 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
-## Reviewed diagnostic build: two passing laps
+## Reviewed diagnostic build: three consecutive passing laps
 
 [T-0027](../agents/tasks/T-0027-recovery-instrumented-trial.md) ran the integrated
 recovery-diagnostic build at f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f, with fallback
@@ -23,9 +23,21 @@ passing in **335.561454 s**, again with zero charged backups. Its 3358 health sa
 all passed (maximum gap 0.122978 s). Both reviewers verified the second pass.
 The return distance was 0.399444509 m: only **0.555 mm inside the bound**.
 All 19 runtime hashes and the profile/player/course/mission matched T0027.
-Neither run exercised failed-backup capture. This gives two consecutive passes
-on this version; T0030 is the separately bounded third attempt. Earlier failures
-remain preserved, and held-out 2028/2029 validation is still required.
+Neither run exercised failed-backup capture. T0030 then passed 6/6 and all20 checks in **383.590085 s**, with one checked
+1.2 m backup (1.209000018 m actual travel). Its 3838 health samples all passed,
+maximum gap0.133848 s; final distance0.389614266 m and conservative swept clearance
+0.122843140 m. Both reviewers verified the same19 runtime hashes and inputs.
+
+**The three-consecutive-pass stage on seed2027 is satisfied.** Held-out2028 and2029
+still require one pass each before promotion. Earlier failures remain preserved.
+Times vary under uncontrolled load; no causal speed improvement is claimed.
+The successful recovery logged matching submitted/worker input fingerprints, but
+only the submitted digest and match flag were persisted. This is a runtime
+assertion, not independently reconstructed provenance. No failed-capture branch
+was exercised in any of these three runs.
+
+T0030 artifacts: artifacts/iterations/2026-10-05/recovery-instrumented-3.
+Run SHA256: d91f89d49fe59a144851a794d4f06626a76ae2f93a02a89b72843baed4e11ee8.
 
 T0028 artifacts: artifacts/iterations/2026-10-05/recovery-instrumented-2.
 Run SHA256: e8242ae844cd33b45ae9088b95a9bf4145363d20ddea8d73b35036c59047c362.

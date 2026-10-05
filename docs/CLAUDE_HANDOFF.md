@@ -26,9 +26,11 @@ under T0023/T0026, without changing recovery behavior. Validation covers 630
 distinct tests after targeted board/environment repairs. T0027 then passed 6/6
 and all 20 audit checks in 364.39 s with zero charged backups. It did not exercise
 the failed-capture branch. T0028 repeated f1a6ae4 and passed 6/6/all20 in335.56s,
-with zero charged backups. There are two consecutive passes; the second return
-margin was only0.555mm. T0030 is the third attempt. T0029 prepares explicit seed
-selection for later held-out tests; its metadata validation is under revision. Opus now owns complete
+with zero charged backups. T0030 passed 6/6/all20 in383.59s with one checked1.2m
+backup, completing three consecutive seed2027 passes on f1a6ae4. Held-out2028/2029
+remain required. The second return margin was only0.555mm; no robust physical
+stopping or causal speed claim. T0029 prepares explicit seed selection for the
+held-out tests; its metadata validation and harness are under final revision. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the
