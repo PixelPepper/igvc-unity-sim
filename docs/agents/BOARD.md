@@ -11,9 +11,9 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| [T-0011](tasks/T-0011-passing-lap-delay-analysis.md): Identify avoidable delay and repeated backup causes in the passing lap | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-05T02:34:40-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0010](tasks/T-0010-repeat-mouth-handoff.md): Repeat the reviewed sensor-led mouth-handoff lap | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none |  |
-| [T-0011](tasks/T-0011-passing-lap-delay-analysis.md): Identify avoidable delay and repeated backup causes in the passing lap | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T02:34:29.650715-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
