@@ -4,8 +4,13 @@ Observation-only regression input for the T-0014 path-entry curvature comparison
 
 ## Source
 
-All sources are frozen T-0012 inputs from T-0009 decision 212, recorded with source `70b3566`. Their hashes were
-verified against `artifacts/agents/T-0012/inputs/manifest.json` before extraction.
+All sources are frozen T-0012 inputs from T-0009 decision 212. Their hashes were verified against
+`artifacts/agents/T-0012/inputs/manifest.json` before extraction.
+
+- **Live run:** T-0009 was launched from `8f99951a189a02ba1b3e8d07b3fc58b50fdcfc0f`. That is the source that produced
+  these recorded observations.
+- **Probe and review base:** `70b3566d91dce8b807fee729dbb110c20db3c764`. T-0012 and T-0014 loaded `tools/path_entry.py`
+  from this commit; its source is byte-identical to the live run for this module.
 
 | Source file | sha256 |
 | --- | --- |
