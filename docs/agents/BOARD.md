@@ -5,15 +5,14 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0031** `review`: First preselected held-out seed2028 validation (LEASE-RELEASE by gpt-6-astra at 2026-10-05T06:21:48.4343476-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | LEASE-RELEASE by gpt-6-astra at 2026-10-05T06:21:48.4343476-07:00 |
+| [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-05T06:22:40.8702254-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0032](tasks/T-0032-lane-entry-recovery.md): Diagnose and correct observed lane-entry target refusal on held-out course | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-05T06:22:05-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -44,6 +43,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0027](tasks/T-0027-recovery-instrumented-trial.md): Exercise reviewed recovery evidence in one unchanged-policy live trial | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T05:44:46.509854-07:00 |
 | [T-0028](tasks/T-0028-instrumented-repeat.md): Second fixed-version instrumented seed-2027 lap | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T05:56:16.578047-07:00 |
 | [T-0030](tasks/T-0030-instrumented-third.md): Third fixed-version instrumented seed-2027 lap | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T06:08:10.950644-07:00 |
+| [T-0031](tasks/T-0031-heldout-2028.md): First preselected held-out seed2028 validation | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | f1a6ae4ceb0a146b53b5ea7d9e83da472ceb391f | DECISION by gpt-6-astra at 2026-10-05T06:24:28.0016616-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
