@@ -4,7 +4,7 @@ title: Agent handoffs
 description: Where tasks, messages and decisions live, and who may change what.
 tags: [agents, protocol, git, review, coordination]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
+generated: { by: codex/gpt-6-astra, at: 2026-10-05T11:30:48.593369Z }
 sources:
   - id: protocol
     resource: ../agents/PROTOCOL.md
@@ -34,6 +34,7 @@ These files are authoritative. This concept only points to them and does not cop
 
 - Work only on an explicitly dispatched task.
 - One owner per file.
+- Under [ADR-011](../agents/DECISIONS.md#adr-011-opus-owns-complete-bounded-development-tasks), Opus owns design, implementation, tests and revisions within its assigned task; ordinary intermediate choices need no separate approval. Integration and exclusive live-test coordination remain with ASTRA.
 - Reviews bind to an immutable candidate SHA.
 - Integration uses `cherry-pick -x <base>..<candidate>`, never a merge of a snapshot-based branch.
 - No automatic retries or model substitution.

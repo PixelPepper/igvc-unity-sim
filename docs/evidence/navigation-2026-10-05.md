@@ -1,5 +1,42 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Latest reliability result: two passes, then a failed repeat
+
+Three runs used immutable commit `a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7`,
+seed 2027, the same 16 runtime source fingerprints, player, profile, course and
+six sparse GPS goals. Hidden Unity on Windows and native ROS 2 Jazzy/Nav2 in WSL2
+ran through the managed exclusive lease. Speed remained 0.6 m/s.
+
+| Task | Destinations | Full audit | Elapsed | Charged backups | Return distance |
+| --- | --- | --- | --- | --- | --- |
+| [T-0016](../agents/tasks/T-0016-connector-live-comparison.md) | 6/6 | 20/20 | 380.349 s | 0 | 0.392594 m |
+| [T-0018](../agents/tasks/T-0018-connector-repeat.md) | 6/6 | 20/20 | 355.421 s | 1 (0.604 m actual) | 0.398906 m |
+| [T-0020](../agents/tasks/T-0020-connector-third-repeat.md) | 2/6 | **Failed: 14/20** | 226.295 s | 0 | 49.08278 m (unfinished) |
+
+The third run stopped with “No observed collision-free backup with useful forward
+clearance.” Completion, return, ramp and ordered-loop checks failed. Processing
+health passed throughout (2265 passing samples, zero failed/unknown, maximum gap
+0.130315 s), and obstacle, footprint-paint and speed checks passed on the partial
+trajectory. No collision was recorded. Refusing recovery does not establish that
+no possible safe route existed. The observed gate reports unavailable fresh
+corridor/footprint prerequisites; the terminal backup choice needs separate diagnosis.
+
+**The consecutive-pass streak is broken.** Neither speed improvement nor promotion
+is established. Passing-run return margins are small (7.406 mm and 1.094 mm);
+host load is uncontrolled. Both reviewers accepted the failed evidence without
+reclassifying the run. Shutdown and lease release were verified for all three
+attempts. Raw artifacts remain local under
+`artifacts/iterations/2026-10-05/{connector-numerics-1,connector-repeat-2,connector-repeat-3}`;
+durable outcomes are in [the benchmark ledger](benchmark_runs.csv).
+T-0020 run SHA-256:
+`6959f6278a7dc1a5e93175db9d66fb3791a94dbb178c62147c45aecb5e7569bb`.
+
+Completion telemetry from [T-0019](../agents/tasks/T-0019-completion-evidence.md)
+was integrated separately at `02cea958ccc9cd051241170c58ed1cbcd929a697`.
+Its 598 combined tests passed; these three frozen runs do **not** exercise that
+new recorder. Opt-in replacement-path experiment T-0021 remains under review,
+and is not a demonstrated fix for T-0020.
+
 ## Follow-up: one audited full loop
 
 [T-0008](../agents/tasks/T-0008-body-aware-mouth-handoff.md) changed the lower

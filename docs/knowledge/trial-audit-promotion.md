@@ -4,7 +4,7 @@ title: Trial, audit and promotion
 description: What a live trial must record, what the independent audit decides, and how promotion is gated.
 tags: [evidence, audit, trial, ledger, promotion]
 status: stable
-generated: { by: claude-code/claude-opus-5-5, at: 2026-10-05T10:19:28Z }
+generated: { by: codex/gpt-6-astra, at: 2026-10-05T11:30:48.593369Z }
 sources:
   - id: auditor
     resource: ../../tools/audit_sensor_run.py
@@ -28,6 +28,8 @@ igvc_sources:
 - **Ownership.** One bounded trial per grant, under the exclusive lease, held until shutdown is verified.
 - **What gets recorded.** Commit, profile, player, overlay and course/mission identities, plus the run, decisions and
   health ledger.
+
+Recordings containing the additive [mission completion evidence](../../tools/mission_completion.py) distinguish the arrival decision, cleanup phases and final recorded trajectory endpoint. These sampled observations do not establish continuous physical stopping. Older recordings may lack this field.
 
 # Audit
 

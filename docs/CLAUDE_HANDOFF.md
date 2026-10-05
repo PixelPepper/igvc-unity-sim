@@ -4,16 +4,21 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
-**October 5 update:** the reviewed lane-mouth correction completed a sensor-led
-6/6 comparison in 399.23 s with all 20 audit checks passing. A second native
-Unity/ROS lap reached 6/6 in 394.56 s with one backup and no failed/unknown health
-samples. Its original audit failed on a terminal-indexing exception; a separately
-reviewed auditor fix and preserved-run re-audit pass all 20 checks. The original
-failure record remains intact. A numerical connector correction is also integrated
-with all 589 constituent integration tests passing after task-board refresh and
-continuation-command repairs; no new live speed improvement is claimed.
-Neither result promotes a repeatable baseline. See [current evidence](evidence/navigation-2026-10-05.md)
-and the [research-to-implementation status](agents/COMPETITION_CONTEXT.md#implementation-status-october-5).
+**October 5 update:** the reviewed connector arithmetic correction has two
+same-version seed-2027 laps at commit a0a3d49: 6/6 with all 20 audit checks passing
+in 380.35 s (zero recovery attempts) and 355.42 s (one checked backup).
+The third frozen-version repeat failed at 2/6 after 226.30 s: no observed safe
+backup with useful forward clearance. Its audit passed 14/20 checks, processing
+health passed, and the consecutive-pass streak is broken. Return margins on the
+passing runs remain narrow and host load is uncontrolled; no promotion or causal
+speed improvement is claimed.
+The earlier terminal audit failure is preserved alongside its separate corrected
+20/20 re-audit. Completion instrumentation is integrated at 02cea95 with all
+598 combined tests passing; live wiring remains unverified. Opus now owns complete
+bounded development tasks under ADR-011, with independent review and exclusive
+live-test coordination retained.
+See [current evidence](evidence/navigation-2026-10-05.md), the
+[task board](agents/BOARD.md) and [research implementation status](agents/COMPETITION_CONTEXT.md#implementation-status-october-5).
 Use the [Open Knowledge index](knowledge/index.md) for targeted context and
 [its maintenance workflow](OPEN_KNOWLEDGE.md) for source freshness and sharing.
 The October 1 checkout/session descriptions below are historical; use the
