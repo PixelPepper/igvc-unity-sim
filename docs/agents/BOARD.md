@@ -5,15 +5,15 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0021** `changes-requested`: Reduce avoidable replacement-path cancellation pauses with fresh observed checks (DECISION by gpt-6-astra at 2026-10-05T04:39:54.183617-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0018](tasks/T-0018-connector-repeat.md): Repeat audited connector correction at the same immutable source commit | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | NOTE by gpt-6-astra at 2026-10-05T04:15:22.405813-07:00 |
-| [T-0019](tasks/T-0019-completion-evidence.md): Make final arrival and shutdown evidence precise without changing motion | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-05T04:12:27-07:00 |
+| [T-0021](tasks/T-0021-replacement-continuity.md): Reduce avoidable replacement-path cancellation pauses with fresh observed checks | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e0829c55e31063baad1323780f4b39fc60b05aac | DECISION by gpt-6-astra at 2026-10-05T04:39:54.183617-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0022](tasks/T-0022-observed-recovery-diagnosis.md): Explain observed recovery refusal in failed connector repeat | `ready` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | none | DISPATCH by gpt-6-astra at 2026-10-05T04:38:00-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -32,6 +32,9 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0012](tasks/T-0012-connector-admission-probe.md): Trace the exact-limit connector rejection before changing admission | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 70b3566d91dce8b807fee729dbb110c20db3c764 | NOTE by claude-opus-5-5 at 2026-10-05T02:54:01-07:00 |
 | [T-0013](tasks/T-0013-topology-terminal.md): Preserve topology evaluation across stationary terminal samples | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 69ceefe223a2eddfa79c5f0043735654cd3c521d | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0016](tasks/T-0016-connector-live-comparison.md): Measure reviewed connector numerical correction in a live lap | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:10:22.934022-07:00 |
+| [T-0018](tasks/T-0018-connector-repeat.md): Repeat audited connector correction at the same immutable source commit | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | audit-passed | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:21:06.987016-07:00 |
+| [T-0019](tasks/T-0019-completion-evidence.md): Make final arrival and shutdown evidence precise without changing motion | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | ce249efbc3ee83099147d54360edc5401da93d15 | INTEGRATION by gpt-6-astra at 2026-10-05T04:27:20.466401-07:00 |
+| [T-0020](tasks/T-0020-connector-third-repeat.md): Third same-version seed-2027 connector repeat | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:39:54.183617-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f667d570386edaeec91e24d5ef8cfc09099baaef | NOTE by gpt-6-astra at 2026-10-05T00:27:09-07:00 |
 | [T-0014](tasks/T-0014-connector-numerics.md): Admit numerical curvature boundary without relaxing geometric checks | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 57920aa822e0cd02131a0db9ff6b6eef3eb61821 | INTEGRATION by gpt-6-astra at 2026-10-05T03:37:42.940616-07:00 |
 | [T-0015](tasks/T-0015-open-knowledge-workflow.md): Add portable Open Knowledge Format context to agent workflow | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c1aa03a6a53916644a2c3f17014a2ad399e785ad | HANDOFF by gpt-6-astra at 2026-10-05T03:38:09.367366-07:00 |
