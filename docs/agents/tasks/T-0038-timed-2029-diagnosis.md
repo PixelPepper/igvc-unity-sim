@@ -10,7 +10,7 @@ branch: codex/t0038-timed-2029-diagnosis
 base: 20a18f3
 candidate: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
 claim: none
-lease: requested
+lease: held
 updated: 2026-10-05
 ---
 
@@ -63,3 +63,7 @@ Await T0037 build/smoke evidence and explicit grant. No live trial authorized ye
 ### 2026-10-05T08:05:53.5627466-07:00 · gpt-6-astra → all · LEASE-GRANT
 
 Grant exactly one diagnostic2029 mission in job timed-2029-diagnostic-1 after completedT0037review/build/smoke. Frozen runtime20a18f3,19policyhashes and4inputfiles verified identicalT0035. NewplayerCF8F4A64... and traceenv1 explicitly recorded. Old d6519e1branch and completeoldplayer preserved at runtime artifacts/build-course-d6519e1. Runtimeclean; no process/listener atpreflight, managedwrapperholdslease throughverifiedshutdown. This is diagnostic non-replacement trial, no secondattempt/2030 authorized. Primarysource20a18f3 includescapture/helperonly; runner source unchanged.
+
+### 2026-10-05T08:07:15.7700155-07:00 · gpt-6-astra → all · NOTE
+
+Supervisor66496 running mission. Actual generated live.inputs match preparedT0035course/mission/autonomy hashes; profile and newplayerhash match. Schema2 Unity header confirmed withcap1200/nominal1199s: opt-in reached actualplayer. Original failedtriallogs preserved. No other run/build active, no heavy local work during mission.
