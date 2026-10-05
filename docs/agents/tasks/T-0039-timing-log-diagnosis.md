@@ -8,7 +8,7 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0039-timing-log-diagnosis
 base: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
-candidate: 138386416f884eb834a95fcde8b37afe4715d7af
+candidate: 634697112fcb9208186d193020d11209e49eb1ab
 claim: tested
 lease: none
 updated: 2026-10-05
@@ -190,3 +190,75 @@ Usage: UNMETERED.
 ### 2026-10-05T08:26:51.340722-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
 
 Sol final review relayed. Add asynchronous count/time non-atomic caveat to standalone report (not a coherent pair or exact per-window attribution). Already authorized revision2 scope unchanged.
+
+### 2026-10-05T08:30:03-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+Revision 2: candidate 634697112fcb9208186d193020d11209e49eb1ab (parent 1383864; same 2 files).
+- Nested JSON (RecursionError) and duplicate keys are malformed lines, not crashes.
+- Producer-exact consistency checks: first-window start, each later start equal to the previous last frame,
+  cumulative = max(previous, window), gap within the span, no gap without frames, seq < cap, non-negative mono.
+  This closes Sol's three false completes.
+- Incomplete evidence withholds the derived tail and span (derived_fields: unvalidated). Bounded kind histogram.
+- Asynchronous count/time caveat added. Narrow CLI input errors (exit 2). Exclusive-create comment corrected.
+Tests: 16/16 OK, including portable byte fixtures, CRLF, record limit, multichunk oversize, nesting/duplicates,
+the false-complete reproductions and unreadable input. One earlier attempt failed to compile because of my patch
+escaping; it was fixed.
+Real logs (new *-r2.json; r0 untouched):
+- smoke-on: complete.
+- smoke-off: unavailable.
+- T38 timed-2029: INCOMPLETE, missing_final_record. 378 windows, max gap 0.0578 s; 95 queue-full lines, all in
+  seq 1 (about 0.97 s).
+Finding: managed shutdown ends the player before OnDisable/OnDestroy, so live traces have no final record. That
+is integrator-owned. Report: REPORT.md "Revision 2". Stopping for revision review.
+
+
+### 2026-10-05T08:33:42.618993-07:00 · gpt-6-astra → all · REVIEW-START
+
+Revised6346971 immutable source handed to Sonnet and Sol for delta review. Correct handback/report: missing terminal is consistent with managed forced process cleanup; the absence does not establish exactly when or whether lifecycle callbacks ran, and must not be generalized to all live traces. Stopped-player smoke showed graceful lifecycle final record. Preserve original report wording in REPORT-r2-original.md; root narrows current report to supported observation. No runtime fix/promotion.
+
+### 2026-10-05T08:33:55-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+Correction accepted. The T38 missing final record is consistent with the managed forced process cleanup. It does not establish when, or whether, OnDisable/OnDestroy ran, and my "live traces will have no final record" was an overgeneralization from one run. The stopped-player smoke did produce the lifecycle final record. Root narrowing REPORT.md (original kept as REPORT-r2-original.md) is fine; candidate 6346971 is unchanged.
+
+
+relayed-from: artifacts/agents/T-0039/sol-review-r2.md
+
+### 2026-10-05T15:33:35+00:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+Task: T-0039   Candidate: 634697112fcb9208186d193020d11209e49eb1ab   Scope: evidence
+Verdict: approve-with-nits
+
+Findings (ranked, ≤ 5):
+1. [nit] tools/diagnose_transport_timing.py:292: unsampled_tail_s subtracts the last frame from mono_before_utc_s, so it is the lower endpoint of the UTC-read placement bracket, not an exact tail to the UTC read. Label that endpoint explicitly; the accompanying after-bracket permits the upper endpoint. This does not affect missing-terminal handling or the approximate smoke result.
+
+Evidence: Clean exact candidate; revision touches only the two owned files (+126/−16). Prior false-completeness cases now reject negative/misaligned window starts, unsupported cumulative maxima and records beyond the producer cap. Incomplete reports withhold derived spans. Portable binary fixtures and explicit CRLF coverage address the Windows failure. Deep nesting/duplicate keys, bounded kind histogram and asynchronous warning semantics are covered. A header-plus-stop before any sampled frame remains valid.
+
+Independently reran the focused suite: 16 tests pass, zero failures/errors in 0.106 s under WSL Python. In the same command, recomputed timed-2029-r2, smoke-on-r2 and smoke-off-r2 with candidate source: all three match saved reports exactly; original byte counts and SHA-256 bindings match. T38 correctly remains incomplete with only missing_final_record and null derived coverage/tail; smoke-on is complete with 11 records, smoke-off unavailable. Revised report now correctly treats forced cleanup as consistent with, rather than proof of, the missing terminal record.
+
+Invariants checked: 1 ✓ 2 ✓ 3 ✓ 4 ✓ 5 ✓ 6 ✓.
+Tests run: One focused Python invocation loading tests.test_transport_timing_diagnostics and comparing the three real-log reports; no live/replay.
+Missing acceptance coverage: Native Windows final-suite execution and graceful live shutdown remain unverified by this reviewer. T38 non-reproduction establishes no cause/fix, overhead benefit or replacement qualification; original failure preserved, promotion blocked.
+Usage: UNMETERED.
+
+
+relayed-from: artifacts/agents/T-0039/sonnet-review-r2.md
+
+**REVIEW T0039 candidate 634697112fcb9208186d193020d11209e49eb1ab** (static read of the two owned files; I did not re-run the tests)
+
+**Verdict: REVISE.** The earlier findings (nested JSON, histogram size, CRLF tests, window/cap/max false-completes) look closed in source. Two false-complete paths remain.
+
+**Blockers, ranked**
+
+1. **Understated frame gaps validate as complete.** The window loop in `validate` only upper-bounds gaps (`window_gap <= mono - start`). It has no lower bound: a window of `n` frames spanning `S` seconds needs a max gap of at least `S/n` (`S/(n-1)` for the first window). A producer bug that drops the boundary-crossing gap, which is the hitch case this diagnosis targets, would pass. There is also no check that `window` records span at least `report_interval_s`. Add both checks, with tests.
+
+2. **Cross-record bracket ordering is unchecked.** `mono_before_utc_s` and `mono_after_utc_s` need not be non-decreasing from the header onward, and the first frame is never compared with the header bracket. `covered_mono_span_s` (final after minus header before) can therefore be negative or misleading while status is `complete`. Require ordered brackets and a span of at least 0, with tests.
+
+**Non-blockers**
+
+3. The `missing_final_record` text ("abrupt termination or truncated log") names causes. Reword to "no terminal record; cause not determined". That matches the root correction: missing-terminal is consistent with forced cleanup, not an established cause.
+4. Any oversize line is an integrity issue, even an unrelated one. A tracing-off log with one long line reports `incomplete` instead of `unavailable`. This is conservative, but document it.
+5. In `main`, a missing parent directory or permission error on `--output` raises a traceback. Only `FileExistsError` is handled.
+6. The exact-equality checks (`cumulative == max(...)`, `start == previous mono`) assume the producer round-trips doubles losslessly. Confirm against the C# formatting, since that source wasn't in this read. `sim_time_*` fields are never validated.
+
+**Scope:** no policy or runtime changes, and nothing here supports diagnosis or promotion.
+
+### 2026-10-05T08:35:25.721706-07:00 · gpt-6-astra → claude-opus-5-5 · REVISION
+
+Root explicitly extends packet by ONE final targeted revision,10min active/2 focused test+real-log application commands, same2paths, no runtime. Sonnet0.1358614USD API-equivalent; Sol UNMETERED. Fix two newly identified consistency defects: ordered local Stopwatch UTC brackets fromheader and first frame after header; prevent negative derived span. Add mathematically necessary maximum-gap lower bound across n gaps (first window n-1), tolerating floating summation rounding, and periodic-window minimum report_interval. Header+stop before any frame valid; partial final windows not required fullinterval. Do not infer actual cause from missing-final wording. Label unsampled_tail_s as lowerendpoint to BEFORE-UTC read (not exactread). C# ToString R roundtrips double losslessly, existing exactcopied comparisons are intentional. Sim_time fields unused inreport not priority. Oversize unrelated-line conservative incompleteness documented; output path error polish optional only narrow IO handling. Add focused contradictory-case regressions plus apply actual3logs withnew r3names. Preserve failed/reviewed revisions. Complete source/report commit, stop for final delta reviews. If remaining acceptance blocker, leave unintegrated rather than indefinite revision loop.
