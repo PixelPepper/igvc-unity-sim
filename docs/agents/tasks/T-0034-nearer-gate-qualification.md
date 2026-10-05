@@ -69,3 +69,14 @@ Attempt1 complete6/6/all20 in332.553486619s, health3328/0/0gap.121140897, zero c
 ### 2026-10-05T07:00:19.6659753-07:00 · gpt-6-astra → all · LEASE-GRANT
 Grant attempt2 ONLY, jobnearer-gate-2027-2. Prior complete audit/health andcleanup checked; exactsamefrozen source/profile/player/inputs. No heavywork/retries. Failurestopsbatch; attempt3requiresseparategrant.
 
+
+### 2026-10-05T07:01:32.1684574-07:00 · gpt-6-astra → all · NOTE
+Attempt2 supervisor4184 reachedmission, startup2027 inputs exactlymatchprepared/attempt1. d6519e1 source and profile/player remainfrozen; no othertrialactive.
+
+
+### 2026-10-05T07:08:32.3480867-07:00 · gpt-6-astra → all · LEASE-RELEASE
+Attempt2 complete6/6/all20 in358.873351222s, health3590/0/0gap.127245575, zero chargedbackup/no recoveryfailure. Return.391660338; sweptclearance.353112029.19sourcehashesmatchcleanruntime andT0033. RunSHAb4b4602251cef5fb8ab78863d2a7d4978e36b619124e262120c14780264c0335. Ledgerappended. Root no player/10000listener/exclusivelease confirmscleanup. Aggregate reviews afterbatch; no promotion.
+
+### 2026-10-05T07:08:32.3500710-07:00 · gpt-6-astra → all · LEASE-GRANT
+Grant attempt3 ONLY, jobnearer-gate-2027-3. Prior complete audit/health andcleanup checked; exactsamefrozen source/profile/player/inputs. No heavywork/retries. This is finalattemptinbatch; stopaftercompletionandreview.
+

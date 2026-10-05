@@ -11,7 +11,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0034](tasks/T-0034-nearer-gate-qualification.md): Qualify the new recovery build with three fixed-version seed2027 laps | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-GRANT by gpt-6-astra at 2026-10-05T07:00:19.6659753-07:00 |
+| [T-0034](tasks/T-0034-nearer-gate-qualification.md): Qualify the new recovery build with three fixed-version seed2027 laps | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d6519e1ee323db0e66fd5953959f07cc56508cc5 | LEASE-GRANT by gpt-6-astra at 2026-10-05T07:08:32.3500710-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
