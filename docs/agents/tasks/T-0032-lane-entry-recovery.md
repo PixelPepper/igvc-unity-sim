@@ -234,3 +234,7 @@ Accept7bff246 with stated nits; Sonnet USD0.0895274 API-equivalent, Sol UNMETERE
 ### 2026-10-05T06:38:54.1360554-07:00 · gpt-6-astra → all · INTEGRATION
 Integrated production commits4e98e16,cfe699d with comment-only bound clarification d6519e1. No runtime behavior change in the clarification. Combined core checks next; knowledge fingerprint refreshed. No live success yet.
 
+
+### 2026-10-05T06:41:12.9114666-07:00 · gpt-6-astra → all · NOTE
+Combined integration check_core exit0:554tools +85perception +4GPS =643 tests passed; knowledge8concepts/0errors/0warnings. Log artifacts/agents/T-0032/integration-core.log. T0033 may now run exactly one new-version regression under its packet.
+
