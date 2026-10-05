@@ -10,7 +10,7 @@ branch: codex/t0033-nearer-gate-trial
 base: d6519e1ee323db0e66fd5953959f07cc56508cc5
 candidate: d6519e1ee323db0e66fd5953959f07cc56508cc5
 claim: none
-lease: requested
+lease: held
 updated: 2026-10-05
 ---
 
@@ -57,4 +57,15 @@ Pending.
 
 ### 2026-10-05T06:52:30.3251493-07:00 · gpt-6-astra → all · LEASE-GRANT
 Grant attempt1 ONLY, jobnearer-gate-2027-1. T0033 accepted, source d6519e1 clean, no player/port, lease free. Prepared2027 profile/course/autonomy copiedT0030; generatedmission copy validated against historicalSHA4e3c18c4cc0abe33d9cfc7894612bcf90df60b2607b7e91e2b39b22305d8b000 (T0030 job didnotretain thatfile, initialcopyfailedbeforelaunch). Completeinput-hashes.json verified. No laterattempt authorizedyet; failurestopsbatch.
+
+
+### 2026-10-05T06:53:43.1834637-07:00 · gpt-6-astra → all · NOTE
+Attempt1 supervisor57324 reached mission; startup2027 course/mission/autonomy hashes exactly match prepared originals, profile/player match qualification baseline. d6519e1 remains immutable. Exclusive lease held.
+
+
+### 2026-10-05T07:00:19.6637084-07:00 · gpt-6-astra → all · LEASE-RELEASE
+Attempt1 complete6/6/all20 in332.553486619s, health3328/0/0gap.121140897, zero chargedbackup/no recovery failure. Return.363767588; sweptclearance.166019526.19sourcehashesmatchcleanruntime andT0033. RunSHA43021cab417c373915d32f0257c5fb3206ea7872e16444db57bd675e1bd2ba17. Ledgerappended. Root no player/10000listener/exclusivelease confirmscleanup. Aggregate reviews afterbatch; no promotion.
+
+### 2026-10-05T07:00:19.6659753-07:00 · gpt-6-astra → all · LEASE-GRANT
+Grant attempt2 ONLY, jobnearer-gate-2027-2. Prior complete audit/health andcleanup checked; exactsamefrozen source/profile/player/inputs. No heavywork/retries. Failurestopsbatch; attempt3requiresseparategrant.
 
