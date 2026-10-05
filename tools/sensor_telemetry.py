@@ -199,9 +199,18 @@ class SensorTelemetry:
         return immediately without copying. Nothing here alters any verdict.
         """
         if verdict not in self.health_snapshots or self.health_snapshots[verdict] is not None:
-            return False
+            return False  # pass, or already captured: no copying or serialization
         if not isinstance(ledger_event, dict) or ledger_event.get('status') != verdict:
             return False
+        try:
+            self.health_snapshots[verdict] = self._encode_snapshot(verdict, ledger_event, summary, now)
+        except Exception as error:  # evidence capture must never disturb the sampling callback
+            self.health_snapshots[verdict] = json.dumps(
+                {'schema_version': 1, 'verdict': verdict,
+                 'capture_error': bounded_text(type(error).__name__+': '+str(error), 160)})
+        return True
+
+    def _encode_snapshot(self, verdict, ledger_event, summary, now):
         streams = {}
         for name in self.SNAPSHOT_STREAMS:
             stream = self.streams.get(name)
@@ -210,7 +219,7 @@ class SensorTelemetry:
             stamp = stream['last_stamp_ns']
             lag = (self.sim_ns-stamp)/1e9 if stamp is not None and self.sim_ns is not None else None
             streams[name] = {'count': stream['count'],
-                             'receipt_age_wall_s': None if stream['last_wall'] is None else now-stream['last_wall'],
+                             'receipt_age_wall_s': None if stream['last_wall'] is None else max(0., now-stream['last_wall']),
                              'last_stamp_ns': stamp, 'acquisition_lag_sim_s': lag,
                              'max_gap_wall_s_so_far': stream['max_gap_s']}
         snapshot = {
@@ -231,12 +240,8 @@ class SensorTelemetry:
             'interpretation': 'source_reported_status is what perception nodes published; '
                               'subscriber_observations are receipt/acquisition ages seen here. '
                               'No cause is inferred: an unhealthy Bool does not say why.'}
-        try:
-            encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False)
-        except (ValueError, TypeError, OverflowError, RecursionError):
-            snapshot['health_summary'] = None
-            snapshot['capture_error'] = 'nonfinite_or_unserializable_summary'
-            encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False, default=str)
+        # Nonfinite or unserializable content raises here and becomes a capture_error record.
+        encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False)
         dropped = 0
         while len(encoded.encode('utf-8')) > self.snapshot_byte_limit and snapshot['recent_status_events']:
             snapshot['recent_status_events'].pop(0)  # drop oldest first; keep events nearest the failure
@@ -245,10 +250,8 @@ class SensorTelemetry:
             encoded = json.dumps(snapshot, allow_nan=False, ensure_ascii=False)
         if len(encoded.encode('utf-8')) > self.snapshot_byte_limit:
             encoded = json.dumps({'schema_version': 1, 'verdict': verdict,
-                                  'ledger_sample': snapshot['ledger_sample'], 'clocks': snapshot['clocks'],
                                   'capture_error': 'snapshot_exceeds_byte_limit'})
-        self.health_snapshots[verdict] = encoded  # serialized: later mutation cannot alter it
-        return True
+        return encoded  # serialized: later mutation cannot alter the retained copy
 
     def report(self):
         now = self.clock()

@@ -5,6 +5,7 @@ import json
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from sensor_telemetry import SensorTelemetry  # noqa: E402
@@ -23,9 +24,9 @@ class Rig:
         self.odom_ns = 50_000_000_000
         self.ledger.begin(self.now, self.odom_ns)
 
-    def step(self, lane_healthy=True, depth_healthy=True, lane_reason=None, health=True):
+    def step(self, lane_healthy=True, depth_healthy=True, lane_reason=None, health=True, odom_step=100_000_000):
         self.now += .1
-        self.odom_ns += 100_000_000
+        self.odom_ns += odom_step
         stamp = self.odom_ns - 200_000_000
         self.telemetry.observe_clock(self.odom_ns)
         self.telemetry.observe('depth', stamp)
@@ -106,7 +107,7 @@ class CaptureTest(unittest.TestCase):
         self.assertEqual(verdict, 'fail')
         rig.telemetry.capture_health_snapshot(verdict, rig.ledger.events[-1], summary, rig.now)
         snap = rig.telemetry.report()['first_health_snapshots']['fail']
-        self.assertLessEqual(len(json.dumps(snap, ensure_ascii=False).encode('utf-8')), 4096 + 64)
+        self.assertLessEqual(len(json.dumps(snap, ensure_ascii=False).encode('utf-8')), 4096)
         self.assertGreater(snap['recent_status_events_dropped_for_size'], 0)
         self.assertEqual(snap['source_reported_status']['lanes']['telemetry_rejection'], 'status_payload_too_large')
 
@@ -124,6 +125,29 @@ class CaptureTest(unittest.TestCase):
             clean.step()
         self.assertEqual(clean.telemetry.health_snapshots, {'fail': None, 'unknown': None})
 
+    def test_pass_and_already_captured_verdicts_do_no_serialization(self):
+        rig = Rig()
+        rig.step()
+        with patch('sensor_telemetry.json.dumps', side_effect=AssertionError('serialized')) as dumps:
+            self.assertFalse(rig.telemetry.capture_health_snapshot('pass', rig.ledger.events[-1], {}, rig.now))
+        dumps.assert_not_called()
+        self.assertEqual(rig.step(lane_healthy=False), 'fail')  # first fail captured normally
+        self.assertEqual(rig.step(depth_healthy=False), 'fail')
+        with patch('sensor_telemetry.json.dumps', side_effect=AssertionError('serialized')) as dumps:
+            # Second fail: the slot is already filled, so capture must return before any copying.
+            self.assertFalse(rig.telemetry.capture_health_snapshot('fail', rig.ledger.events[-1], {}, rig.now))
+        dumps.assert_not_called()
+
+    def test_capture_errors_are_recorded_never_raised(self):
+        rig = Rig()
+        rig.step()
+        rig.telemetry.sim_ns = float('nan')  # nonfinite clock makes the snapshot unserializable
+        event = {'monotonic_s': rig.now, 'odom_stamp_ns': 1, 'status': 'fail', 'reasons': ['x']}
+        self.assertTrue(rig.telemetry.capture_health_snapshot('fail', event, {'status': 'fail'}, rig.now))
+        snap = rig.telemetry.report()['first_health_snapshots']['fail']
+        self.assertEqual(set(snap), {'schema_version', 'verdict', 'capture_error'})
+        self.assertIn('ValueError', snap['capture_error'])
+
     def test_mismatched_verdict_or_event_is_not_captured(self):
         rig = Rig()
         rig.step()
@@ -134,36 +158,87 @@ class CaptureTest(unittest.TestCase):
 
 
 class DiagnosticSnapshotTest(unittest.TestCase):
-    def run_record(self):
+    def run_record(self, odom_step=None):
         rig = Rig()
         rig.step()
-        rig.step(lane_healthy=False, lane_reason='waiting_for_depth_ground_or_rgb_tf')
+        if odom_step is None:
+            rig.step(lane_healthy=False, lane_reason='waiting_for_depth_ground_or_rgb_tf')
+        else:
+            self.assertEqual(rig.step(odom_step=odom_step), 'unknown')  # integrity unknown, passing summary
         for _ in range(20):
             rig.step()
         interval, report = rig.finish()
         return {'mission_health_interval': interval, 'sensor_health': report}
 
-    def test_bound_snapshot_is_exposed_without_inferring_cause(self):
-        result = diag.diagnose(self.run_record())
-        check = result['first_verdict_snapshots']['fail']
-        self.assertTrue(check['valid'])
-        self.assertEqual(result['first_failure_cause'], diag.SNAPSHOT_RETAINED)
+    def diagnose_fail(self, run):
+        result = diag.diagnose(run)
+        return result, result['first_verdict_snapshots']['fail']
+
+    def test_bound_snapshot_is_exposed_and_cause_stays_undetermined(self):
+        result, check = self.diagnose_fail(self.run_record())
+        self.assertTrue(check['valid'], check)
+        self.assertEqual(result['first_failure_evidence'], 'bound_snapshot_retained')
+        self.assertEqual(result['first_failure_cause'], diag.UNDETERMINED)
         self.assertIn('does not establish why', check['interpretation'])
         self.assertEqual(result['retained_event_coverage']['status_events'], 'evicted_before_failure')
 
-    def test_mismatched_or_malformed_snapshot_is_not_first_failure_evidence(self):
-        for corrupt in ('odom', 'kind', 'error'):
+    def test_incomplete_or_corrupt_snapshots_are_rejected(self):
+        def empty_identities(run, snap):
+            snap['ledger_sample'] = {}
+            run['mission_health_interval']['first_fail'] = {}
+
+        def float_odom(run, snap):
+            for sample in (snap['ledger_sample'], run['mission_health_interval']['first_fail']):
+                sample['odom_stamp_ns'] = float(sample['odom_stamp_ns'])
+
+        def shift(section, key, value=None, delta=None):
+            def corrupt(run, snap):
+                snap[section][key] = snap[section][key] + delta if delta is not None else value
+            return corrupt
+
+        def drop(key, where='snapshot'):
+            def corrupt(run, snap):
+                (run['sensor_health'] if where == 'health' else snap).pop(key)
+            return corrupt
+
+        corruptions = {
+            'empty identities': empty_identities,
+            'float odom both sides': float_odom,
+            'odom mismatch': shift('ledger_sample', 'odom_stamp_ns', delta=1),
+            'clock monotonic': shift('clocks', 'monotonic_s', delta=1.0),
+            'clock origin': shift('clocks', 'telemetry_started_monotonic_s', value=0.0),
+            'clock elapsed': shift('clocks', 'telemetry_elapsed_s', value=0.0),
+            'origin not exported': drop('started_monotonic_s', 'health'),
+            'summary not failing': shift('health_summary', 'status', value='pass'),
+            'missing summary': drop('health_summary'),
+            'missing statuses': drop('source_reported_status'),
+            'missing observations': drop('subscriber_observations'),
+            'missing events': drop('recent_status_events'),
+            'wrong kind': lambda run, snap: snap.__setitem__('verdict', 'unknown'),
+            'capture error': lambda run, snap: snap.__setitem__('capture_error', 'snapshot_exceeds_byte_limit'),
+        }
+        for name, corrupt in corruptions.items():
             run = self.run_record()
-            snap = run['sensor_health']['first_health_snapshots']['fail']
-            if corrupt == 'odom':
-                snap['ledger_sample']['odom_stamp_ns'] += 1
-            elif corrupt == 'kind':
-                snap['verdict'] = 'unknown'
-            else:
-                snap['capture_error'] = 'snapshot_exceeds_byte_limit'
-            result = diag.diagnose(run)
-            self.assertFalse(result['first_verdict_snapshots']['fail']['valid'], corrupt)
-            self.assertEqual(result['first_failure_cause'], diag.UNDETERMINED, corrupt)
+            corrupt(run, run['sensor_health']['first_health_snapshots']['fail'])
+            result, check = self.diagnose_fail(run)
+            self.assertFalse(check['valid'], name)
+            self.assertTrue(result['first_failure_evidence'].startswith('no_valid_snapshot'), name)
+            self.assertTrue(result['first_failure_cause'].startswith(('undetermined', 'contradiction')), name)
+
+    def test_contradiction_is_kept_when_ledger_lacks_first_fail(self):
+        run = self.run_record()
+        run['mission_health_interval']['first_fail'] = None
+        result, check = self.diagnose_fail(run)
+        self.assertEqual(result['first_failure_cause'],
+                         'contradiction: totals report 1 failing samples but first_fail is missing')
+        self.assertEqual(check['reason'], 'ledger_first_fail_missing_or_incomplete')
+
+    def test_integrity_unknown_with_passing_summary_is_valid_unknown_evidence(self):
+        run = self.run_record(odom_step=-500_000_000)
+        check = diag.diagnose(run)['first_verdict_snapshots']['unknown']
+        self.assertTrue(check['valid'], check)
+        self.assertEqual(check['summary_status'], 'pass')
+        self.assertIn('odom_clock_regression', check['ledger_sample']['reasons'])
 
     def test_schema_one_run_without_snapshots_keeps_historical_result(self):
         run = self.run_record()

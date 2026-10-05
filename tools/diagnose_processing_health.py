@@ -11,6 +11,7 @@ failing samples. Never changes thresholds, samples or audit results.
 
 import argparse
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -19,30 +20,74 @@ UNDETERMINED = 'undetermined: per-failure telemetry does not cover the first fai
 NODE_TICK_WALL_S = 0.2       # steady-clock create_timer(.2)
 SUCCESS_FRESH_SIM_S = 0.5    # acquisition bound, simulation clock
 SUCCESS_FRESH_WALL_S = 0.5   # receipt bound, wall (monotonic) clock
-# Monotonic time at telemetry initialization, if a future schema records it
-# (sensor_telemetry.py keeps `started` internally; schema v1 does not export it).
+# Monotonic time at telemetry initialization. Runs recorded before T-0005 do not
+# export it (sensor_telemetry.py kept `started` internal), so their status-event
+# alignment is unknown; newer runs export it as an additive schema-1 field.
 TELEMETRY_ORIGIN_KEY = 'started_monotonic_s'
-SNAPSHOT_RETAINED = ('first-failure snapshot retained and bound to the ledger sample; node-reported '
-                     'statuses and subscriber ages are listed; cause is not inferred')
 LEDGER_SAMPLE_KEYS = ('monotonic_s', 'odom_stamp_ns', 'status', 'reasons')
+CLOCK_TOLERANCE_S = 1e-6
 
 
-def _validate_snapshot(snapshot, kind, ledger_first):
-    """Expose a snapshot only if it is exactly bound to the ledger's first sample of that kind."""
+def _finite(value):
+    return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)
+
+
+def _ledger_identity(sample, kind):
+    """A complete, typed, finite ledger sample of the expected kind, or None."""
+    if not isinstance(sample, dict) or any(key not in sample for key in LEDGER_SAMPLE_KEYS):
+        return None
+    stamp, reasons = sample['odom_stamp_ns'], sample['reasons']
+    if (not _finite(sample['monotonic_s']) or type(stamp) is not int or not 0 <= stamp < 2**63
+            or sample['status'] != kind or not isinstance(reasons, list)
+            or not all(isinstance(reason, str) for reason in reasons)):
+        return None
+    return {key: sample[key] for key in LEDGER_SAMPLE_KEYS}
+
+
+def _validate_snapshot(snapshot, kind, ledger_first, telemetry_origin):
+    """Expose a snapshot only if its identity, clocks and evidence sections are exactly bound.
+
+    A valid snapshot is retained evidence, never a cause: callers keep the cause
+    conclusion separate.
+    """
     if snapshot is None:
         return {'valid': False, 'reason': 'absent'}
     if not isinstance(snapshot, dict) or snapshot.get('schema_version') != 1 or snapshot.get('verdict') != kind:
         return {'valid': False, 'reason': 'malformed_or_wrong_kind'}
-    if not isinstance(ledger_first, dict):
-        return {'valid': False, 'reason': 'ledger_has_no_first_%s' % kind}
-    sample = snapshot.get('ledger_sample')
-    if (not isinstance(sample, dict)
-            or any(sample.get(key) != ledger_first.get(key) for key in LEDGER_SAMPLE_KEYS)):
-        return {'valid': False, 'reason': 'ledger_sample_mismatch'}
     if snapshot.get('capture_error'):
-        return {'valid': False, 'reason': 'capture_error: %s' % snapshot['capture_error']}
+        return {'valid': False, 'reason': 'capture_error: %s' % str(snapshot['capture_error'])[:160]}
+    ledger = _ledger_identity(ledger_first, kind)
+    if ledger is None:
+        return {'valid': False, 'reason': 'ledger_first_%s_missing_or_incomplete' % kind}
+    sample = _ledger_identity(snapshot.get('ledger_sample'), kind)
+    if sample is None or sample != ledger or any(type(sample[k]) is not type(ledger[k]) for k in LEDGER_SAMPLE_KEYS):
+        return {'valid': False, 'reason': 'ledger_sample_missing_or_mismatched'}
+    clocks = snapshot.get('clocks')
+    if not _finite(telemetry_origin):
+        return {'valid': False, 'reason': 'telemetry_origin_not_exported'}
+    if (not isinstance(clocks, dict)
+            or not all(_finite(clocks.get(key)) for key in
+                       ('monotonic_s', 'telemetry_started_monotonic_s', 'telemetry_elapsed_s'))
+            or clocks['monotonic_s'] != ledger['monotonic_s']
+            or clocks['telemetry_started_monotonic_s'] != telemetry_origin
+            or abs(clocks['telemetry_elapsed_s'] - (clocks['monotonic_s'] - telemetry_origin)) > CLOCK_TOLERANCE_S
+            or clocks.get('latest_sim_clock_ns') is not None and type(clocks['latest_sim_clock_ns']) is not int):
+        return {'valid': False, 'reason': 'clock_binding_missing_or_mismatched'}
+    summary = snapshot.get('health_summary')
+    if not isinstance(summary, dict) or summary.get('status') not in ('pass', 'fail', 'unknown'):
+        return {'valid': False, 'reason': 'health_summary_missing_or_malformed'}
+    # The ledger can only return fail from a failing summary. It may turn any
+    # summary into unknown (integrity errors, changed limits), so no equality there.
+    if kind == 'fail' and summary['status'] != 'fail':
+        return {'valid': False, 'reason': 'fail_snapshot_summary_not_failing'}
+    sections = {key: snapshot.get(key) for key in ('source_reported_status', 'subscriber_observations')}
     events = snapshot.get('recent_status_events')
-    return {'valid': True, 'ledger_sample': sample, 'clocks': snapshot.get('clocks'),
+    if not all(isinstance(value, dict) for value in sections.values()) or not isinstance(events, list):
+        return {'valid': False, 'reason': 'evidence_sections_missing_or_malformed'}
+    return {'valid': True, 'ledger_sample': sample, 'clocks': clocks,
+            'summary_status': summary['status'],
+            'ledger_reasons_vs_summary': 'ledger reasons are the verdict basis; an unknown ledger verdict can '
+                                         'differ from the summary status for integrity or limit changes',
             'source_reported_status': snapshot.get('source_reported_status'),
             'subscriber_observations': snapshot.get('subscriber_observations'),
             'health_summary': snapshot.get('health_summary'),
@@ -131,18 +176,20 @@ def diagnose(run, window_s=6.0):
             unavailable.append('per-message perception status events at first failure: node reason, pairing '
                                'stamps, receipt age, TF wait, processing duration (%s)' % coverage['status_events'])
         report['first_failure_cause'] = (
-            'per-failure status events retained; inspect sensor_health.recent_events'
-            if coverage['status_events'] == 'covers_failure' else UNDETERMINED)
+            'undetermined: per-failure status events retained in sensor_health.recent_events; '
+            'cause not inferred' if coverage['status_events'] == 'covers_failure' else UNDETERMINED)
     report['retained_event_coverage'] = coverage
 
     # Bounded first-verdict snapshots (telemetry additive fields; absent in older runs).
     snapshots = get(health, 'first_health_snapshots')
     report['first_verdict_snapshots'] = {}
     for kind, ledger_key in (('fail', 'first_fail'), ('unknown', 'first_unknown')):
-        report['first_verdict_snapshots'][kind] = check = _validate_snapshot(
-            get(snapshots, kind), kind, get(interval, ledger_key))
-        if kind == 'fail' and check['valid']:
-            report['first_failure_cause'] = SNAPSHOT_RETAINED
+        report['first_verdict_snapshots'][kind] = _validate_snapshot(
+            get(snapshots, kind), kind, get(interval, ledger_key), _number(get(health, TELEMETRY_ORIGIN_KEY)))
+    # Evidence availability is reported separately; it never replaces the cause conclusion.
+    report['first_failure_evidence'] = (
+        'bound_snapshot_retained' if report['first_verdict_snapshots']['fail']['valid']
+        else 'no_valid_snapshot: ' + report['first_verdict_snapshots']['fail']['reason'])
     if snapshots is None:
         unavailable.append('first-verdict snapshots (not recorded by this run)')
     unavailable += ['per-frame image interarrival and acquisition lag at first failure',
