@@ -20,7 +20,9 @@ from lane_heading_memory import GapHeadingMemory
 from entrance_memory import ObservedEntranceMemory
 from entrance_support import corridor_fresh_support
 from navigation_decisions import DecisionRecorder, DecisionOutcomes, compact_event_metadata
-from recovery_policy import select_backup_recovery, select_trap_escape
+from recovery_policy import select_trap_escape
+from recovery_evidence import (MAX_CAPTURES, describe_search_inputs, diagnose_backup_recovery,
+                               write_recovery_capture)
 from trap_memory import (TrapMemory, entry_heading, evaluate_with_trap_memory,
                          exclude_trapped_guidance, recent_path)
 from recovery_budget import RecoveryBudget
@@ -204,7 +206,7 @@ def run(args):
                      'entrance_memory.py', 'entrance_support.py', 'recovery_budget.py', 'recovery_policy.py',
                      'execution_path.py', 'path_entry.py', 'swept_footprint.py', 'recovery_intent.py',
                      'action_cancellation.py', 'mission_health.py', 'sensor_telemetry.py',
-                     'mission_completion.py', 'replacement_path.py')
+                     'mission_completion.py', 'replacement_path.py', 'recovery_evidence.py')
                      + (('trap_memory.py',) if trap_memory is not None else ())}
     latest = {}
     entrance_tracking = args.guidance_memory == 'entrance'
@@ -588,6 +590,7 @@ def run(args):
                     # each hypothetical backed-up pose. Preserve an already
                     # active escape intent through a second bounded attempt.
                     selected = preserved_guidance((rx,ry,ryaw), time.monotonic(), cursor)
+                    selection_preserved = selected is not None
                     if selected is None:
                         selection_diagnostics = {}
                         selected = select_observed_guidance(latest.get('lane_xy', []),
@@ -612,12 +615,30 @@ def run(args):
                     recovery_args = ((recovery_grid.info.origin.position.x,recovery_grid.info.origin.position.y),
                         recovery_grid.info.resolution,recovery_grid.info.width,recovery_grid.info.height,
                         recovery_grid.data,(rx,ry),ryaw,(gx,gy))
+                    search_evidence = None
                     if trap_memory is None:
                         guidance = partial(plan_observed_navigation, lane_points=[],
                             frozen_guidance=selected, entrance_tracking=entrance_tracking)
-                        search = planner.submit(select_backup_recovery, *recovery_args,
-                            goal_footprint=goal_footprint, forward_planner=guidance,
+                        search_kwargs = dict(goal_footprint=goal_footprint, forward_planner=guidance,
                             max_search_seconds=5., forward_options=recovery_options)
+                        # Provenance of the exact submitted inputs; the worker fingerprints what it
+                        # received with the same function, so equal digests bind its stage trace.
+                        recovery_submitted_at = time.monotonic()
+                        recovery_context = dict(decision_sequence=decision_sequence, destination_index=cursor,
+                            goal_radius_m=radius, grid_stamp_ns=stamps.get('grid'),
+                            odom_stamp_ns=stamps.get('odom'), grid_frame=recovery_grid.header.frame_id,
+                            odom_frame=latest['odom'][1].header.frame_id,
+                            grid_age_wall_s=recovery_submitted_at-latest['grid'][0],
+                            odom_age_wall_s=recovery_submitted_at-latest['odom'][0],
+                            guidance_preserved_from_intent=selection_preserved,
+                            budget=recovery_budget.report())
+                        try:
+                            submitted_digest = describe_search_inputs(recovery_args, search_kwargs)['digest']
+                        except Exception as exc:  # noqa: BLE001 - reported; never skips a gate
+                            submitted_digest = None
+                            recovery_context['submitted_digest_error'] = f'{type(exc).__name__}: {exc}'[:200]
+                        recovery_context['submitted_digest_wall_s'] = time.monotonic()-recovery_submitted_at
+                        search = planner.submit(diagnose_backup_recovery, *recovery_args, **search_kwargs)
                         search_deadline=min(end,time.monotonic()+8.)
                     else:
                         # Remember this stall from the robot's own pose and recent
@@ -650,6 +671,35 @@ def run(args):
                         if time.monotonic()>search_deadline:
                             raise RuntimeError('Backup clearance search exceeded its time budget')
                     escape=search.result()
+                    if trap_memory is None:
+                        escape, search_evidence = escape
+                        search_evidence = dict(search_evidence, submitted_digest=submitted_digest,
+                            binding_matches=submitted_digest is not None and submitted_digest
+                                == search_evidence.get('input_binding', {}).get('digest'),
+                            search_wall_s=time.monotonic()-recovery_submitted_at)
+                    if escape is None and search_evidence is not None:
+                        # Evidence only: any error here is recorded, and the stop below is unconditional.
+                        failures_recorded = state.setdefault('recovery_failures', [])
+                        failure = dict(recovery_context, evidence=search_evidence,
+                                       capture='unavailable: no capture directory or cap reached')
+                        try:
+                            if args.capture_dir and len(failures_recorded) < MAX_CAPTURES:
+                                capture_path = Path(args.capture_dir)/f'recovery-{decision_sequence:05d}.json.gz'
+                                capture_digest, capture_bytes = write_recovery_capture(capture_path,
+                                    recovery_args, search_kwargs, recovery_context)
+                                failure['capture'] = dict(file=capture_path.name, digest=capture_digest,
+                                                          uncompressed_bytes=capture_bytes)
+                        except Exception as exc:  # noqa: BLE001
+                            failure['capture'] = f'failed: {type(exc).__name__}: {exc}'[:200]
+                        if len(failures_recorded) < MAX_CAPTURES:
+                            failures_recorded.append(failure)
+                        try:
+                            decision_event('recovery_search_failed',
+                                           returned_stage=search_evidence.get('returned_stage'),
+                                           binding_matches=search_evidence['binding_matches'],
+                                           capture=failure['capture'])
+                        except Exception as exc:  # noqa: BLE001
+                            failure['event_error'] = f'{type(exc).__name__}: {exc}'[:200]
                     check_live(time.monotonic(),armed_at,initial_run)
                     if escape is None:
                         raise RuntimeError('No observed collision-free backup with useful forward clearance')
@@ -682,6 +732,11 @@ def run(args):
                         'selected_guidance':selected,
                         'budget':recovery_budget.report(),
                         'clearance_search':escape['diagnostics']})
+                    if search_evidence is not None:
+                        state['recoveries'][-1]['search_binding'] = dict(
+                            submitted_digest=search_evidence['submitted_digest'],
+                            binding_matches=search_evidence['binding_matches'],
+                            returned_stage=search_evidence.get('returned_stage'))
                     if trap_memory is not None:
                         state['recoveries'][-1].update(escape_type=escape['escape_type'],
                             trap_memory=trap_memory.regions())

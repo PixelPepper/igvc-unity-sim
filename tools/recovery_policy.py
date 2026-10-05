@@ -27,6 +27,14 @@ def _accept_continuation(plan, trap_xy, start_xy, destination_xy, resolution, re
     guidance target with >=1 m path/reserve (terminal arrival excepted), and
     must not end inside a remembered trap region.
     """
+    return _continuation_verdict(plan, trap_xy, start_xy, destination_xy, resolution, regions)[0]
+
+
+def _continuation_verdict(plan, trap_xy, start_xy, destination_xy, resolution, regions=()):
+    """The same rule, also naming the first failed condition in the original evaluation order.
+
+    Returns ((trap_progress, terminal, tolerance) or None, reason, metrics).
+    """
     diagnostics = plan.get('diagnostics', {})
     target = diagnostics.get('guidance_target', destination_xy)
     endpoint = diagnostics.get('endpoint', plan['local_goal'])
@@ -35,18 +43,31 @@ def _accept_continuation(plan, trap_xy, start_xy, destination_xy, resolution, re
     path = plan.get('path', [])
     terminal = bool(path) and all(math.dist(point[:2], target) <= tolerance
         for point in (endpoint, plan['local_goal'], path[-1]))
-    if (diagnostics.get('local_path_length', 0.) < 1.
-            or (not terminal and diagnostics.get('checked_continuation_length', 0.) < 1.)
-            or math.dist(start_xy, plan['local_goal']) < 1.
-            or math.dist(trap_xy, plan['local_goal']) < .4
-            or math.dist(trap_xy, target) < .4
-            or trap_progress < .5):
-        return None
+    metrics = {'trap_progress_m': trap_progress, 'terminal': terminal,
+               'local_path_length_m': diagnostics.get('local_path_length', 0.),
+               'checked_continuation_length_m': diagnostics.get('checked_continuation_length', 0.)}
+    # Lazily evaluated, so later conditions are never computed after an earlier failure (as before).
+    for reason, failed in (
+            ('local_path_below_1m', lambda: diagnostics.get('local_path_length', 0.) < 1.),
+            ('checked_continuation_below_1m',
+             lambda: not terminal and diagnostics.get('checked_continuation_length', 0.) < 1.),
+            ('goal_within_1m_of_backup_pose', lambda: math.dist(start_xy, plan['local_goal']) < 1.),
+            ('goal_within_0.4m_of_trap', lambda: math.dist(trap_xy, plan['local_goal']) < .4),
+            ('guidance_target_within_0.4m_of_trap', lambda: math.dist(trap_xy, target) < .4),
+            ('trap_progress_below_0.5m', lambda: trap_progress < .5)):
+        if failed():
+            return None, reason, metrics
     if regions and (_in_regions(plan['local_goal'][:2], regions)
                     or _in_regions(endpoint[:2], regions)
                     or _in_regions(target[:2], regions)):
-        return None
-    return trap_progress, terminal, tolerance
+        return None, 'ends_in_trap_region', metrics
+    return (trap_progress, terminal, tolerance), 'accepted', metrics
+
+
+def _note(trace, started, **record):
+    """Append one bounded stage record when a caller asked for a trace; never changes a result."""
+    if trace is not None and len(trace) < 32:
+        trace.append({**record, 'elapsed_s': time.monotonic()-started})
 
 
 def select_backup_recovery(origin_xy, resolution, width, height, costs,
@@ -54,7 +75,7 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                            distances=(.6, .9, 1.2, 1.5, 1.8), max_backup_distance=1.8,
                            max_search_seconds=5., max_expansions=50000,
                            forward_planner=select_local_goal, forward_options=None,
-                           continuation_costs=None, trap_regions=()):
+                           continuation_costs=None, trap_regions=(), trace=None):
     """Return the shortest checked backup with useful forward continuation.
 
     Defaults reproduce the original (legacy) behaviour exactly. Optional
@@ -75,6 +96,9 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
     Search time/expansions are shared across candidates. Time bounding is
     cooperative: callbacks must honor max_search_seconds, and the caller retains
     its external watchdog for input/clearance precomputation and execution.
+
+    Optional ``trace`` (a list) receives bounded stage records naming where and
+    why the search returned; it never changes the result.
     """
     started = time.monotonic()
     try:
@@ -92,17 +116,22 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                 or goal_footprint[0] >= goal_footprint[1]
                 or goal_footprint[2] >= goal_footprint[3]
                 or any(d <= 0 or d > 2. for d in distances)):
+            _note(trace, started, stage='input_validation', reason='invalid_inputs')
             return None
         candidates = sorted(set(d for d in distances if d <= max_backup_distance))
         options = dict(forward_options or {})
         continuation_grid = costs if continuation_costs is None else continuation_costs
         if len(continuation_grid) != width*height:
+            _note(trace, started, stage='input_validation', reason='continuation_grid_size')
             return None
         trap_regions = _valid_regions(trap_regions)
-    except (TypeError, ValueError, OverflowError):
+    except (TypeError, ValueError, OverflowError) as exc:
+        _note(trace, started, stage='input_validation', reason='exception', exception=type(exc).__name__)
         return None
     if not candidates:
+        _note(trace, started, stage='input_validation', reason='no_candidate_within_max_backup_distance')
         return None
+    _note(trace, started, stage='inputs_valid', candidates_m=candidates)
 
     # At fixed yaw, the continuous union over a rearward translation is exactly
     # the same oriented rectangle extended along negative body X. Keep spacing
@@ -114,18 +143,24 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
     def pose(distance):
         return robot_xy[0]-distance*hx, robot_xy[1]-distance*hy
 
-    def clear(distance, previous=None):
+    def blocked(distance, previous=None):
+        """None when clear, else the first failed check (same checks and order as before)."""
         x, y = pose(distance)
         ix, iy = math.floor((x-origin_xy[0])/resolution), math.floor((y-origin_xy[1])/resolution)
         # Anchor at the later (rearward) pose: the earlier body is ahead by
         # distance-previous. Their union leaves both lateral edges unchanged.
         swept = b if previous is None else (b[0], b[1]+distance-previous, b[2], b[3])
-        return (0 <= ix < width and 0 <= iy < height
-                and 0 <= costs[iy*width+ix] < 99
-                and _rectangle_clear(x, y, robot_yaw, swept, costs,
-                                     width, height, resolution, origin_xy))
+        if not (0 <= ix < width and 0 <= iy < height):
+            return 'center_outside_grid'
+        if not 0 <= costs[iy*width+ix] < 99:
+            return 'center_cell_unknown' if costs[iy*width+ix] < 0 else 'center_cell_lethal_or_inscribed'
+        if not _rectangle_clear(x, y, robot_yaw, swept, costs, width, height, resolution, origin_xy):
+            return 'body_rectangle_blocked'
+        return None
 
-    if not clear(0.):
+    reason = blocked(0.)
+    if reason is not None:
+        _note(trace, started, stage='initial_clearance', reason=reason)
         return None
     checked_distance = 0.
     charged_expansions = 0
@@ -133,18 +168,26 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
     for i, distance in enumerate(candidates):
         remaining = max_search_seconds-(time.monotonic()-started)
         if remaining <= 0 or charged_expansions >= max_expansions:
+            _note(trace, started, stage='budget_exhausted', before_candidate_m=distance,
+                  reason='time' if remaining <= 0 else 'expansions', charged_expansions=charged_expansions)
             break
         intervals = math.ceil((distance-checked_distance)/spacing)
         previous = checked_distance
         for j in range(1, intervals+1):
             current = checked_distance+(distance-checked_distance)*j/intervals
-            if not clear(current, previous):
+            reason = blocked(current, previous)
+            if reason is not None:
                 # Farther candidates must cross this same blocked rear sweep.
+                _note(trace, started, stage='rear_sweep_blocked', candidate_m=distance,
+                      blocked_from_m=previous, blocked_at_m=current, reason=reason,
+                      unattempted_candidates_m=candidates[i:])
                 return None
             previous = current
         checked_distance = distance
         remaining = max_search_seconds-(time.monotonic()-started)
         if remaining <= 0:
+            _note(trace, started, stage='budget_exhausted', after_rear_sweep_m=distance, reason='time',
+                  charged_expansions=charged_expansions)
             break
         slots = len(candidates)-i
         expansion_allowance = max(1, (max_expansions-charged_expansions)//slots)
@@ -165,9 +208,11 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                          'charged_expansions': min(expansion_allowance, max(0, used)),
                          'proposal_found': plan is not None})
         if plan is None:
+            _note(trace, started, stage='candidate', verdict='no_forward_proposal', **attempts[-1])
             continue
-        accepted = _accept_continuation(plan, robot_xy, pose(distance), destination_xy,
-                                        resolution, trap_regions)
+        accepted, verdict, metrics = _continuation_verdict(plan, robot_xy, pose(distance), destination_xy,
+                                                           resolution, trap_regions)
+        _note(trace, started, stage='candidate', verdict=verdict, **attempts[-1], **metrics)
         if accepted is None:
             continue
         trap_progress, terminal, tolerance = accepted
@@ -181,6 +226,8 @@ def select_backup_recovery(origin_xy, resolution, width, height, costs,
                     'elapsed_seconds': time.monotonic()-started,
                     'charged_expansions': charged_expansions, 'attempts': attempts,
                     'unknown_is_blocked': True, 'straight_backup_only': True}}
+    _note(trace, started, stage='search_ended_without_escape',
+          attempted_m=[a['distance_m'] for a in attempts], charged_expansions=charged_expansions)
     return None
 
 
