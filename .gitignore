@@ -24,6 +24,10 @@
 # Regenerated from canonical ROS description by RobotInspectionBuild.
 /unity/IGVCSim/Assets/IGVC/GeneratedRobot/
 /unity/IGVCSim/Assets/IGVC/GeneratedRobot.meta
+# Generated Reference Lab output accidentally created from an Assets cwd.
+# Canonical output belongs in repository-root artifacts/. Preserve source .meta.
+/unity/IGVCSim/Assets/IGVC/Runtime/artifacts/
+/unity/IGVCSim/Assets/IGVC/Runtime/artifacts.meta
 
 # ROS/Python generated output
 /ros2/build/
