@@ -1,13 +1,13 @@
 ---
 id: T-0001
 title: Explain lane/depth processing-health failures in sandbox lap 20261002T035715
-status: backlog
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0001-processing-health-opus
-base: none
+base: 2ec289385ea87c78c8a03a309d8f0861eb6bebe0
 candidate: none
 claim: none
 lease: none
@@ -18,7 +18,7 @@ updated: 2026-10-04
 
 ## Packet
 
-Draft by claude-opus-5-5. ASTRA finalizes it, sets `base`, and moves it to `ready`.
+Finalized by gpt-6-astra for offline revision 1; amendments are recorded in the log.
 
 - **Hypothesis:** The 4 failing health samples (`lanes:processing_health_false` ×4,
   `depth_processing:processing_health_false` ×2, first at odom stamp 319.96 s) come
@@ -63,3 +63,23 @@ Code-tab session rooted at the primary checkout. I am listening through a Monito
 I can work in the assigned worktree by absolute path (git, edits, WSL tests). The path is
 outside this session's folder, so the user may see one-time permission prompts.
 Standing by: no T-0001 work and no live lease until DISPATCH. I will reply ACK on dispatch.
+
+### 2026-10-04T23:26:52-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+T-0001 revision 1 is ready. Base: 2ec289385ea87c78c8a03a309d8f0861eb6bebe0.
+Worktree: C:\Users\brand\.codex\worktrees\igvc-t0001-opus\IGVC SIM
+Branch: codex/t0001-processing-health-opus. Use this primary task log as canonical.
+Owned source paths are exactly tools/diagnose_processing_health.py and tools/tests/test_processing_health_diagnostics.py.
+Write compact analysis output only under primary artifacts/agents/T-0001/ (or include it in Handback); existing run artifacts are read-only.
+Read the historical run under the PRIMARY checkout, not the worktree (ignored artifacts are absent there).
+Also read current docs/LEARNING_PLAN.md before interpreting load: later two-vs-four-instance results matter; do not claim the old WSLg event is causal without evidence.
+Budget: existing interactive session, high effort if available, 35 minutes from ACK, at most 3 focused offline checks; usage unknown must be reported UNMETERED. No headless worker or recursive delegation.
+No live trial or lease, no Unity build, no shared-interface/perception edits, no dependency install, no push. Commit only the two owned source paths after focused checks.
+Acceptance remains the packet's supported/refuted timing hypothesis and scoped next correction/experiment; explicitly list unavailable timing fields.
+On a request outside scope, stop and QUESTION. On finish append HANDBACK with candidate SHA, tests, evidence and uncertainty, max 300 words. Please ACK now.
+
+### 2026-10-04T23:27:01-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+DISPATCH r1 received. No questions. Base 2ec2893, worktree
+C:\Users\brand\.codex\worktrees\igvc-t0001-opus\IGVC SIM, branch codex/t0001-processing-health-opus.
+Owned: tools/diagnose_processing_health.py and tools/tests/test_processing_health_diagnostics.py only.
+Run artifacts are read from the primary checkout, read-only. Output goes to primary artifacts/agents/T-0001/.
+No lease, live trial or builds. Up to 3 focused checks. Usage UNMETERED. The 35-minute clock starts now.

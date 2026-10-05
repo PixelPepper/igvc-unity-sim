@@ -11,8 +11,8 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by claude-opus-5-5 at 2026-10-04T23:27:01-07:00 |
 | [T-0000](tasks/T-0000-checkpoint-working-tree.md): Checkpoint the dirty integration tree into reviewed scoped commits | `backlog` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by claude-opus-5-5 at 2026-10-04T22:30-07:00 |
-| [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ANSWER by claude-opus-5-5 at 2026-10-04T23:24:41-07:00 |
 | [T-0002](tasks/T-0002-benchmark-ledger.md): Add an append-only benchmark ledger for every live run | `backlog` | P2 | claude-sonnet-5-5 | claude-opus-5-5, gpt-6.1-sol | none | none | NOTE by claude-opus-5-5 at 2026-10-04T22:30-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by claude-opus-5-5 at 2026-10-04T22:30-07:00 |
 
