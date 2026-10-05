@@ -9,10 +9,16 @@ spec = importlib.util.spec_from_file_location('iteration_mission', AGENTS/'itera
 iteration_mission = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(iteration_mission)
 
-WORKSPACE, JOB = Path('/w'), Path('/j')
-LEGACY_2027 = [sys.executable, '/w/tools/sensor_course.py', '--mission', '/w/artifacts/courses/seed-2027/autonomy.json',
-               '--report', '/j/run.json', '--capture-dir', '/j/decisions', '--timeout', '600', '--speed', '0.6',
-               '--planning-budget', '0.5', '--path-execution', 'checked-path']
+WORKSPACE, JOB = Path('/w'), Path('/j')  # built with Path, so expectations also hold on native Windows
+
+
+def mission_path(seed):
+    return str(WORKSPACE/f'artifacts/courses/seed-{seed}/autonomy.json')
+
+
+LEGACY_2027 = [sys.executable, str(WORKSPACE/'tools/sensor_course.py'), '--mission', mission_path(2027),
+               '--report', str(JOB/'run.json'), '--capture-dir', str(JOB/'decisions'), '--timeout', '600',
+               '--speed', '0.6', '--planning-budget', '0.5', '--path-execution', 'checked-path']
 
 
 class IterationMissionSeedTest(unittest.TestCase):
@@ -23,8 +29,8 @@ class IterationMissionSeedTest(unittest.TestCase):
     def test_default_reproduces_the_previous_2027_commands(self):
         record, mission = self.parse()
         self.assertEqual(mission, LEGACY_2027)
-        self.assertEqual(record, [sys.executable, '/w/tools/record_navigation_episode.py', '--output', '/j/episode',
-                                  '--duration', '660', '--image-hz', '2'])
+        self.assertEqual(record, [sys.executable, str(WORKSPACE/'tools/record_navigation_episode.py'), '--output',
+                                  str(JOB/'episode'), '--duration', '660', '--image-hz', '2'])
 
     def test_explicit_seed_selects_only_the_course_folder(self):
         default_record, _ = self.parse()
@@ -33,7 +39,7 @@ class IterationMissionSeedTest(unittest.TestCase):
                 record, mission = self.parse('--seed', str(seed))
                 self.assertEqual(record, default_record)  # recorder options unchanged
                 expected = list(LEGACY_2027)
-                expected[3] = f'/w/artifacts/courses/seed-{seed}/autonomy.json'
+                expected[3] = mission_path(seed)
                 self.assertEqual(mission, expected)
                 self.assertEqual([a for a in mission if 'seed-' in a], [expected[3]])
 

@@ -8,7 +8,10 @@ $passed=0
 function Check([bool]$Condition,[string]$Name){
  if($Condition){$script:passed++}else{$script:failures.Add($Name)}
 }
-function Throws([scriptblock]$Block){try{& $Block;return $false}catch{return $true}}
+function Throws([scriptblock]$Block){
+ # Discard the block's own output: only $true (it threw) or $false (it returned) may come back.
+ try{& $Block | Out-Null;return $false}catch{return $true}
+}
 
 # Seed validation (as ConvertFrom-Json types it).
 $valid=[ordered]@{'{}'=2027;'{"seed":2027}'=2027;'{"seed":2028}'=2028;'{"seed":2029}'=2029;'{"seed":0}'=0;'{"seed":2147483647}'=2147483647}
@@ -40,26 +43,49 @@ foreach($seed in @(2027,2028,2029)){
 }
 
 # Generated-input identity.
-$tmp=Join-Path ([IO.Path]::GetTempPath()) ('t0029-'+[guid]::NewGuid())
-function Make-Inputs([int]$Folder,[int]$CourseSeed,[int]$MissionSeed,[switch]$BadHash,[switch]$NoAutonomy){
+$tempRoot=[IO.Path]::GetFullPath([IO.Path]::GetTempPath())
+$tmp=Join-Path $tempRoot ('t0029-'+[guid]::NewGuid())
+function Make-Inputs([int]$Folder,[string]$CourseSeed='2028',[string]$MissionSeed='2028',[string]$CourseText,
+                     [switch]$BadHash,[switch]$UpperHash,[switch]$NoAutonomy){
+ # Seed values are raw JSON text so non-integer metadata can be written exactly.
  $dir=Join-Path $tmp "artifacts/courses/seed-$Folder"; New-Item -ItemType Directory -Force $dir | Out-Null
  $course=Join-Path $dir 'course.json'
- Set-Content -LiteralPath $course -Value "{`n  `"schema_version`": 1,`n  `"seed`": $CourseSeed,`n  `"centerline`": []`n}" -Encoding Ascii
+ if(!$CourseText){$CourseText="{`n  `"schema_version`": 1,`n  `"seed`": $CourseSeed,`n  `"generation`": {`"seed`": 1},`n  `"centerline`": []`n}"}
+ Set-Content -LiteralPath $course -Value $CourseText -Encoding Ascii
  $sha=(Get-FileHash -LiteralPath $course -Algorithm SHA256).Hash.ToLowerInvariant()
- if($BadHash){$sha='0'*64}
+ if($BadHash){$sha='0'*64}; if($UpperHash){$sha=$sha.ToUpperInvariant()}
  Set-Content -LiteralPath (Join-Path $dir 'mission.json') -Value "{`"seed`": $MissionSeed, `"course_sha256`": `"$sha`"}" -Encoding Ascii
  $autonomy=Join-Path $dir 'autonomy.json'
  if($NoAutonomy){Remove-Item -LiteralPath $autonomy -ErrorAction SilentlyContinue}else{Set-Content -LiteralPath $autonomy -Value '{"goals": []}' -Encoding Ascii}
 }
 try {
- Make-Inputs 2028 2028 2028
+ Make-Inputs 2028
  $identity=Test-SeedInputs $tmp 2028
- Check ($identity.seed -eq 2028 -and $identity.course_sha256.Length -eq 64 -and $identity.autonomy_sha256.Length -eq 64) 'matching 2028 inputs accepted with hashes'
- Make-Inputs 2029 2027 2029; Check (Throws {Test-SeedInputs $tmp 2029}) 'course seed mismatch rejected'
- Make-Inputs 2029 2029 2027; Check (Throws {Test-SeedInputs $tmp 2029}) 'mission seed mismatch rejected'
- Make-Inputs 2029 2029 2029 -BadHash; Check (Throws {Test-SeedInputs $tmp 2029}) 'unbound course rejected'
- Make-Inputs 2029 2029 2029 -NoAutonomy; Check (Throws {Test-SeedInputs $tmp 2029}) 'missing autonomy rejected'
+ Check ($identity.seed -eq 2028 -and $identity.course_sha256.Length -eq 64 -and $identity.autonomy_sha256.Length -eq 64) 'matching 2028 inputs accepted (unrelated nested seed ignored)'
+ # Strict top-level integer metadata in BOTH files; the course bytes are still bound by mission.json.
+ $badSeeds=[ordered]@{'fraction'='2028.5';'integral fraction'='2028.0';'exponent'='2.028e3';'string'='"2028"';'bool'='true';
+                      'array'='[2028]';'object'='{"value": 2028}';'null'='null';'other seed'='2027';'negative'='-2028'}
+ foreach($name in $badSeeds.Keys){
+  Make-Inputs 2029 -CourseSeed $badSeeds[$name] -MissionSeed '2029'; Check (Throws {Test-SeedInputs $tmp 2029}) "course seed rejected: $name"
+  Make-Inputs 2029 -CourseSeed '2029' -MissionSeed $badSeeds[$name]; Check (Throws {Test-SeedInputs $tmp 2029}) "mission seed rejected: $name"
+ }
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText "{`n  `"generation`": {`"seed`": 2029},`n  `"centerline`": []`n}"
+ Check (Throws {Test-SeedInputs $tmp 2029}) 'nested-only course seed rejected (no top-level seed)'
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText "{`n  `"seed`": 2029,`n  `"centerline`": [" ; Check (Throws {Test-SeedInputs $tmp 2029}) 'malformed course.json rejected'
+ Make-Inputs 2029 -MissionSeed '2029' -CourseText '[{"seed": 2029}]'; Check (Throws {Test-SeedInputs $tmp 2029}) 'non-object course.json rejected'
+ Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -BadHash; Check (Throws {Test-SeedInputs $tmp 2029}) 'unbound course rejected'
+ Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -UpperHash; Check (Throws {Test-SeedInputs $tmp 2029}) 'non-canonical course hash rejected'
+ Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029' -NoAutonomy; Check (Throws {Test-SeedInputs $tmp 2029}) 'missing autonomy rejected'
+ Make-Inputs 2029 -CourseSeed '2029' -MissionSeed '2029'; Check (!(Throws {Test-SeedInputs $tmp 2029})) 'repaired 2029 inputs accepted'
  Check (Throws {Test-SeedInputs $tmp 2031}) 'missing seed folder rejected'
+
+ # Optional read-only check against a real generated workspace (set IGVC_REAL_COURSE_ROOT).
+ if($env:IGVC_REAL_COURSE_ROOT){
+  $real=Test-SeedInputs $env:IGVC_REAL_COURSE_ROOT 2027
+  "real seed-2027 identity: course=$($real.course_sha256) mission=$($real.mission_sha256) autonomy=$($real.autonomy_sha256)"
+  Check ($real.seed -eq 2027) 'real generated seed-2027 folder accepted'
+  Check (Throws {Test-SeedInputs $env:IGVC_REAL_COURSE_ROOT 2028}) 'real workspace not accepted as another seed unless generated'
+ }
 
  # Full runner: invalid options stop before live.json or the lease exist.
  $cases=[ordered]@{
@@ -82,7 +108,15 @@ try {
   Check (!(Test-Path (Join-Path $coordinator 'artifacts/iterations/live.lock'))) "no lease file: $name"
   Check ($output -match 'seed must be|revalidate_active_path') "reason reported: $name"
  }
-} finally {Remove-Item -LiteralPath $tmp -Recurse -Force -ErrorAction SilentlyContinue}
+} finally {
+ # Delete only this run's own folder: resolved, strictly inside the temp root, named t0029-<guid>.
+ $resolved=[IO.Path]::GetFullPath($tmp)
+ $root=$tempRoot.TrimEnd('\')+'\'
+ if($resolved.StartsWith($root,[StringComparison]::OrdinalIgnoreCase) -and $resolved.Length -gt $root.Length -and
+    (Split-Path -Leaf $resolved) -match '^t0029-[0-9a-f-]{36}$' -and (Split-Path -Parent $resolved).TrimEnd('\')+'\' -eq $root){
+  Remove-Item -LiteralPath $resolved -Recurse -Force -ErrorAction SilentlyContinue
+ } else {"temp folder NOT deleted (failed containment check): $resolved"}
+}
 
 "passed=$passed failed=$($failures.Count)"
 foreach($f in $failures){"FAIL: $f"}

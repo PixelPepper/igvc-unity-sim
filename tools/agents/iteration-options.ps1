@@ -2,16 +2,18 @@
 # Test-SeedInputs, which only reads the generated course files; none takes the lease
 # or starts a process.
 
+function Test-SeedValue($Value) {
+ # A JSON integer in 0..Int32.MaxValue. ConvertFrom-Json yields Int32/Int64 for JSON integers and
+ # Decimal/Double (fractions, exponents), Boolean, String, arrays, objects or $null otherwise.
+ return ((($Value -is [int]) -or ($Value -is [long])) -and $Value -ge 0 -and $Value -le [int]::MaxValue)
+}
+
 function Get-TrialSeed($Cfg) {
- # Absent means the existing seed 2027. Only a JSON integer in 0..Int32.MaxValue is accepted:
- # ConvertFrom-Json yields Int32/Int64 for integers and Decimal/Double/Boolean/String/null otherwise.
+ # Absent means the existing seed 2027; anything but a JSON integer in range throws.
  $property=$Cfg.PSObject.Properties['seed']
  if($null -eq $property){return 2027}
- $value=$property.Value
- if(!(($value -is [int]) -or ($value -is [long])) -or $value -lt 0 -or $value -gt [int]::MaxValue){
-  throw 'seed must be a JSON integer in 0..2147483647'
- }
- return [int]$value
+ if(!(Test-SeedValue $property.Value)){throw 'seed must be a JSON integer in 0..2147483647'}
+ return [int]$property.Value
 }
 
 function Get-TrialCommands {
@@ -34,20 +36,35 @@ function Get-TrialCommands {
  }
 }
 
+function Read-SeededJson([string]$Path,[int]$Seed) {
+ # The whole file must parse as one JSON object whose top-level "seed" is exactly the selected integer.
+ try {$json=Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json}
+ catch {throw "$Path is not valid JSON: $($_.Exception.Message)"}
+ if($json -isnot [Management.Automation.PSCustomObject]){throw "$Path is not a JSON object"}
+ $property=$json.PSObject.Properties['seed']
+ if($null -eq $property){throw "$Path has no top-level seed"}
+ if(!(Test-SeedValue $property.Value) -or [long]$property.Value -ne $Seed){
+  throw "$Path top-level seed $(ConvertTo-Json $property.Value -Compress) is not the integer $Seed"
+ }
+ return $json
+}
+
 function Test-SeedInputs([string]$Workspace,[int]$Seed) {
- # The files variant-start generated for this seed must say so: course.json and mission.json carry
- # the seed, and mission.json binds course.json by sha256. Returns their identity for live.json;
- # throws on any mismatch so a run is never labelled with a seed it did not use.
+ # What variant-start generated for this seed must say so: course.json and mission.json are complete
+ # JSON objects with that top-level integer seed, and mission.json binds the exact course.json bytes
+ # by sha256. autonomy.json (the sanitized mission given to autonomy) carries no seed; it is only
+ # recorded by hash, generated alongside these. Throws on any mismatch so a run is never labelled
+ # with a seed it did not use.
  $folder=Join-Path $Workspace "artifacts/courses/seed-$Seed"
  $course=Join-Path $folder 'course.json'; $mission=Join-Path $folder 'mission.json'; $autonomy=Join-Path $folder 'autonomy.json'
  foreach($path in @($course,$mission,$autonomy)){if(!(Test-Path -LiteralPath $path)){throw "Seed $Seed input missing: $path"}}
- $missionJson=Get-Content -LiteralPath $mission -Raw | ConvertFrom-Json
- $courseHead=Get-Content -LiteralPath $course -TotalCount 40 | Out-String
- $courseSeed=if($courseHead -match '"seed"\s*:\s*(-?\d+)'){[long]$Matches[1]}else{$null}
+ Read-SeededJson $course $Seed | Out-Null
+ $missionJson=Read-SeededJson $mission $Seed
  $courseSha=(Get-FileHash -LiteralPath $course -Algorithm SHA256).Hash.ToLowerInvariant()
- if($courseSeed -ne $Seed){throw "course.json seed $courseSeed does not match selected seed $Seed"}
- if($missionJson.seed -ne $Seed){throw "mission.json seed $($missionJson.seed) does not match selected seed $Seed"}
- if($missionJson.course_sha256 -ne $courseSha){throw 'mission.json does not bind the generated course.json'}
+ $bound=$missionJson.PSObject.Properties['course_sha256']
+ if($null -eq $bound -or $bound.Value -isnot [string] -or $bound.Value -cne $courseSha){
+  throw 'mission.json does not bind the generated course.json'
+ }
  return @{seed=$Seed;course_sha256=$courseSha
   mission_sha256=(Get-FileHash -LiteralPath $mission -Algorithm SHA256).Hash.ToLowerInvariant()
   autonomy_sha256=(Get-FileHash -LiteralPath $autonomy -Algorithm SHA256).Hash.ToLowerInvariant()}
