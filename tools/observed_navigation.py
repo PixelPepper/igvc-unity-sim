@@ -45,9 +45,10 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
     the same observed corridor are known and clear. Every check is unchanged:
     unknown and lethal cells still block, and nothing beyond the observed
     boundaries is used. Enabling it requires ``retreat_ahead_of``, the robot's
-    actual (x, y): a retreated station must lie strictly ahead of that body's
-    front along the observed corridor (axle station + footprint front), so a
-    retreat never targets the trap itself or a point behind it. Invalid values
+    actual (x, y): a retreated station must exceed its axle station plus the
+    nominal footprint front offset along the corridor. This is an ahead-of-trap
+    bound, not the yaw-projected leading corner; full-body checks still apply.
+    A retreat never targets the trap itself or a point behind it. Invalid values
     raise ValueError rather than extrapolating.
     """
     if station_retreat_step is not None:
@@ -130,7 +131,7 @@ def refine_corridor_guidance(selection, corridor, origin, resolution, width,
         evidence['reason'] = 'no_body_width_inside_observed_gate'
         return None, evidence
     if found is None and station_retreat_step:
-        # Retreated stations stay inside the shared observed support AND strictly ahead of the robot's front.
+        # Stay within observed support and above the nominal ahead-of-trap station bound.
         front_station = dot(retreat_ahead_of,direction)+footprint[1]
         floor = max(lo, front_station)
         checked = 0
