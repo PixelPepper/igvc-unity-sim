@@ -34,8 +34,11 @@ stopping or causal speed claim. T0029 explicit seed selection is integrated at
 integration. The first preselected held-out2028 trial T0031 failed at1/6 after
 111.67s: no observed clear lane-entry position for recovery. Audit14/20, processing
 health passed; zero charged backup. Both reviews accepted the failure evidence.
-Promotion is blocked. T0032 assigns Opus an observation-only diagnosis/correction;
-2029 remains untested. Opus now owns complete
+Promotion is blocked. T0032's reviewed recovery-only nearer observed target selection
+is integrated at d6519e1. All643 combined integration tests passed. T0033 is testing
+one new-version2028 regression; no live benefit is established yet. This seed now
+informs development, while2029 remains untested. Old-version2027 passes do not
+qualify the new source. Opus now owns complete
 bounded development tasks under ADR-011, with independent review and exclusive
 live-test coordination retained.
 See [current evidence](evidence/navigation-2026-10-05.md), the
