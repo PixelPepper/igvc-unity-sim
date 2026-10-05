@@ -46,6 +46,11 @@ class MissionCompletionTest(unittest.TestCase):
         self.assertEqual([p['name'] for p in report['phases']],
                          ['cleanup_start', 'disable autonomy', 'cancel action', 'reset unmarked mode',
                           'mission_health_end'])
+        # After the final arrival the index is len(goals); cleanup is still measured against the final goal.
+        for phase in report['phases']:
+            self.assertEqual(phase['destination_index'], len(GOALS))
+            self.assertIsNotNone(phase['goal_distance_m'], phase['name'])
+            self.assertLessEqual(phase['goal_distance_m'], .4)
         self.assertEqual(report['endpoint']['trajectory_index'], len(trajectory)-1)
         self.assertAlmostEqual(report['after_final_arrival']['moved_m'], .05, places=9)
         self.assertEqual(report['after_final_arrival']['trajectory_samples'], 5)
@@ -94,6 +99,34 @@ class MissionCompletionTest(unittest.TestCase):
         self.assertIsNone(report['final_arrival'])
         self.assertIsNone(report['after_final_arrival'])
         self.assertAlmostEqual(report['endpoint']['final_goal_distance_m'], 8.)
+
+    def test_out_of_range_arrivals_are_not_retained(self):
+        recorder = MissionCompletionRecorder(GOALS)
+        for index in (2, 7, 8, 9):  # len(goals) and beyond are not real destinations
+            recorder.arrival(1., (0., 0., 0.), 1, .9, index, 1)
+        recorder.arrival(1., (0., 0., 0.), 1, .9, 1, 1)
+        self.assertEqual([a['destination_index'] for a in recorder.report([])['arrivals']], [1])
+
+    def test_loop_interval_never_spans_an_invalid_evaluation(self):
+        recorder = MissionCompletionRecorder(GOALS)
+        for now in (1., float('nan'), 2., 2.1):
+            recorder.observe_loop(now, (5., 0., 0.), 1, now, 1, 1)
+        dts = [s['loop_dt_s'] for s in recorder.report([])['loop_samples']]
+        self.assertEqual(dts[:3], [None, None, None])
+        self.assertAlmostEqual(dts[3], .1, places=9)
+
+    def test_overflowing_derived_values_stay_json_finite(self):
+        recorder = MissionCompletionRecorder([(-1e308, 0., .4)])
+        recorder.observe_loop(1e308, (1e308, 0., 0.), 1, -1e308, 0, 0)
+        recorder.observe_loop(-1e308, (1e308, 0., 0.), 1, 0., 0, 1)
+        recorder.arrival(0., (1e308, 0., 0.), 1, 0., 0, 1)
+        report = recorder.report([[0., -1e308, 0., 0.]])
+        first, second = report['loop_samples']
+        self.assertIsNone(first['goal_distance_m'])       # hypot overflow, not inf
+        self.assertIsNone(first['odom_receipt_age_s'])    # 1e308 - (-1e308) overflows
+        self.assertIsNone(second['loop_dt_s'])            # -1e308 - 1e308 overflows
+        self.assertIsNone(report['after_final_arrival']['moved_m'])
+        json.dumps(report, allow_nan=False)
 
     def test_phase_cap_counts_dropped_phases(self):
         recorder = MissionCompletionRecorder(GOALS, phase_limit=4)

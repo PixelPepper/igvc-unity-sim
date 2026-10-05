@@ -810,7 +810,8 @@ def run(args):
             try:
                 state['mission_completion'] = completion.report(state['trajectory'])
             except Exception as exc:  # noqa: BLE001 - evidence must not block saving the run
-                completion_errors.append(f'report: {type(exc).__name__}: {exc}'[:200])
+                if len(completion_errors) < 8:
+                    completion_errors.append(f'report: {type(exc).__name__}: {exc}'[:200])
             if completion_errors:
                 state['mission_completion_errors'] = list(completion_errors)
             output = Path(args.report)
