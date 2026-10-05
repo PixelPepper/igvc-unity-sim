@@ -77,6 +77,18 @@ The robot visual hierarchy has no physical contact colliders. Ideal axle integra
 
 [TerrainSupport.cs](../../unity/IGVCSim/Assets/IGVC/Runtime/TerrainSupport.cs) provides the rigid three-point fallback. [CasterTerrainSupport.cs](../../unity/IGVCSim/Assets/IGVC/Runtime/CasterTerrainSupport.cs) uses a rigid front axle and one sprung rear body-height state to approximate pitch. Missing support, excessive slope (15° limit) or infeasible travel rejects movement. It does not solve tire forces, slip, gravity-driven motion, independent suspension roll or contact impulses.
 
+Generated ground includes coarse cutouts around potholes. Their flat rim meshes
+are also wheel-support surfaces; the actual depressions are not. Pothole pairs
+must leave at least 0.85 m between their circular openings so one flat rim cannot
+cover another depression. The generator and Unity loader enforce this together.
+After changing support geometry, rebuild the Unity player and run
+[CourseSupportChecks](../../unity/IGVCSim/Assets/IGVC/Editor/CourseSupportChecks.cs),
+which also runs during `course-build`. `/sim/status` exposes cumulative
+`terrain_support_rejects` and `terrain_budget_rejects`. A support rejection can
+mean a missing surface, excessive slope or infeasible caster travel; it does not
+by itself identify which constraint failed. See the
+[recorded pothole failure](../NAVIGATION_INVESTIGATION.md#follow-up-invisible-support-gap-beside-a-pothole).
+
 [caster_suspension.json](../../ros2/src/igvc_description/config/caster_suspension.json) specifies provisional effective rear mass **30 kg**, each spring **12,000 N/m**, each damper **700 N·s/m**, vertical travel **0.04 m**, joint limit **0.045 m**, front/rear half tracks **0.405255/0.24612 m**, and rear support distance **0.85 m**. [caster_swivel.json](../../ros2/src/igvc_description/config/caster_swivel.json) specifies alignment distance **0.12 m**, maximum swivel rate **4 rad/s**, and stationary threshold **0.005 m/s**. Swivel visuals/joints follow motion; support sample positions remain yaw-only. These values are uncalibrated. Suspension defaults on when terrain support exists; `--caster-suspension off` selects rigid support. See [suspension](../CASTER_SUSPENSION.md) and [turning validation](../CASTER_TURNING.md).
 
 ## Keep the three course files separate

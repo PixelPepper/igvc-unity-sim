@@ -6,7 +6,7 @@ covers the major maintained entry points and groups repetitive test/asset files.
 Generated output, binary meshes, `.meta` pairs, Python `__init__.py` files and
 package boilerplate are described by directory rather than individually.
 
-Reviewed 2026-09-23. **Read-only** means a tool does not command the robot; it can
+Reviewed 2026-09-30. **Read-only** means a tool does not command the robot; it can
 still write an output report. **Motion/state** means it may move/reset the robot,
 alter ROS authority, interrupt a sensor, or restart processes. Read its arguments
 and fixture assumptions before running it.
@@ -29,6 +29,8 @@ and fixture assumptions before running it.
 |---|---|
 | [README.md](../README.md) | Installation, platform-specific prerequisites, downloads and normal startup |
 | [AGENTS.md](../AGENTS.md) | Project conventions, physical orientation, file ownership and delegation constraints |
+| [CLAUDE.md](../CLAUDE.md), [Claude handoff](CLAUDE_HANDOFF.md) | Claude Code entry point, architecture/source index, current evidence and prioritized optimization workflow |
+| [Agent implementation iterations](AGENT_ITERATION.md) | Independent Claude worktrees/commits, scoped edits and tests, exclusive background simulator lease, evidence and integration gates |
 | [.gitignore](../.gitignore) | Excludes build caches, credentials, local artifacts and external course assets; preserves owned Unity metadata |
 | [.dockerignore](../.dockerignore) | Limits image build context to required ROS, tools and Docker inputs |
 | [THIRD_PARTY_ASSETS.md](../THIRD_PARTY_ASSETS.md) | Asset provenance and redistribution boundaries |
@@ -44,6 +46,11 @@ and fixture assumptions before running it.
 | [tools/docker.sh](../tools/docker.sh) | Thin Linux entry point into `linux_session.py` |
 | [tools/linux_session.py](../tools/linux_session.py) | Linux player/Compose lifecycle, display authorization, build commands and owned-process checks |
 | [tools/igvc.ps1](../tools/igvc.ps1) | Native WSL launch/build/stop, test benches, course variants and legacy guided loop commands |
+| [tools/sandbox.ps1](../tools/sandbox.ps1) | Builds/launches the separate interactive sandbox with native WSL ROS and RViz; creates its desktop shortcut |
+| [tools/sandbox_session.py](../tools/sandbox_session.py) | Owns sandbox Start/Stop, heartbeat, Nav2 restarts and run evidence |
+| [tools/sandbox_profile.py](../tools/sandbox_profile.py) | Validates menu settings and generates allowlisted controller profiles |
+| [Sandbox guide and source index](SANDBOX.md) | Course placement, navigation menu, presets, UI source, limitations and validation |
+| [Reference Lab](REFERENCE_LAB.md) and [port plan](REFERENCE_LAB_PLAN.md) | Audit-only planner/racing-line/AI-driver studies in the sandbox, checks harness, validation and limits |
 | [tools/run_ros.sh](../tools/run_ros.sh) | Executes one native command after sourcing the project ROS environment |
 | [tools/ros_env.sh](../tools/ros_env.sh) | Domain 42, localhost discovery, Fast DDS settings, native install and validated MPPI overlay |
 | [tools/ros_session.py](../tools/ros_session.py) | Owns native ROS process groups, serializes session changes and prevents overlapping managed perception/navigation |
@@ -179,6 +186,7 @@ or canonical configuration, not only in a generated scene.
 | [SoonerCourseBuild.cs](../unity/IGVCSim/Assets/IGVC/Editor/SoonerCourseBuild.cs) | Constructs the reference-course scene around the owned robot/runtime |
 | [CourseLaneBuild.cs](../unity/IGVCSim/Assets/IGVC/Editor/CourseLaneBuild.cs) | Course lane/ground preparation used by the scene build pipeline |
 | [GroundRenderChecks.cs](../unity/IGVCSim/Assets/IGVC/Editor/GroundRenderChecks.cs) | Current course player build entry points and ground rendering checks |
+| [CourseSupportChecks.cs](../unity/IGVCSim/Assets/IGVC/Editor/CourseSupportChecks.cs) | Course-build regression for flat ground, pothole rims, and slow movement past the recorded support gap; separate local forensic replay |
 | [ProbeChecks.cs](../unity/IGVCSim/Assets/IGVC/Editor/ProbeChecks.cs) | Pure motion/transport fixture invariants |
 | [R3aKinematicsChecks.cs](../unity/IGVCSim/Assets/IGVC/Editor/R3aKinematicsChecks.cs) | Canonical drive geometry/frame/kinematics checks |
 | [DepthChecks.cs](../unity/IGVCSim/Assets/IGVC/Editor/DepthChecks.cs) | Ideal depth fixture/render checks |
@@ -211,10 +219,27 @@ or canonical configuration, not only in a generated scene.
 | [sensor_course.py](../tools/sensor_course.py) | **Current sensor-led motion coordinator**: observations, local goals, Nav2 actions, progress, adequate recovery and reports |
 | [observed_navigation.py](../tools/observed_navigation.py) | Chooses observed lane-entry/heading guidance before broad GPS fallback |
 | [sensor_route_policy.py](../tools/sensor_route_policy.py) | Bounded forward-arc search through observed costs with swept full-footprint clearance |
+| [swept_footprint.py](../tools/swept_footprint.py) | Directed interval enclosures of the full rectangular body along short constant-curvature arcs; exact straight translation bounds |
+| [execution_path.py](../tools/execution_path.py), [path_entry.py](../tools/path_entry.py) | Experimental direct FollowPath sampling and latest-pose/observed-grid admission; reject stale path handoffs without inventing a shortcut |
 | [lane_corridor_policy.py](../tools/lane_corridor_policy.py) | Proposes a corridor/entrance from paired observed paint; does not itself prove a drivable route |
 | [lane_heading_memory.py](../tools/lane_heading_memory.py) | Bounded remembered direction through gaps; no inferred hidden lane bounds |
+| [entrance_memory.py](../tools/entrance_memory.py), [entrance_support.py](../tools/entrance_support.py) | Experimental fixed observed entrance, expiry/consumption and recent bilateral support gating |
+| [navigation_decisions.py](../tools/navigation_decisions.py) | Bounded exact-input compressed decision recorder, with acquisition metadata and source hashes |
+| [record_navigation_episode.py](../tools/record_navigation_episode.py) | Bounded RGB/mask/depth/source-TF bundles plus pose, scan, paths, commands and decision events; read-only |
+| [replay_navigation_decision.py](../tools/replay_navigation_decision.py) | Offline observation-only replay and isolated lane-detector gate experiments |
+| [Recorded lane-mouth failures](../fixtures/observed_mouth_handoff/README.md) | Three compact original inputs for nearby, corner and post-ramp oblique handoff regressions; includes hashes and replay command |
+| [analyze_navigation_episode.py](../tools/analyze_navigation_episode.py) | Decision ages, guidance transitions, rejection reasons and heuristic selected/Nav2 path comparison |
+| [Navigation investigation](NAVIGATION_INVESTIGATION.md), [recorded fixture](../fixtures/white_barrel_cap/metadata.json) | Reproduction workflow, controlled trials, limits and a recorded white-barrel/ground-projection regression |
 | [recovery_policy.py](../tools/recovery_policy.py) | Selects adequate straight backup from observed rear sweep and useful forward continuation; no commands itself |
-| [audit_sensor_run.py](../tools/audit_sensor_run.py) | Read-only offline sensor-run audit; full geometry is scoring-only |
+| [recovery_budget.py](../tools/recovery_budget.py) | Two attempts per local trap; rearm only after measured forward and net progress, with a bounded mission total |
+| [recovery_intent.py](../tools/recovery_intent.py) | Preserves the actually selected sensor/GPS target after backup for at most 30 s; execution still replans on current observations |
+| [action_cancellation.py](../tools/action_cancellation.py) | Waits for a confirmed terminal Nav2 result before recovery handoff, with bounded waits and cancellation diagnostics |
+| [audit_sensor_run.py](../tools/audit_sensor_run.py) | Offline geometry, exact course/mission identity and health evidence; missing interval proof leaves aggregate acceptance uncertified |
+| [course_judge.py](../tools/course_judge.py) | Independent rendered-paint sweeps, ordered WORLD loop and ramp body checks; never imported by navigation |
+| [check_competition_profile.py](../tools/check_competition_profile.py), [2027 profile](../config/competition/igvc-2027-autonav.json) | Versioned rules comparisons with explicit fail/unknown results; does not modify training missions |
+| [sensor_telemetry.py](../tools/sensor_telemetry.py), [record_sensor_health.py](../tools/record_sensor_health.py) | Bounded arrival/acquisition/processing evidence, attached to missions or recorded without motion |
+| [mission_health.py](../tools/mission_health.py) | Whole-interval processing counters, latched failures/unknowns and bounded sampling-gap evidence tied to armed odometry |
+| [capture_observed_clearance.py](../tools/capture_observed_clearance.py), [diagnose_observed_clearance.py](../tools/diagnose_observed_clearance.py) | Fresh stationary paired costmap capture and whole-footprint blocker explanation; neither authorizes movement |
 | [full_course.py](../tools/full_course.py) | **Guided regression** mission using ordered known-route checkpoints; not current first-time autonomy |
 | [course_progress.py](../tools/course_progress.py) | Fail-closed ordered-route progress/continuity audit for guided runs |
 | [approach_speed.py](../tools/approach_speed.py) | Guided waypoint braking cap; distinct from current MPPI/mission speed tuning |
@@ -302,6 +327,12 @@ project also has custom Unity Editor batch checks listed in the Unity table.
 | Test / directory | Behavior under test |
 |---|---|
 | [test_sensor_route_policy.py](../tools/tests/test_sensor_route_policy.py) | Observed-only forward search, cost semantics and swept footprint |
+| [check_core.sh](../tools/check_core.sh), [checks.yml](../.github/workflows/checks.yml) | ROS-sourced core behavioral suite locally and in CI; does not run a Unity lap |
+| [test_sensor_run_audit.py](../tools/tests/test_sensor_run_audit.py) | Independent paint, gap, full-loop, shortcut, identity and ramp-body scoring |
+| [test_competition_profile.py](../tools/tests/test_competition_profile.py) | Rule units, limits, missing evidence and training-versus-competition differences |
+| [test_sensor_telemetry.py](../tools/tests/test_sensor_telemetry.py) | Distinguishes image arrival from processing health and bounded diagnostic history |
+| [test_mission_health.py](../tools/tests/test_mission_health.py) | Covers intermittent failures, missing coverage, clock regressions and bounded history without losing interval failures |
+| [test_clearance_capture.py](../tools/tests/test_clearance_capture.py), [test_clearance_diagnostics.py](../tools/tests/test_clearance_diagnostics.py) | Rejects stale/moving captures and explains footprint blocks despite a clear center |
 | [test_sensor_mission_contract.py](../tools/tests/test_sensor_mission_contract.py) | Sparse mission validation / accepted input contract |
 | [test_autonomy_mission_export.py](../tools/tests/test_autonomy_mission_export.py) | Export omits privileged route/geometry details |
 | [test_observed_navigation.py](../tools/tests/test_observed_navigation.py) | Observed corridor/heading guidance still obeys collisions |
@@ -333,11 +364,15 @@ and its parameter references for orientation, then use the linked source/evidenc
 | Document | What to use it for |
 |---|---|
 | [PROJECT_GUIDE.md](PROJECT_GUIDE.md) | Master architecture, workflow, interfaces, editing and troubleshooting |
+| [Independent model handoff](reviews/2026-09-30/HANDOFF.md), [review status](reviews/2026-09-30/STATUS.md) | Frozen source/evidence baseline, Opus/Sonnet/Sol assignments, offline test boundaries, findings and provider limitations |
 | [FILE_INDEX.md](FILE_INDEX.md) | This linked source and documentation directory |
 | [guide/ROS_PARAMETERS.md](guide/ROS_PARAMETERS.md) | Exact current navigation/perception/mission parameters and application workflow |
 | [guide/UNITY_AND_COURSE.md](guide/UNITY_AND_COURSE.md) | Exact Unity/world/robot editing paths and regeneration rules |
 | [NATIVE_AUTONAV.md](NATIVE_AUTONAV.md) | Native Jazzy patched controller setup and sensor-led launch commands |
 | [SENSOR_AUTONOMY.md](SENSOR_AUTONOMY.md) | Current autonomous architecture, observations, experimental results and unresolved failures |
+| [RELIABILITY_MILESTONE.md](RELIABILITY_MILESTONE.md) | September 30 investigation, matched costmap grids, new diagnostics and measured limits |
+| [COURSE_JUDGE.md](COURSE_JUDGE.md) | Independent offline paint/full-loop/ramp scoring contract and limitations |
+| [IGVC_2027_PROFILE.md](IGVC_2027_PROFILE.md) | Pinned published rules, compatibility checker, known mismatches and unresolved requirements |
 | [REFERENCE_COURSE.md](REFERENCE_COURSE.md) | Current user-reference map interpretation, sectors, gaps and outer ramp barrel bands |
 | [RAMP_DESCENT_FILTER.md](RAMP_DESCENT_FILTER.md) | Observed cause and controlled validation of descent lidar ground filtering |
 | [SOONER_COMPARISON.md](SOONER_COMPARISON.md) | Actual software/algorithm reuse boundary versus SoonerRobotics |

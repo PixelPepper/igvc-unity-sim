@@ -1,6 +1,6 @@
 # ROS and sensor-mission parameter reference
 
-This reference describes the checked-in profile as of 2026-09-23. It does not assert that a running process has loaded these values. Read live parameters after restarting. The fixture uses ideal transport, ground-truth odometry and synthetic GPS; it is not a calibrated R3-a robot or proof of 2027 compliance or a completed sensor-led lap. Start with the [project guide](../PROJECT_GUIDE.md), [file index](../FILE_INDEX.md) and [README](../../README.md).
+This reference describes the checked-in profile as of 2026-09-30. It does not assert that a running process has loaded these values. Read live parameters after restarting. The fixture uses ideal transport, ground-truth odometry and synthetic GPS; it is not a calibrated R3-a robot or proof of 2027 compliance or a completed sensor-led lap. Start with the [project guide](../PROJECT_GUIDE.md), [file index](../FILE_INDEX.md) and [README](../../README.md).
 
 `course` runs [sensor_course.py](../../tools/sensor_course.py): sparse GPS destinations, observed costmaps, camera paint and bounded remembered direction. It never loads generated route geometry. `guided-course` is a separate known-guide regression. Historical guided completion counts must not be attributed to sensor-led navigation.
 
@@ -33,8 +33,8 @@ All names in this table are ROS parameters under `/global_costmap/global_costmap
 | --- | --- | --- |
 | `global_frame`, `robot_base_frame` | `odom`, `base_footprint` for both | Canonical +X points toward the front driven wheels. The axle is the footprint origin; the long rear overhang matters in turns. |
 | `rolling_window`, `track_unknown_space` | `true`, `true` | Unknown space remains distinct; planner policy blocks it. |
-| `width`, `height` | 40 × 40 / 14 × 14 m | Larger windows increase memory and search workload. |
-| `resolution` | 0.10 / 0.05 m | Finer cells improve geometric detail while increasing computation. |
+| `width`, `height` | 24 × 24 / 14 × 14 m | Global 480 × 480 cells remains below the observed planner's 262,144-cell guard. Outside the rolling window remains blocked. |
+| `resolution` | 0.05 / 0.05 m | Matched paint raster detail avoids the demonstrated coarse-global/fine-local footprint disagreement. See [reliability evidence](../RELIABILITY_MILESTONE.md); finer grids still cost more CPU. |
 | `update_frequency`, `publish_frequency` | 2 / 1 Hz global; 5 / 2 Hz local | Update and publication rates differ. Mission freshness uses received messages. |
 | `transform_tolerance` | 0.3 s | Transform timing tolerance; not permission to project camera frames using an unrelated latest TF. |
 | `footprint` | `[[0.6,0.5],[-1.1,0.5],[-1.1,-0.5],[0.6,-0.5]]` m | Full rectangle about the driven axle. Keep both costmaps consistent. |
@@ -110,21 +110,55 @@ These are Python/CLI values, **not ROS parameters**. [sensor_course.py](../../to
 | `forward_only` | `false` → `true` | Mission uses forward straight/curved primitives, not reverse or pivot escape. |
 | `minimum_turn_radius` | 1.25 → 0.65 m | Slightly larger than Nav2's 0.6 m radius. |
 | `max_expansions` | 10000 → 50000 | Search cap; more states can find longer detours but cost time. |
-| `max_search_seconds` | `None` → 5.0 s | Cooperative expansion budget, checked every 64 expansions; precomputation is outside this timer. Mission has an 8 s external wait limit. |
+| `max_search_seconds` | `None` → `--planning-budget` (default 5.0 s) | Cooperative expansion budget, checked every 64 expansions; precomputation is outside this timer. CLI permits 0.05–5 s; mission has an 8 s external wait limit. Shorter 0.5 s trials remain experimental. |
 | `min_goal_distance` | 0 → 0.4 m | Avoids proposals already within Nav2's 0.30 m acceptance zone. |
 | `continuation_reserve` | 0 → 1.0 m | Leave checked path beyond a local goal unless the actual planning destination is reached. |
+| `body_clearance_weight` | 0 → `--body-clearance-weight` (default 0) | Experimental soft preference for space around the whole body; permitted range 0–10. Zero disables it. Larger values favor separation but may reduce progress within the search budget. It never enlarges the mandatory footprint or permits collision. |
+| `body_clearance_scale` | 0.30 m | Helper-only distance scale for four rectangular preference bands around the body. This is separate from Nav2 inflation and is not a required safety margin. |
+| `destination_yaw`, `destination_yaw_tolerance` | `None`, 0.35 rad → observed lane direction, 0.35 rad | Forward paths must align near an observed entrance; broad GPS remains position-only. Misaligned motion toward/through the target inside 0.7 m is rejected; outward escape is allowed. |
 
-[sensor_route_policy.py](../../tools/sensor_route_policy.py) blocks unknown/lethal squares, blocks centre costs ≥99, and checks continuous full-footprint sweeps with conservative sampling margins. Its 16 heading states use ±π/8 turns and step `max(minimum_turn_radius*π/8, 2*resolution)`. Endpoint selection prefers progress (`remaining + 0.01*travel`); this is a bounded proposal, not proof of global reachability. Full rectangle bounds are read from Nav2, rather than duplicated in the mission.
+[sensor_route_policy.py](../../tools/sensor_route_policy.py) blocks unknown/lethal squares, blocks centre costs ≥99, and checks continuous full-footprint sweeps with directed conservative arc enclosures. Its 16 heading states use ±π/8 turns and step `max(minimum_turn_radius*π/8, 2*resolution)`. Endpoint selection prefers progress (`remaining + 0.01*travel`, plus `minimum_turn_radius*heading_error` for oriented entrances); this is a bounded proposal, not proof of global reachability. Full rectangle bounds are read from Nav2, rather than duplicated in the mission.
+
+Endpoints must pass displacement, continuation and heading admission before they
+can win that ranking. When enabled, accumulated body-clearance preference also
+contributes to traversal and endpoint scores. It samples three poses per primitive;
+the separate hard swept-footprint checks still cover every motion interval.
 
 [observed_navigation.py](../../tools/observed_navigation.py) first seeks a paired observed lane corridor. [lane_corridor_policy.py](../../tools/lane_corridor_policy.py) defaults to `min_width=2`, `max_width=8`, `horizon=14`, `lookahead=3` m; the wrapper passes `min_width=1.2` and the mission's 7 m lookahead. A blocked visible entrance does not silently fall back to a GPS shortcut. [GapHeadingMemory](../../tools/lane_heading_memory.py) defaults to `max_travel=20` m and `max_age=60` monotonic seconds. It remembers observed direction, not invisible lane boundaries. The wrapper uses it only when the destination lies within 60° of that direction; final approaches within 1 m bypass corridor/hint guidance.
 
-[recovery_policy.py](../../tools/recovery_policy.py) tests straight rear distances `(0.6,0.9,1.2,1.5,1.8)` m, default `max_backup_distance=1.8` m (validated maximum 2 m). It checks the entire padded rear sweep, stops at the first obstruction, and shares `max_search_seconds=5` s / `max_expansions=50000` across candidates. A candidate must unlock ≥1 m forward goal displacement/path, ≥1 m checked continuation, a goal ≥0.4 m away from the original trap, and endpoint progress ≥0.5 m toward its guidance target. A clear backup endpoint alone is insufficient.
+[recovery_policy.py](../../tools/recovery_policy.py) tests straight rear distances `(0.6,0.9,1.2,1.5,1.8)` m, default `max_backup_distance=1.8` m (validated maximum 2 m). It checks the exact rectangle union of the padded straight rear sweep, stops at the first obstruction, and shares `max_search_seconds=5` s / `max_expansions=50000` across candidates. A candidate must unlock ≥1 m forward goal displacement/path, a goal ≥0.4 m away from the original trap, and endpoint progress ≥0.5 m toward its guidance target. Partial paths require ≥1 m checked continuation; a path actually reaching its selected target within `max(resolution,0.25)` m can finish there. A clear backup endpoint alone is insufficient.
 
-The mission allows at most two recoveries per destination, commands backup at 0.1 m/s, and sets action allowance to `ceil(distance/speed)+3` s. It cancels the prior action before searching. Search runs in a spawned process while the main process services ROS callbacks. Lack of safe recovery stops the mission; it does not license shrinking the footprint.
+The selection is made once at the actual trap, rather than redetecting a different
+entrance for each hypothetical backup. After successful backup,
+[recovery_intent.py](../../tools/recovery_intent.py) preserves the target for at most
+30 s while paths are recomputed from current sensor costs. It clears on aligned
+arrival within 0.25 m, or ≥1 m measured positive forward motion and net displacement
+from the backup pose plus ≥0.5 m improvement beyond the original trap. Expiry stops
+the mission. These source-level development bounds do not disable sensor health,
+unknown-space rejection, collision checks or the separate recovery budget.
+
+The mission allows at most two recoveries per local trapping episode, and at most
+twice the number of broad destinations over the whole mission. The local limit
+rearms only after both 3 m of measured forward progress and 3 m net displacement
+from the trap. Reversing and short back-and-forth shuffles cannot rearm it.
+[recovery_budget.py](../../tools/recovery_budget.py) owns these source-level limits.
+The mission commands backup at 0.1 m/s and sets action allowance to
+`ceil(distance/speed)+3` s. It cancels the prior action before searching. Search
+runs in a spawned process while the main process services ROS callbacks. Lack of
+safe recovery stops the mission; it does not license shrinking the footprint.
 
 Mission CLI defaults are `--speed 2.2` m/s and `--timeout 600` s; `--mission` and `--report` are required. `/speed_limit` is the minimum of CLI speed, mission JSON `max_speed_mps`, and 2.2 m/s. This is a ceiling, not an achieved-speed guarantee. Mission replan spacing is 1.5 s; stall detection uses 20 s without 0.15 m displacement or two failed actions. Monotonic reception-age limits are grid 5 s, odom 1 s, simulator status 3 s, lanes 1.5 s and autonomy-enabled status 1 s (after the initial 1 s grace).
 
 ## Perception and command safety
+
+For controlled comparisons, `sensor_course.py` also accepts `--goal-policy hold`
+(default `rolling`) and `--guidance-memory entrance` (default `heading`). Fixed
+entrance mode uses per-point age from `/perception/lanes/evidence`, requires recent
+bilateral paint support to refresh, consumes reached/passed targets and clears on
+destination change. `--capture-dir NEWDIR` saves exact decision inputs. See the
+[investigation workflow](../NAVIGATION_INVESTIGATION.md) for gating constants,
+record/replay commands, measured outcomes and limitations. These are experimental
+mission policies, not new ROS parameter names or competition-ready defaults.
 
 | Source / setting | Current value and kind | Effect / dependency |
 | --- | --- | --- |
@@ -141,7 +175,7 @@ Mission CLI defaults are `--speed 2.2` m/s and `--timeout 600` s; `--mission` an
 
 Point retention uses [PointMemory](../../ros2/src/igvc_perception/igvc_perception/point_memory.py): unconfirmed points expire after at most 3 s; five distinct acquisition stamps spanning at least 0.4 s earn the configured longer TTL. These are Python defaults, not ROS parameters. Thus `point_ttl=1200` does not retain every one-frame detection for 20 minutes.
 
-The 2.2 m/s cap leaves margin below the supplied 2026 five-mph reference. It does not certify the unverified 2027 rules. Do not increase watchdog limits to hide missing observations without investigating timestamps, callback latency and compute load.
+The 2.2 m/s cap leaves margin below the published 2027 five-mph limit (2.2352 m/s), as recorded in the [versioned rules profile](../IGVC_2027_PROFILE.md). A software command cap does not certify the required hardware governor or measured performance. Do not increase watchdog limits to hide missing observations without investigating timestamps, callback latency and compute load.
 
 ## GPS and sensor placement
 

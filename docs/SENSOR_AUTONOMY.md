@@ -1,5 +1,18 @@
 # Sensor-led navigation
 
+The [lane re-entry investigation](NAVIGATION_INVESTIGATION.md) records and replays
+individual decisions, exposes latency/preemption experiments, and tests optional
+fixed observed-entrance memory. Defaults remain the legacy heading policy and
+5 s search budget; candidate runs use explicit CLI flags. Full-lap validation
+remains open, including ramp body containment and repeated-seed reliability.
+
+Latest investigation: [September 30 reliability milestone](RELIABILITY_MILESTONE.md)
+adds bounded timing reports, fresh paired costmap diagnostics, matched 0.05 m
+global/local grids, and independent [paint/loop/ramp scoring](COURSE_JUDGE.md).
+The [2027 rules profile](IGVC_2027_PROFILE.md) exposes differences between this
+training fixture and the published rules. Historical results below retain their
+original configuration; a first-time full lap remains unverified.
+
 The user requested destinations as broad guidance, with navigation driven by
 vision and other sensors. The previous 31-point lap used a generated guide and
 known painted/unmarked zones; its success is not evidence of this capability.

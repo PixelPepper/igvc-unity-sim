@@ -1,5 +1,37 @@
 # IGVC simulation implementation plan
 
+October 1 interactive sandbox: [editor and validation](SANDBOX.md) adds a separate
+Windows Unity player with obstacle placement, preset save/load, large navigation
+controls and managed native-WSL ROS/RViz trials. Build, editor behavior and short
+RPP/MPPI start/move/stop integration checks passed. New obstacle layouts and
+alternate settings remain experimental; this does not close repeatability,
+hardware-fidelity or full-course gates for those combinations.
+
+October 1 sensor-led milestone: [candidate and integration evidence](evidence/navigation-2026-10-01.md#completed-sensor-led-loop)
+records a completed **6/6 full loop** in 363.37 s, seed 2027, experimental
+checked-path/RPP execution at a requested 0.6 m/s ceiling. All independent audit
+checks passed, including ordered return, obstacle/paint sweeps, ramp body
+containment and sampled processing health throughout armed motion. One checked
+0.6 m backup was used. This closes the single-run ideal-fixture gate for this
+configuration; repeated/variant runs, higher speeds and physical calibration
+remain open. Earlier partial trials below remain historical evidence.
+
+September 30 support follow-up: the [recorded post-ramp stall](NAVIGATION_INVESTIGATION.md#follow-up-invisible-support-gap-beside-a-pothole)
+reproduced an invisible support gap at a pothole rim. Unity support geometry and
+generation overlap checks are repaired. A fresh sensor-led run had zero terrain
+rejections but stopped at 4/6 destinations; ramp-body containment also remains
+unproven. Full-lap and repeated-run gates remain open.
+
+September 30 follow-through: [lane re-entry investigation](NAVIGATION_INVESTIGATION.md)
+adds synchronized evidence, replay, latency/preemption comparisons, optional fixed
+entrance memory and a replay-confirmed final-arrival repair. The independent
+full-lap and repeated-run gates remain authoritative; partial progress is not a pass.
+
+September 30 reliability slice: [measured investigation and tools](RELIABILITY_MILESTONE.md),
+[independent course judge](COURSE_JUDGE.md), and [versioned 2027 profile](IGVC_2027_PROFILE.md).
+These improve evidence and configuration checks; they do not close the full-lap,
+physical-calibration or competition qualification gates below.
+
 Current autonomy change: [sensor-led navigation](SENSOR_AUTONOMY.md) replaces
 route-informed mission control with observed-costmap local goals and six broad
 GPS destinations. Earlier lap evidence below belongs to guided regression.

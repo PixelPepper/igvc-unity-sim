@@ -8,11 +8,37 @@ Use its [linked file index](docs/FILE_INDEX.md),
 [ROS/navigation parameter reference](docs/guide/ROS_PARAMETERS.md) and
 [Unity/course editing guide](docs/guide/UNITY_AND_COURSE.md) to find the source for a change.
 
+For interactive obstacle placement and navigation tuning, see the
+[Unity Sandbox guide](docs/SANDBOX.md). It uses a separate player and named presets.
+Its **Reference lab** tab (HPA*/JPS planner, racing-line optimiser, AI-driver ghosts) is an
+audit-only study of the full course file; see [docs/REFERENCE_LAB.md](docs/REFERENCE_LAB.md).
+
+Continuing in Claude Code? Read the [Claude handoff](docs/CLAUDE_HANDOFF.md)
+for current evidence, architecture, source index, optimization priorities and
+safe experiment workflows. The root [CLAUDE.md](CLAUDE.md) is its entry point.
+
 **Navigation update:** `course` selects local goals from observed camera/depth/lidar
 costs using six broad GPS destinations. This experimental mode has no generated
 route input. `guided-course` retains the earlier route-informed regression.
-The successful lap results below describe that guided mode, not proven sensor-led
-autonomy. See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
+The October 1 experimental checked-path/RPP trial completed **6/6 sensor-led
+destinations and the full loop**, with all independent audit checks passing.
+It used seed 2027, a 0.6 m/s requested ceiling and one checked 0.6 m backup.
+This is one validated run, not repeatability or calibrated hardware autonomy.
+The [exact profile, results and remaining gates](docs/evidence/navigation-2026-10-01.md#completed-sensor-led-loop)
+are recorded separately; ordinary `course` defaults do not select this experimental
+configuration. The older lap results below describe guided mode.
+See [sensor navigation plan and validation](docs/SENSOR_AUTONOMY.md).
+The [September reliability milestone](docs/RELIABILITY_MILESTONE.md) adds sensor
+timing evidence, matched costmap detail and independent paint/full-loop scoring.
+The [lane re-entry investigation](docs/NAVIGATION_INVESTIGATION.md) adds synchronized
+recording, exact-input replay, goal/path comparisons and controlled entrance-memory
+experiments. Those earlier trials were partial; the October 1 result above includes
+subsequent observed-target and endpoint-admission corrections.
+The follow-up also repairs an invisible wheel-support gap beside potholes; rebuild
+the Unity course player to include it. Updating ROS or Docker alone cannot apply
+this Unity runtime fix.
+Use the [2027 rules checker](docs/IGVC_2027_PROFILE.md) to identify configuration
+mismatches; it does not certify the simulator or hardware.
 For the actual reuse boundary and algorithm differences, see the
 [SoonerRobotics comparison](docs/SOONER_COMPARISON.md).
 

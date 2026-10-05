@@ -1,5 +1,31 @@
 # Transport probe runbook
 
+## Desktop shortcut for the latest successful navigation setup
+
+On Windows, run `powershell -NoProfile -ExecutionPolicy Bypass -File tools/install-latest-run-shortcut.ps1`
+once to create **IGVC Latest Run + RViz** on your desktop. Double-click it to open
+the rendered Unity player and RViz using native WSL Jazzy, seed 2027 and the
+[successful experimental 6/6 configuration](evidence/navigation-2026-10-01.md#completed-sensor-led-loop).
+It checks the installed perception source and rebuilds the native ROS workspace
+if those files are stale. Docker must not already own the simulator bridge.
+
+Press **Enter** in the launcher to begin a fresh lap, or **Q then Enter** to close.
+After the lap, the launcher saves its report and independent audit under
+`artifacts/latest-run/<timestamp>/`; press Enter to close Unity and RViz.
+Use the console controls instead of closing the terminal with its X button so
+the launcher can finish cleanup. This launches a fresh simulation, not recorded
+playback, and does not promise another 6/6 result. The experimental mission speed
+ceiling is 0.6 m/s. It opens the compiled player, not the Unity Editor.
+
+In RViz, select **Move Camera** and drag in the main 3D viewport: left-drag
+rotates the Orbit view, middle-drag pans, and the scroll wheel zooms. The view
+follows `base_footprint`; change **Views > Target Frame** to `odom` for a fixed
+world view. These controls move the visualization camera, not the simulated
+OAK-D sensor. The RGB and depth image panels are not orbitable 3D viewports.
+
+`tools/latest-run.ps1 -SmokeTest` checks visible player/RViz startup and live
+odometry/RGB reception, then shuts down without commanding a lap.
+
 Docker `course` now runs experimental [sensor-led navigation](SENSOR_AUTONOMY.md).
 Use `guided-course` explicitly for the older generated-route regression described
 in historical lap instructions. Sensor mode requires rebuilt Unity and Docker;

@@ -3,7 +3,7 @@
 **Start here when joining the project.** This guide explains what runs, how the
 pieces communicate, where to edit them, and how to judge the result.
 
-Reviewed against the working-tree source on **2026-09-23**. Target: **IGVC 2027
+Reviewed against the working-tree source on **2026-09-30**. Target: **IGVC 2027
 AutoNav**, Unity **6000.3.23f1**, Ubuntu **24.04**, ROS 2 **Jazzy**. This describes
 the current checkout; it does not imply that every local change is already in a
 published release. Relative links work in the repository and on GitHub.
@@ -27,12 +27,20 @@ published release. Relative links work in the repository and on GitHub.
 
 Companion references:
 
+- **[Claude Code handoff](CLAUDE_HANDOFF.md)** — current working-tree status,
+  evidence, prioritized optimization tasks, commands and experiment boundaries.
 - **[Linked file and document index](FILE_INDEX.md)** — repository entry points,
   source-file responsibilities, utilities, tests, and the complete topic-document index.
 - **[ROS, navigation, and perception parameters](guide/ROS_PARAMETERS.md)** —
   exact names, units, current values, interactions, and verification methods.
 - **[Unity, robot, and course editing](guide/UNITY_AND_COURSE.md)** — world
   generation, scene builders, geometry, mounts, camera controls, and terrain settings.
+- **[Reliability investigation](RELIABILITY_MILESTONE.md)** — measured failure,
+  matched costmap detail, diagnostic commands, independent scoring and current limits.
+- **[Lane re-entry investigation](NAVIGATION_INVESTIGATION.md)** — synchronized
+  evidence, offline replay, planning latency, fixed entrance experiments and remaining gates.
+- **[2027 rules profile](IGVC_2027_PROFILE.md)** — pinned rules comparisons with
+  explicit unknowns; the training layout is not a competition-compliant fixture.
 
 <a id="first-reading"></a>
 ## 1. First reading and common tasks
@@ -40,6 +48,7 @@ Companion references:
 | Your goal | Read or open next |
 |---|---|
 | Run an existing checkout | [Run modes below](#run), then the platform setup in [README](../README.md) |
+| Place obstacles and experiment with navigation through a large Unity menu | [Interactive sandbox](SANDBOX.md): separate player, presets, controller choices and trial controls |
 | Understand the system without running it | [Architecture](#architecture), [interfaces](#interfaces), [file index](FILE_INDEX.md) |
 | Change barrels, lanes, the ramp, or randomization | [Unity/course reference](guide/UNITY_AND_COURSE.md) and [generator](../tools/generate_course_variant.py) |
 | Change speed, heatmap clearance, or backing up | [ROS parameter reference](guide/ROS_PARAMETERS.md) and [current navigation configuration](../ros2/src/igvc_navigation/config/local_navigation.yaml) |
