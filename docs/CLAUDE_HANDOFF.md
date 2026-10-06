@@ -4,6 +4,17 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
+**October 6 continuation:** the external two-instance route-weight comparison
+has completed and its failures are preserved. Weight0 passed7/10 full audits;
+weight8 passed9/10 planned trials (9/11 recorded attempts including one startup
+retry). Weight8 was slower on6/7 mutually audit-passing pairs. No default or
+promotion change follows. Both players stopped; the completed report and limits
+are in [October 6 evidence](evidence/navigation-2026-10-06.md). T0045 is revising
+the isolated offline corridor teacher after C# fixture failures; do not train
+or integrate its unaccepted candidate. The overnight heartbeat resumed at the
+user's request through October6 10:00AM Pacific. Read the canonical board before
+starting work; no concurrent live session or Unity build without its lease.
+
 **October 5 current state:** the reviewed recovery build is frozen at
 **d6519e1ee323db0e66fd5953959f07cc56508cc5**. It passed643 combined checks and,
 under T0034, three consecutive seed2027 laps:6/6 and all20 audit checks in
