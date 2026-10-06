@@ -93,13 +93,13 @@ public static class Program
             var watch = System.Diagnostics.Stopwatch.StartNew();
             try
             {
+                // Output state is checked before any work; run.Name is the folder name.
+                string target = one != null && outDir != null ? outDir : Path.Combine(outDir ?? Path.Combine(root ?? ".", "artifacts", "learning", "labels"), new DirectoryInfo(dir).Name);
+                string refusal = OutputRefusal(target, options.CorridorCost);
+                if (refusal != null) throw new InvalidOperationException("refusing to write " + options.CorridorCost + " labels to " + target + ": " + refusal + "; label into a fresh --out directory");
                 var run = LoadRun(dir);
                 if (!teachers.TryGetValue(run.Course.Identity, out var teacher)) teachers[run.Course.Identity] = teacher = new HindsightTeacher(run.Course);
                 var res = new Labeler(teacher, options).Label(run);
-                string target = one != null && outDir != null ? outDir : Path.Combine(outDir ?? Path.Combine(root ?? ".", "artifacts", "learning", "labels"), run.Name);
-                // Never overwrite labels of another corridor mode (a summary without corridor_label is straight-v1).
-                string existing = ExistingCorridorLabel(Path.Combine(target, "summary.json"));
-                if (existing != null && existing != options.CorridorCost) throw new InvalidOperationException("refusing to overwrite " + existing + " labels in " + target + " with " + options.CorridorCost);
                 Directory.CreateDirectory(target);
                 File.WriteAllText(Path.Combine(target, "labels.jsonl"), string.Join("\n", res.Lines) + "\n");
                 File.WriteAllText(Path.Combine(target, "summary.json"), res.Summary + "\n");
@@ -116,11 +116,35 @@ public static class Program
     }
 
     private static double D(JsonElement e) => e.ValueKind == JsonValueKind.Number ? e.GetDouble() : double.NaN;
-    private static string ExistingCorridorLabel(string summary)
+    /// <summary>Null when target may be (re)written in this mode. Fresh/absent output is allowed; existing generated output is
+    /// overwritten only if summary.json, labels.jsonl and traps.json all exist and every record explicitly names the same
+    /// corridor_label. Missing/unparsable/unlabelled metadata (including pre-mode legacy and path-v2 corridor_cost output)
+    /// is refused rather than guessed, so existing bytes are never replaced. Unrelated files are left alone.</summary>
+    private static string OutputRefusal(string target, string mode)
     {
-        if (!File.Exists(summary)) return null;
-        using var d = JsonDocument.Parse(File.ReadAllText(summary));
-        return Has(d.RootElement, "corridor_label", out var v) ? v.GetString() : LabelOptions.StraightV1;
+        if (File.Exists(target)) return "target is a file";
+        if (!Directory.Exists(target)) return null;
+        string summary = Path.Combine(target, "summary.json"), labels = Path.Combine(target, "labels.jsonl"), traps = Path.Combine(target, "traps.json");
+        if (!File.Exists(summary) && !File.Exists(labels) && !File.Exists(traps)) return null;
+        if (!File.Exists(summary) || !File.Exists(labels) || !File.Exists(traps)) return "incomplete existing output (summary.json, labels.jsonl, traps.json not all present)";
+        try
+        {
+            using (var d = JsonDocument.Parse(File.ReadAllText(summary)))
+            {
+                if (Has(d.RootElement, "corridor_cost", out _)) return "existing summary has legacy corridor_cost metadata";
+                if (!Has(d.RootElement, "corridor_label", out var v) || v.ValueKind != JsonValueKind.String) return "existing summary has no corridor_label";
+                if (v.GetString() != mode) return "existing summary is corridor_label " + v.GetString();
+            }
+            foreach (string line in File.ReadLines(labels))
+            {
+                if (line.Trim().Length == 0) continue;
+                using var d = JsonDocument.Parse(line);
+                if (Has(d.RootElement, "corridor_cost", out _)) return "existing labels have legacy corridor_cost metadata";
+                if (!Has(d.RootElement, "corridor_label", out var v) || v.ValueKind != JsonValueKind.String || v.GetString() != mode) return "existing labels are not all corridor_label " + mode;
+            }
+        }
+        catch (JsonException e) { return "existing metadata is not valid JSON (" + e.Message + ")"; }
+        return null;
     }
     private static bool Has(JsonElement e, string name, out JsonElement v) { v = default; return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out v) && v.ValueKind != JsonValueKind.Null; }
     private static V2 Pt(JsonElement e) => new V2(D(e[0]), D(e[1]));
