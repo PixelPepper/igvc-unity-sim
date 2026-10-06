@@ -314,6 +314,28 @@ class CorridorLabelModeTests(unittest.TestCase):
                     self.assertEqual([r['teacher_cost_m'] for r in rows], costs)
                     self.assertEqual(stats['groups'], 1)
 
+    def test_malformed_raw_label_lines_are_rejected_with_line_numbers(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            v3 = [_target('grid_path', 19.), _target('line_of_sight', 11.)]
+            bad = ['{"index": 4, "corridor_label": "straight-v1"', '[4]', '"text"',
+                   '{"corridor_label": "path-v3"}', '{"index": true}', '{"index": 4.0}',
+                   '{"index": "4"}', '{"index": null}']
+            for k, line in enumerate(bad):
+                case = tmp/str(k)
+                case.mkdir()
+                outcomes, labels = self.write(case, {3: ('path-v3', v3)})
+                labels.write_text(labels.read_text()+'\n'+line+'\n')
+                with self.subTest(line=line), self.assertRaisesRegex(ValueError, r'labels\.jsonl:3: '):
+                    build_corridor_rows(outcomes, labels, 'run', corridor_label='path-v3')
+            # Blank and whitespace-only lines remain tolerated around a valid record.
+            case = tmp/'blank'
+            case.mkdir()
+            outcomes, labels = self.write(case, {3: ('path-v3', v3)})
+            labels.write_text('\n  \n'+labels.read_text()+'\n\t\n')
+            rows, stats = build_corridor_rows(outcomes, labels, 'run', corridor_label='path-v3')
+            self.assertEqual(([r['teacher_cost_m'] for r in rows], stats['groups']), ([19., 11.], 1))
+
     def test_omissions_before_target_check_are_counted(self):
         with tempfile.TemporaryDirectory() as tmp:
             v3 = [_target('line_of_sight', 10.), _target('line_of_sight', 11.)]

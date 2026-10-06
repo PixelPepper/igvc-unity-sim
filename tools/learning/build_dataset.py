@@ -220,22 +220,27 @@ def label_mode(labels_path):
 
     Every raw record is checked before _read_jsonl's index deduplication could
     hide one: duplicate indices and contradictory corridor_label/corridor_cost
-    aliases are rejected rather than resolved by picking a row.
+    aliases are rejected rather than resolved by picking a row. Malformed
+    nonempty lines, non-object records and missing or non-integer indices fail
+    closed with their line number; blank lines are tolerated.
     """
     modes, seen = set(), set()
     with Path(labels_path).open(encoding='utf-8') as stream:
-        for line in stream:
+        for number, line in enumerate(stream, 1):
+            if not line.strip():
+                continue
             try:
                 record = json.loads(line)
-            except ValueError:
-                continue
+            except ValueError as error:
+                raise ValueError(f'{labels_path}:{number}: malformed label JSON ({error})') from None
             if not isinstance(record, dict):
-                continue
+                raise ValueError(f'{labels_path}:{number}: label record is not an object')
             index = record.get('index')
-            if type(index) is int:
-                if index in seen:
-                    raise ValueError(f'{labels_path}#{index}: duplicate label index')
-                seen.add(index)
+            if type(index) is not int:
+                raise ValueError(f'{labels_path}:{number}: label index {index!r} is not an integer')
+            if index in seen:
+                raise ValueError(f'{labels_path}:{number}: duplicate label index {index}')
+            seen.add(index)
             aliases = [record[key] for key in ('corridor_label', 'corridor_cost') if key in record]
             if len(aliases) == 2 and aliases[0] != aliases[1]:
                 raise ValueError(f'{labels_path}#{index}: corridor_label {aliases[0]!r} '
