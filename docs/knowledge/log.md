@@ -1,5 +1,12 @@
 # Knowledge Update Log
 
+## 2026-10-06
+
+* **Transport timing:** Added the accepted T-0042 opt-in schema-v3 capture and
+  v2-compatible analyzer to the transport concept, including sampled-error,
+  independent physics-stream and missing-coverage limits. This does not establish
+  a transport fix, delivery timing or promotion; run evidence stays in task logs.
+
 ## 2026-10-05
 
 * **Recovery gate target**: T-0032 adds bounded nearer-station selection inside

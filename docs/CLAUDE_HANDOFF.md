@@ -34,8 +34,19 @@ T0040 completed both diagnostic repeats (6/6/all20 in368.40s and349.60s);
 no freshness failure reproduced. One checked0.6m backup in the first, none in the
 second; nearer-station search still unexercised. Sonnet and qualified Sol reviews complete; coordinator separately verified raw
 timing/input/runtime identities. Overnight heartbeat remains paused; user resumed
-interactive multi-agent work. No simulator running. T0041 investigates the next
-discriminating transport experiment; no new runtime fix is claimed.
+interactive multi-agent work. T0041 narrowed the next diagnostic change; T0042
+integrated sampled connection-error counts and independent FixedUpdate timing
+(source 6792e01, schema v3). The analyzer still reads v2 and marks new metrics
+unavailable for old logs. Reviews caught and corrected two impossible-record
+validation cases and an unrealistic synthetic fixture; original evidence remains.
+Unity compilation, 29 Editor checks, a Win64 build, 25 integrated Python tests,
+and stopped-player off/on smoke tests passed. The new player assembly is
+809c280c1bbe9606e23a4cbbd8d5c7f04a2a63e2070d67622149867e06109dbf.
+Smoke testing deliberately had no ROS endpoint: it validates capture behavior,
+not a course lap or transport reliability. No simulator is running and no new
+runtime fix is claimed. The prior cf8f timing player remains preserved in the
+frozen runtime checkout. See the [T0042 packet](agents/tasks/T-0042-sampled-transport-capture.md)
+for exact evidence and review limits before granting another diagnostic lap.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,

@@ -1,5 +1,41 @@
 # October 5: instrumented baseline and a passing mouth-handoff comparison
 
+## Evening continuation: sampled transport capture, no new lap
+
+The user resumed interactive multi-agent work; the expired overnight heartbeat
+stays paused. T0041's reviewed investigation identified a coverage limitation:
+reading the connector error flag only at the one-second reporting interval can
+miss shorter observations. T0042 adds sampled Update/FixedUpdate error counts and
+independent physics-callback gaps. These observations do not establish causation,
+message production or delivery. Runtime safety and navigation policy are unchanged.
+
+Opus implemented candidate `2ca413f`, accepted after Sonnet code review and Sol
+evidence review; integration commits are `84ff48e` and `6792e01`. Review corrected
+two impossible-record validation cases and an unrealistic synthetic timestamp in
+an ignored test harness. All original fixtures and reports remain preserved.
+
+Verified in the primary checkout: **25 Python tests, 29 Unity Editor checks,
+Win64 build, and stopped-player tracing-off/on smoke tests passed**. The new
+player assembly SHA256 is
+`809c280c1bbe9606e23a4cbbd8d5c7f04a2a63e2070d67622149867e06109dbf`.
+The frozen cf8f player used for earlier diagnostic laps remains unchanged.
+
+The smoke tests deliberately ran without a ROS endpoint and both exited zero.
+Tracing off produced no records. Tracing on produced 11 schema-v3 records
+(header, nine windows, terminal stopped), 568 Update samples and 946 fixed
+samples. Both streams observed the expected connection-error flag throughout;
+the analyzer reported complete capture and no integrity issues. Maximum observed
+fixed gap was 0.0171758 s; this is a stationary smoke measurement, not a loaded
+mission or an overhead comparison. The on-log SHA256 is
+`578fc8753426ee282b4886b1a640ec06f43f71286f05c7b901ced99589bdc510`.
+The analyzer still accepts v2 logs with new metrics marked unavailable.
+
+Artifacts are under `artifacts/agents/T-0042/`, including build/smoke status,
+closed raw logs, reports, focused test output and independent reviews. No ROS
+course trial was run in this slice; it adds zero qualifying laps. The earlier
+T0035 failure remains unresolved. Capture is off by default, no safety threshold
+was relaxed, and no source was pushed or published.
+
 ## Current source: promotion blocked by first2029 freshness failure
 
 [T0035](../agents/tasks/T-0035-heldout-2029.md) tested the same frozen d6519e1
