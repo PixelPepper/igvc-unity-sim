@@ -95,8 +95,8 @@ public static class Program
             {
                 // Output state is checked before any work; run.Name is the folder name.
                 string target = one != null && outDir != null ? outDir : Path.Combine(outDir ?? Path.Combine(root ?? ".", "artifacts", "learning", "labels"), new DirectoryInfo(dir).Name);
-                string refusal = OutputRefusal(target, options.CorridorCost);
-                if (refusal != null) throw new InvalidOperationException("refusing to write " + options.CorridorCost + " labels to " + target + ": " + refusal + "; label into a fresh --out directory");
+                string refusal = OutputRefusal(target);
+                if (refusal != null) throw new InvalidOperationException("refusing to write " + options.CorridorCost + " labels to " + target + ": " + refusal + "; outputs are immutable, label into a fresh --out directory");
                 var run = LoadRun(dir);
                 if (!teachers.TryGetValue(run.Course.Identity, out var teacher)) teachers[run.Course.Identity] = teacher = new HindsightTeacher(run.Course);
                 var res = new Labeler(teacher, options).Label(run);
@@ -116,34 +116,18 @@ public static class Program
     }
 
     private static double D(JsonElement e) => e.ValueKind == JsonValueKind.Number ? e.GetDouble() : double.NaN;
-    /// <summary>Null when target may be (re)written in this mode. Fresh/absent output is allowed; existing generated output is
-    /// overwritten only if summary.json, labels.jsonl and traps.json all exist and every record explicitly names the same
-    /// corridor_label. Missing/unparsable/unlabelled metadata (including pre-mode legacy and path-v2 corridor_cost output)
-    /// is refused rather than guessed, so existing bytes are never replaced. Unrelated files are left alone.</summary>
-    private static string OutputRefusal(string target, string mode)
+    /// <summary>Null when target is fresh: absent, or a directory holding none of the generated names. Generated output is
+    /// immutable: if summary.json, labels.jsonl or traps.json exists (as file or directory) the target is refused whatever
+    /// its mode or completeness; contents are never inspected. Unrelated files are left alone. Assumes one serial writer.</summary>
+    private static string OutputRefusal(string target)
     {
         if (File.Exists(target)) return "target is a file";
         if (!Directory.Exists(target)) return null;
-        string summary = Path.Combine(target, "summary.json"), labels = Path.Combine(target, "labels.jsonl"), traps = Path.Combine(target, "traps.json");
-        if (!File.Exists(summary) && !File.Exists(labels) && !File.Exists(traps)) return null;
-        if (!File.Exists(summary) || !File.Exists(labels) || !File.Exists(traps)) return "incomplete existing output (summary.json, labels.jsonl, traps.json not all present)";
-        try
+        foreach (string name in new[] { "summary.json", "labels.jsonl", "traps.json" })
         {
-            using (var d = JsonDocument.Parse(File.ReadAllText(summary)))
-            {
-                if (Has(d.RootElement, "corridor_cost", out _)) return "existing summary has legacy corridor_cost metadata";
-                if (!Has(d.RootElement, "corridor_label", out var v) || v.ValueKind != JsonValueKind.String) return "existing summary has no corridor_label";
-                if (v.GetString() != mode) return "existing summary is corridor_label " + v.GetString();
-            }
-            foreach (string line in File.ReadLines(labels))
-            {
-                if (line.Trim().Length == 0) continue;
-                using var d = JsonDocument.Parse(line);
-                if (Has(d.RootElement, "corridor_cost", out _)) return "existing labels have legacy corridor_cost metadata";
-                if (!Has(d.RootElement, "corridor_label", out var v) || v.ValueKind != JsonValueKind.String || v.GetString() != mode) return "existing labels are not all corridor_label " + mode;
-            }
+            string p = Path.Combine(target, name);
+            if (File.Exists(p) || Directory.Exists(p)) return "generated output " + name + " already exists";
         }
-        catch (JsonException e) { return "existing metadata is not valid JSON (" + e.Message + ")"; }
         return null;
     }
     private static bool Has(JsonElement e, string name, out JsonElement v) { v = default; return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out v) && v.ValueKind != JsonValueKind.Null; }

@@ -1,4 +1,4 @@
-"""Behavior tests: reference_lab `label` never overwrites existing generated output of unknown or different mode.
+"""Behavior tests: reference_lab `label` output is immutable; any existing generated name refuses the target.
 
 The guard runs before the run folder is loaded, so a placeholder run folder suffices. Fresh output is shown to pass
 the guard (it then fails loading the placeholder run, before writing anything); a real labelled run is not exercised.
@@ -23,6 +23,10 @@ def label_line(**fields):
     return json.dumps({'schema_version': 1, 'index': 0, **fields}) + '\n'
 
 
+def snapshot(root):
+    return {str(p.relative_to(root)): (p.read_bytes() if p.is_file() else None) for p in sorted(root.rglob('*'))}
+
+
 @unittest.skipIf(DOTNET is None, 'dotnet not available')
 class LabelOutputIsolation(unittest.TestCase):
     @classmethod
@@ -43,44 +47,71 @@ class LabelOutputIsolation(unittest.TestCase):
                '--out', str(out), '--corridor-label', mode]
         return subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
-    def existing(self, files, mode='path-v3'):
+    def existing(self, files, mode='path-v3', dirs=()):
         out = self.tmp / 'out'
         out.mkdir()
+        for name in dirs:
+            (out / name).mkdir()
+            (out / name / 'inner.txt').write_text('keep\n', encoding='utf-8')
         for name, text in files.items():
             (out / name).write_text(text, encoding='utf-8')
-        before = {p.name: p.read_bytes() for p in out.iterdir()}
+        before = snapshot(out)
         proc = self.label(out, mode)
         self.assertNotEqual(proc.returncode, 0, proc.stdout)
         self.assertIn('refusing to write', proc.stdout)
-        self.assertEqual(before, {p.name: p.read_bytes() for p in out.iterdir()}, 'existing output bytes changed')
+        self.assertIn('fresh --out', proc.stdout)
+        self.assertEqual(before, snapshot(out), 'existing output bytes changed')
         return proc.stdout
+
+    def complete(self, mode):
+        return {'labels.jsonl': label_line(corridor_label=mode), 'summary.json': summary(corridor_label=mode),
+                'traps.json': '[]\n'}
+
+    def test_same_mode_complete_path_v3_refused(self):
+        self.assertIn('already exists', self.existing(self.complete('path-v3')))
+
+    def test_same_mode_complete_straight_v1_refused(self):
+        self.existing(self.complete('straight-v1'), mode='straight-v1')
 
     def test_labels_without_summary_refused(self):
         self.existing({'labels.jsonl': label_line(corridor_label='path-v3')})
 
-    def test_unlabelled_legacy_summary_is_not_assumed_straight(self):
+    def test_traps_only_refused(self):
+        self.assertIn('traps.json', self.existing({'traps.json': '[]\n'}))
+
+    def test_truncated_summary_refused(self):
+        files = self.complete('path-v3')
+        files['summary.json'] = '{"labelled": 1, "corridor_la'
+        self.existing(files)
+
+    def test_corrupt_labels_and_empty_traps_refused(self):
+        self.existing({'labels.jsonl': '{not json\n', 'summary.json': summary(corridor_label='path-v3'), 'traps.json': ''})
+
+    def test_named_directory_collisions_refused(self):
+        for name in ('summary.json', 'labels.jsonl', 'traps.json'):
+            with self.subTest(name=name):
+                self.assertIn(name, self.existing({}, dirs=(name,)))
+                shutil.rmtree(self.tmp / 'out')
+
+    def test_unlabelled_legacy_output_refused(self):
         files = {'labels.jsonl': label_line(), 'summary.json': summary(), 'traps.json': '[]\n'}
-        self.assertIn('no corridor_label', self.existing(files, mode='straight-v1'))
+        self.existing(files, mode='straight-v1')
 
     def test_path_v2_corridor_cost_metadata_refused(self):
         files = {'labels.jsonl': label_line(corridor_cost='path-v2'), 'summary.json': summary(corridor_cost='path-v2'),
                  'traps.json': '[]\n'}
-        self.assertIn('corridor_cost', self.existing(files))
-
-    def test_different_mode_refused(self):
-        files = {'labels.jsonl': label_line(corridor_label='straight-v1'),
-                 'summary.json': summary(corridor_label='straight-v1'), 'traps.json': '[]\n'}
-        self.assertIn('straight-v1', self.existing(files))
-
-    def test_inconsistent_labels_refused(self):
-        files = {'labels.jsonl': label_line(corridor_label='path-v3') + label_line(corridor_label='straight-v1'),
-                 'summary.json': summary(corridor_label='path-v3'), 'traps.json': '[]\n'}
         self.existing(files)
 
-    def test_invalid_summary_refused(self):
-        files = {'labels.jsonl': label_line(corridor_label='path-v3'), 'summary.json': '{not json',
-                 'traps.json': '[]\n'}
-        self.assertIn('not valid JSON', self.existing(files))
+    def test_different_mode_refused(self):
+        self.existing(self.complete('straight-v1'))
+
+    def test_target_file_refused(self):
+        out = self.tmp / 'out'
+        out.write_text('not a directory\n', encoding='utf-8')
+        proc = self.label(out)
+        self.assertNotEqual(proc.returncode, 0, proc.stdout)
+        self.assertIn('target is a file', proc.stdout)
+        self.assertEqual(out.read_bytes(), b'not a directory\n')
 
     def test_fresh_output_passes_guard_and_writes_nothing_on_load_failure(self):
         out = self.tmp / 'fresh'
@@ -89,15 +120,17 @@ class LabelOutputIsolation(unittest.TestCase):
         self.assertIn('FAILED', proc.stdout)  # placeholder run cannot load; guard did not block it
         self.assertFalse(out.exists())
 
-    def test_matching_complete_output_passes_guard(self):
+    def test_empty_or_unrelated_directory_passes_guard(self):
         out = self.tmp / 'out'
         out.mkdir()
-        (out / 'labels.jsonl').write_text(label_line(corridor_label='path-v3'), encoding='utf-8')
-        (out / 'summary.json').write_text(summary(corridor_label='path-v3'), encoding='utf-8')
-        (out / 'traps.json').write_text('[]\n', encoding='utf-8')
         proc = self.label(out)
         self.assertNotIn('refusing to write', proc.stdout)
         self.assertIn('FAILED', proc.stdout)
+        (out / 'notes.txt').write_text('unrelated\n', encoding='utf-8')
+        proc = self.label(out)
+        self.assertNotIn('refusing to write', proc.stdout)
+        self.assertIn('FAILED', proc.stdout)
+        self.assertEqual(snapshot(out), {'notes.txt': b'unrelated\n'})
 
 
 if __name__ == '__main__':
