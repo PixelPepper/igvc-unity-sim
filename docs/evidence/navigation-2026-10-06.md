@@ -150,6 +150,23 @@ experiment. T0050 records feedback for the external author and preserves ownersh
 The WORLD-derived teacher is an approximate offline grid reference. It must never
 feed course geometry or oracle paths into runtime features or navigation.
 
+## Recovery diagnosis and next check
+
+Sol and Sonnet reviewed the seed2335 recovery refusal in
+`20261006T091734-d7a917a2`. All five straight backup distances produced forward
+proposals; each failed the required0.5m progress beyond the original trap. The
+largest recorded progress was0.366m. No rear obstruction or exhausted recovery
+execution budget was reported for this run. This differs from T0048's later
+seed2331 failure, which did exhaust its local backup budget.
+
+The full search took4.851s of5s and charged4160 of50000 expansions. Per-candidate
+expansion allowances are recorded, but exact time allowances and full rejected
+proposals are missing. Time-limited forward calls are a hypothesis; neither
+geometric impossibility nor timeout is established. No gate has been weakened.
+[T0051](../agents/tasks/T-0051-observed-recovery-probe.md) prepares one observed-input
+diagnostic after the active batch and integration checks finish. It remains
+undispatched and must be reported as a timing-dependent counterfactual.
+
 See [T0043](../agents/tasks/T-0043-active-scorer-comparison.md) and
 [T0045](../agents/tasks/T-0045-corridor-teacher-integrity.md) for current review
 state, source identities and the next bounded action.
