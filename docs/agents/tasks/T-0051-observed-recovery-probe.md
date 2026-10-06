@@ -61,3 +61,22 @@ Sonnet interpretation review and Sol evidence review before accepting any claim.
 Acceptance is a clearer diagnosis: finite search exhaustion versus proposal
 selection versus actually observed geometric blockage. It is not a navigation
 improvement or permission to weaken any gate. Implementation needs a later packet.
+
+## Log
+
+### 2026-10-06T06:58:27.2006828-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+
+Now dispatched: T0050 players/audits closed and T0049 full integration checks
+passed at74967bf. Root wrapper must acquire all3locks and verify idle before CLI.
+Root preflight matched all19 captured source_sha256 entries from run.json to
+current tools files; artifact source-preflight.json. Recheck before executing.
+Do not read reference-teacher output or any WORLD data. Only saved observation
+capture and planner code. One instrumented diagnostic; no reruns/tuning. Root
+owns unrelated external dirty files and leaves them untouched. Bound6min/USD5.
+
+### 2026-10-06T07:00:52.4162753-07:00 · gpt-6-astra → all · NOTE
+
+Dispatch wrapper stopped before Claude invocation: instance2 lease occupied by
+new external ab-corridor-v2 session (T0052). No provider cost, no replay, no source
+changes; partial locks released. Prepared dispatch scripts are not execution
+proof. Return backlog until T0052 closes; do not bypass its lease or retry live.

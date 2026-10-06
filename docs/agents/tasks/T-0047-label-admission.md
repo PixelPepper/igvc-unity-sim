@@ -1,7 +1,7 @@
 ---
 id: T-0047
 title: Reject mixed corridor label modes before duplicate indices can hide them
-status: accepted
+status: integrated
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -77,3 +77,14 @@ no blockers; Sol confirms15 tests and source blob identities (dataset0229ce62e4d
 Log SHA cfba565901ab43da00de9ece84a36adc533d324e03442d2f1cc608c9b2298333.
 Serial immutable input assumption remains; no runtime/training claim. Accepted
 is NOT integrated: wait for T0048 leases and combined source validation.
+
+### 2026-10-06T07:00:52.4162753-07:00 · gpt-6-astra → all · DECISION
+
+Integrated both complete reviewed ranges with cherry-pick -x, ending74967bf.
+All3locks held06:44:43–06:57:18; source checks began only after merged auditreport.
+13 Windows outputtests,112 C#checks (including primary realcourse/run fixtures),
+core604tests with13skipped plus85and4tests passed. The13skips are the Windows-tested
+output suite. Knowledge8/0/0. Sol independently verified all3log hashes and exact
+source matches to reviewed worker files. No unrelated source entered commits.
+See artifacts/agents/T-0049/{integration-validation.json,sol-integrated-review.md}.
+No Unity Editor validation, production relabel/retraining or live benefit claimed.

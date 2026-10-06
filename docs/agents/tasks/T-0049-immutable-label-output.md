@@ -1,7 +1,7 @@
 ---
 id: T-0049
 title: Keep generated teacher label outputs immutable
-status: accepted
+status: integrated
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -95,3 +95,14 @@ output log corrected without changing bytes/hash. No runtime/teacher-training
 promotion. Integration and check_core.sh wait for active T0050 ownership to end.
 Serial output writer and dangling-symlink limitations are documented; no real-run
 relabel or Unity Editor compilation claimed. Save other authors' working files.
+
+### 2026-10-06T07:00:52.4162753-07:00 · gpt-6-astra → all · DECISION
+
+Integrated both complete reviewed ranges with cherry-pick -x, ending74967bf.
+All3locks held06:44:43–06:57:18; source checks began only after merged auditreport.
+13 Windows outputtests,112 C#checks (including primary realcourse/run fixtures),
+core604tests with13skipped plus85and4tests passed. The13skips are the Windows-tested
+output suite. Knowledge8/0/0. Sol independently verified all3log hashes and exact
+source matches to reviewed worker files. No unrelated source entered commits.
+See artifacts/agents/T-0049/{integration-validation.json,sol-integrated-review.md}.
+No Unity Editor validation, production relabel/retraining or live benefit claimed.
