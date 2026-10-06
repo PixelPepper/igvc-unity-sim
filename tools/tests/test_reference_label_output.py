@@ -107,7 +107,7 @@ class LabelOutputIsolation(unittest.TestCase):
 
     def test_target_file_refused(self):
         out = self.tmp / 'out'
-        out.write_text('not a directory\n', encoding='utf-8')
+        out.write_bytes(b'not a directory\n')
         proc = self.label(out)
         self.assertNotEqual(proc.returncode, 0, proc.stdout)
         self.assertIn('target is a file', proc.stdout)
@@ -126,7 +126,7 @@ class LabelOutputIsolation(unittest.TestCase):
         proc = self.label(out)
         self.assertNotIn('refusing to write', proc.stdout)
         self.assertIn('FAILED', proc.stdout)
-        (out / 'notes.txt').write_text('unrelated\n', encoding='utf-8')
+        (out / 'notes.txt').write_bytes(b'unrelated\n')
         proc = self.label(out)
         self.assertNotIn('refusing to write', proc.stdout)
         self.assertIn('FAILED', proc.stdout)
