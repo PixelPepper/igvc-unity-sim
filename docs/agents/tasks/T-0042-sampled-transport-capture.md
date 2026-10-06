@@ -1,14 +1,14 @@
 ---
 id: T-0042
 title: Observe per-frame connector errors and physics-step gaps without changing control
-status: in-progress
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0042-sampled-transport-capture
 base: 8c33100
-candidate: none
+candidate: d9c71a862ff886f8ca49f674a6a1a0ec0263796f
 claim: none
 lease: none
 updated: 2026-10-05
@@ -84,3 +84,15 @@ of runtimefix/overhead benefit orqualification; originalT0035 preserved.
 ### 2026-10-05T19:36:04.870971-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 
 Bounded implementation after narrowed T0041 review. HeadlessCLIonly; no livelease.
+
+### 2026-10-05T19:44:30-07:00 · gpt-6-astra → all · HANDBACK
+
+relayed-from: artifacts/agents/T-0042/opus-report-r1.md
+
+Opus committed d9c71a862ff886f8ca49f674a6a1a0ec0263796f; five owned paths only, clean worker tree. Exact claude-opus-5-5 confirmed, 435.58 seconds, 2.107092 USD API-equivalent usage. Worker reports 29 C# core checks and 24 Python checks passing, emitted C# v3 fixtures accepted, and four real v2 reports unchanged except unavailable new metrics. Root has not yet independently verified those tests. Unity compile/build and live behavior remain unverified. No control or safety change, root-cause claim, or promotion.
+
+Worker file tools could not write outside its checkout. Root copied the original worker artifacts/T0042/REPORT.md into primary artifacts/agents/T-0042/REPORT.md without changing its contents. Longer original handback remains in artifacts; this is its bounded relay.
+
+### 2026-10-05T19:44:31-07:00 · gpt-6-astra → claude-sonnet-5-5, gpt-6.1-sol · DISPATCH
+
+One code review and one evidence review run in parallel against d9c71a8. Read-only, bounded offline scope. Root prepares integration validation while reviewers work. No live lease or Unity build granted to either reviewer.

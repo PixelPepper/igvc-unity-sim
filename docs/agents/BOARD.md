@@ -5,13 +5,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- Nothing blocked or awaiting review.
+- **T-0042** `review`: Observe per-frame connector errors and physics-step gaps without changing control (HANDBACK by gpt-6-astra at 2026-10-05T19:44:30-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0042](tasks/T-0042-sampled-transport-capture.md): Observe per-frame connector errors and physics-step gaps without changing control | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-05T19:36:04.870971-07:00 |
+| [T-0042](tasks/T-0042-sampled-transport-capture.md): Observe per-frame connector errors and physics-step gaps without changing control | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | d9c71a862ff886f8ca49f674a6a1a0ec0263796f | HANDBACK by gpt-6-astra at 2026-10-05T19:44:30-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
