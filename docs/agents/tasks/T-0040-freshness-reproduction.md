@@ -1,7 +1,7 @@
 ---
 id: T-0040
 title: Seek a bounded reproduction of intermittent freshness expiry
-status: review
+status: integrated
 priority: P1
 owner: gpt-6-astra
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -9,7 +9,7 @@ orchestrator: gpt-6-astra
 branch: codex/t0038-timed-2029-diagnosis
 base: 20a18f3
 candidate: 20a18f3e7df4da4fa6dce4e5c8e5d16323b4c5ef
-claim: tested
+claim: audit-passed
 lease: released
 updated: 2026-10-05
 ---
@@ -106,3 +106,29 @@ No other objections. Batch limit and "no 2030" are consistent with two jobs and 
 Late heartbeat arrived after10AM PDT cutoff. Automation igvc-overnight-improvement nowPAUSED (tool confirmed). No new experiment/provider call or implementation. Both batch attempts ended before09:00PDT and shutdown is again independently verified: no players, TCP10000free, exclusiveleaseavailable. Sonnet reviewed diagnostic interpretation, exactmodel confirmed, API-equivalentcost0.0598334USD. Sol final artifact is absent and no worker remains active; leaveT0040 in review rather than claim bothreviews complete. No further trialgrant. Runtime/source remainsunchanged.
 
 Disposition of Sonnet findings: last raw record kind window is NOT a terminalrecord; final.kind missing is consistent, not contradictory. Future wording should say last_record_kind toavoidambiguity. Attempt1 usedone0.6m checkedbackup (actual0.6000000089m), sequence217 recovery_gate_selection original_target_clear,0candidates; nearer-station retreat remainsunexercised. Attempt2 usedzero. Differentelapsedtimes/clearances do not establishstablebehavior orcausalbenefit. Missingterminal meansunknownfinaltail; recordedwarningcounts95/110 areobservations, notdrops/no-dropproof. OriginalT0035failurepreserved;2030unexamined; promotionblocked. Rootretained bothledgerrows, no push/publishing.
+
+
+relayed-from: artifacts/agents/T-0040/sol-review-r1.md
+
+REVIEW
+Task: T-0040
+Reviewer: GPT-6.1 Sol
+Scope: Saved evidence; read-only, no live runs or tests
+Verdict: QUALIFIED — two successful repetitions; freshness cause and promotion unresolved
+Usage: UNMETERED
+
+Checked: Recomputed raw run.json SHA256 matches audit.run_sha256 for both T0040 repetitions, T0038 diagnostic and preserved T0035 failure. Both T0040 audits report passed with 20 checks; completed_destinations=6, elapsed=368.395837434/349.597993597 seconds. Complete sampled mission-health coverage reports 3685/3498 passing samples, zero failures/unknowns; maximum gaps 0.154945539/0.123447752 seconds. This is bounded lane/depth processing-health coverage, not continuous physical or all-stream health.
+
+All four runs contain identical 19-file policy-source dictionaries. T0040 helper live records agree on profile, course, mission, autonomy and cf8f player hashes. Attempt 1 contains one requested 0.6 m backup, actual 0.6000000088954682 m; helper gate event sequence 217 reports original_target_clear. Attempt 2 contains zero backups. The new retreat selection remains unexercised.
+
+Missing coverage: This reviewer did not independently complete T0038 live-input comparison, frozen-runtime attestation, or raw timing sequence/terminal verification. The helper reports 393/373 timing records and maximum sampled frame gaps 0.0512366/0.0484108 seconds; diagnosis tail is null. The raw parser matched no records, so these remain helper-derived, not independently verified. Missing terminal records leave terminal-tail coverage unknown.
+
+The original T0035 2/6 freshness failure remains preserved. The timing player differs from its original player. Two passes do not establish causal benefit, freshness resolution, recovery benefit, promotion, calibrated hardware autonomy or 2027 compliance. Seed 2030 remains unexamined.
+
+Execution limits: Initial Python alias failed before reading; authorized replacement output was truncated. A final authorized bounded probe supplied the checks above. No source edits, provider calls or simulations.
+END REVIEW
+
+
+### 2026-10-05T19:31:34.366629-07:00 · gpt-6-astra → all · DECISION
+
+User explicitly resumed interactive multi-agent workflow. AcceptT0040 individual diagnostic results with qualifications; no promotion. Sol independently verified raw run/audit bindings, health, policy dictionaries and recovery evidence; its timing parser usedwrongmarker and additionalclaims remain helper-only in thatreview. Root filled remaining checks with explicit bounded assertions saved artifacts/agents/T-0040/coordinator-verification.json: raw schema2 sequences393/373; last_record_kind window (not terminal); maxgaps0.0512366/0.0484108; warnings95/110 allseq1; rawlogSHA matchesreport; all4inputfiles andlivefields matchT0038; frozen clean20a18f3/player/source19 independently matchcurrentfiles. Do notdescribe those rootchecks as Solchecks. Both reviews complete with namedlimitations, notblanketvalidationofallhealth/physicalbehavior. No sourcefixornewtrial/push. Overnightautomationremainspaused.
