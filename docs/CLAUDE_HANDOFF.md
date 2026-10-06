@@ -20,14 +20,29 @@ reviews accept this offline scope. No Unity Editor validation, production
 relabel/retraining or live navigation benefit is claimed. Details and preserved
 earlier failures: [October 6 evidence](evidence/navigation-2026-10-06.md).
 
-Current live owner is external `ab-corridor-v2` instance2, PID41980;
-[T0052](agents/tasks/T-0052-external-corridor-comparison.md). Its instance1 failed
-to acquire root's integration lease; no valid complete paired batch is implied.
-T0051's observed recovery probe was refused before Claude ran because instance2
-was busy. Leave it queued; do not bypass leases. Preserve external launcher,
-DisplayAwake/SandboxPanel, power-events and scene work, which root has not
-integrated. Read the board first. Overnight authorization ends October6 10AM
-Pacific, with no new missions after09:40 and no pushing/publishing.
+**October 6, 07:47 Pacific ownership update:** external Claude renamed the first
+corridor batch `ab-corridor-v2-aborted` and launched `ab-corridor-v2b` on both
+instances (players6132/51876). Preserve the aborted dispatch and incomplete
+results. The new plan uses route0, corridor0/8, seeds2371–2390. Its loaded
+corridor model uses rejected `path-v2` labels, not the corrected `path-v3`
+teacher integrated above. Model promotion remains unaccepted. Recorded policy
+source hashes changed during this batch; stratify results by source identity.
+[T0052](agents/tasks/T-0052-external-corridor-comparison.md) binds these findings.
+
+Sonnet's bounded static review of the new, opt-in latency compensation requests
+changes: explicit measured-versus-predicted pose provenance and integration
+tests. It does not certify safety or accept the external test-count claims.
+[T0053](agents/tasks/T-0053-latency-change-review.md) records the snapshot and
+correction request. No root latency trial is authorized by this review.
+
+T0051's observed recovery probe remains queued. Its previous preflight became
+stale after external source edits: prepare a frozen-source checkout matching
+the captured hashes before dispatch, without restoring primary files. Acquire
+all three process-held locks before checking idle processes/ports and hold them
+through any heavy work. Leave active trials undisturbed. Preserve external
+launcher, DisplayAwake/SandboxPanel, power-events and scene work. Read the board
+first. Overnight authorization ends October6 10AM Pacific, with no new missions
+after09:40 and no pushing/publishing.
 
 **October 5 current state:** the reviewed recovery build is frozen at
 **d6519e1ee323db0e66fd5953959f07cc56508cc5**. It passed643 combined checks and,

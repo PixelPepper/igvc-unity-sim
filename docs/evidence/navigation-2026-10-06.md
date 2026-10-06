@@ -211,3 +211,30 @@ does not establish label mode or model validity. No model promotion accepted.
 See [T0043](../agents/tasks/T-0043-active-scorer-comparison.md) and
 [T0045](../agents/tasks/T-0045-corridor-teacher-integrity.md) for current review
 state, source identities and the next bounded action.
+
+## 07:47 ownership and candidate correction
+
+The external author aborted/renamed the first corridor batch and launched
+`ab-corridor-v2b` on both instances. Root did not restart either session. The
+aborted batch retains an empty merged report, wrapper exits1/0 and no per-instance
+results. The new plan has40trials, seeds2371–2390, route0 and corridor0/8.
+It is still running; no final success rate is claimed.
+
+The current corridor model SHA256
+`bbfc93f7085266a22854faa44d524aa4268469cf43821f557c59a3b5e09b4308`
+uses `corridor_cost path-v2` and rejected teacher95b0baf. It does not validate
+integrated path-v3. Old gate/promotion metadata in its manifest is not bound
+acceptance evidence for the replacement model; both live vetoes remain set.
+Policy hashes also changed mid-batch, from sensor_course c3c93114 to ad1bfb9c
+plus the new latency module c3b7fec3. Later samples report prediction disabled,
+but identical runtime behavior has not been established. Stratify all results
+by their recorded sources and preserve the incomplete predecessor separately.
+
+Sonnet reviewed immutable latency-change copies once (USD0.1431538,51.72s),
+requesting explicit prediction provenance and integration tests. Pure predictor
+and CLI tests do not establish end-to-end correctness. Root clarified that
+saved planner inputs must retain the actual submitted prediction; measured
+pose, twist and estimate need separate metadata. No code was accepted, heavy
+tests run or live benefit claimed. T0053 retains the full review and limits.
+T0051 must use frozen captured source because its old primary-source preflight
+is now stale. Active players remain untouched.
