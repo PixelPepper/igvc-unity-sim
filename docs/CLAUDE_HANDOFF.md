@@ -8,10 +8,20 @@ release. It is the starting packet for continuing development and optimization.
 has completed and its failures are preserved. Weight0 passed7/10 full audits;
 weight8 passed9/10 planned trials (9/11 recorded attempts including one startup
 retry). Weight8 was slower on6/7 mutually audit-passing pairs. No default or
-promotion change follows. Both players stopped; the completed report and limits
-are in [October 6 evidence](evidence/navigation-2026-10-06.md). T0045 is revising
-the isolated offline corridor teacher after C# fixture failures; do not train
-or integrate its unaccepted candidate. The overnight heartbeat resumed at the
+promotion change follows. A subsequent baseline timing reproduction passed5/6
+planned trials, with one5/6 recovery-budget stop and one extra startup retry;
+both players stopped. Sol independently verified all seven attempts and trace
+coverage. Reports and confounders are in
+[October 6 evidence](evidence/navigation-2026-10-06.md). The isolated offline
+teacher revisions now pass91 C# checks,15 dataset tests and13 output-protection
+tests; both independent reviews accept the complete ranges for offline
+integration. Another external Claude session started `ab-route-3` at03:35 PDT;
+[T0050](agents/tasks/T-0050-active-route-comparison-3.md) owns its coordination.
+Wait for that active batch before integrating and running combined checks. The
+exact accepted ranges and locks are in T0049. Preserve external launcher,
+DisplayAwake/SandboxPanel, power-events and scene work; root has not reviewed or
+integrated it. No retraining or live navigation benefit is claimed.
+The overnight heartbeat resumed at the
 user's request through October6 10:00AM Pacific. Read the canonical board before
 starting work; no concurrent live session or Unity build without its lease.
 

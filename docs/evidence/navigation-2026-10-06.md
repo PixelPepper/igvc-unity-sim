@@ -81,8 +81,62 @@ Opus revised it on a separate branch as ece7278 (T0045), with additive opt-in
 path-v3 targets, unavailable statuses, unchanged legacy numeric targets and
 dataset admission checks. Root validation:12 Python tests passed; C# checks
 reported75 passed/4 failed, including an indexing exception in the synthetic
-fixture. Original failures are preserved. A bounded revision is in progress;
-no successful C# validation, integration, retraining or live benefit is claimed.
+fixture. Original failures are preserved. Revision2572e87 then passed91 C#
+checks and32 focused Python tests. It adds conservative endpoint/boundary
+checks and distinguishes bounded search exhaustion from disconnection.
+
+T0047 revisione2b7ada passed15 dataset tests and both independent reviews:
+every raw label record is checked before duplicate indices can hide mixed modes
+or malformed records. Legacy route data semantics remain unchanged.
+
+T0049 revision5a57d91 makes generated label outputs immutable, including existing
+partial/corrupt outputs and directory collisions. Final1a81e8a corrects two Windows
+fixture byte writes without changing assertions or runtime. Sonnet approved both
+diffs. Root's locked final validation passed13 output tests,91 C# checks and15
+dataset tests, with source/log hashes in `artifacts/agents/T-0049/validation-final.json`.
+The earlier two CRLF test failures remain archived. Sonnet and Sol accept the
+complete teacher and dataset ranges for offline integration. Combined integration
+validation remains pending. Earlier output-guard
+revisions are not accepted as the final implementation. These source ranges are
+still isolated on worker branches; no integration, retraining or live benefit
+is claimed. Successful refusal tests do not prove successful real-run relabeling.
+
+## Additional timing reproduction
+
+Another Claude session launched six baseline trials across two instances at
+03:07 PDT: four seed2331 normal and two seed2332 hard. Both players had stopped
+by03:30; all audits subsequently completed. This is not another scorer A/B.
+Final Unity logs were archived under `artifacts/agents/T-0048/` at03:30:52.
+The v3 trace has a bounded capture window, so coverage must be established per
+event rather than inferred from the session header.
+
+Sol independently verified **5/6 planned-trial passes,5/7 recorded-attempt passes**.
+One seed2331 run stopped5/6 at the local backup cap after two backups, with1.769m
+forward progress below the3m reset requirement. This diagnoses a budget rejection,
+not permission to weaken it. Its3734 health samples passed. Another attempt
+failed startup with no live grid, then its retry passed. No freshness latch was
+recorded in this batch; that does not resolve earlier failures.
+
+Each archived Unity log contains1200v3 timing records, then exhausts the cap.
+Covered maximum frame/fixed gaps were0.792/0.797s and0.313/0.313s. Coverage ends
+before batch completion. Clock domains are not synchronized; zero sampled queue
+warnings are not evidence of zero transport drops. Report SHA256:
+`6a1c9b4a60cfb428b6d132b41a9a1fb689af51a63dee5236235991b6281ef84a`.
+
+Some worker tests overlapped this independently launched batch before root
+detected it at03:18. Exact file timestamp windows and the incidental uv Python
+download are documented in [T0048](../agents/tasks/T-0048-active-timing-reproduction.md).
+This prevents a controlled-host-load claim; it does not establish causation.
+Future heavy validation holds all three simulator lease files throughout the
+checks, closing the gap between checking for idle players and starting work.
+
+## Current live ownership
+
+At03:35 another external Claude session started `ab-route-3`, twenty planned
+trials on seeds2341–2350 with paired route weights0/8. Root's locked offline
+checks had ended before launch. Preserve its live ownership; teacher integration
+and combined checks wait for its completion. [T0050](../agents/tasks/T-0050-active-route-comparison-3.md)
+binds the plan and requests a validation window before another batch.
 
 The WORLD-derived teacher is an approximate offline grid reference. It must never
 feed course geometry or oracle paths into runtime features or navigation.
