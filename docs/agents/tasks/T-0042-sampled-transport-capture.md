@@ -1,7 +1,7 @@
 ---
 id: T-0042
 title: Observe per-frame connector errors and physics-step gaps without changing control
-status: accepted
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -162,3 +162,32 @@ END REVIEW
 
 Accept 2ca413f for its reviewed offline capture/analyzer scope. Sonnet r2 exact model confirmed, 20.09 seconds and 0.0785114 USD; Sol independently rechecked changed hashes, 25 Python tests, 29 unchanged C# checks, corrected producer fixtures and four v2 comparisons. Comparison normalizes uncertainty prose; it is not a byte-identical report claim. Root reviewed the complete five-file change and two-file correction. Authorize integrator-only Unity compile, Win64 build and two stopped-player 12-second off/on smoke checks under the exclusive process-held lease; no ROS/autonomy mission in this grant. Preserve cf8f player and earlier failed evidence.
 
+
+
+relayed-from: artifacts/agents/T-0042/sol-integration-review.md
+
+REVIEW
+Task: T-0042
+Reviewer: GPT-6.1 Sol
+Verdict: ACCEPT saved build and diagnostic-smoke evidence
+Usage: UNMETERED
+
+Verified from saved artifacts: Both smoke-report input SHA256 values exactly match their corresponding logs. Trace-off contains zero records. Trace-on contains 11 contiguous v3 records: header, nine windows and labelled stopped terminal. Raw cumulative totals are 568 Update observations/error samples and 946 FixedUpdate observations/error samples. All ten non-header records report connection_error=true, consistent with the supplied deliberate no-endpoint smoke condition. The analyzer reports complete with zero integrity issues.
+
+The actual built Assembly-CSharp.dll matches the status hash 809c280c1bbe9606e23a4cbbd8d5c7f04a2a63e2070d67622149867e06109dbf. The Editor log contains 29 PASS lines; saved validation status reports checks_exit=0 and build_exit=0. The integrated Python log records 25 tests, OK. Saved smoke status reports both exits zero and completion.
+
+This closes the previously unverified Unity compilation/build and short player-capture integration scope. It does not exercise successful ROS delivery, an autonomy lap, intermittent freshness failure reproduction, performance overhead or causal discrimination. Error counts remain sampled observations, not exact durations. No runtime fix or promotion is established. The frozen cf8f runtime and lease/process cleanup were not independently rechecked here.
+
+Two read/hash commands; no rerun, build, live action or source edit.
+END REVIEW
+
+
+### 2026-10-05T19:55:02.5495709-07:00 · gpt-6-astra → all · INTEGRATION
+
+Integrated as 84ff48e and 6792e01. Primary 25 Python tests, 29 Unity Editor checks, Win64 build and both stopped-player smoke checks passed. Assembly SHA256 809c280c1bbe9606e23a4cbbd8d5c7f04a2a63e2070d67622149867e06109dbf. Trace off: zero records. Trace on: complete schema v3 capture, 11 records (header, nine windows, stopped), 568 Update and 946 FixedUpdate samples. All sampled error flags true with intentionally absent ROS endpoint. This confirms capture integration, not ROS delivery, lap performance, measured overhead or the original failure cause. Sol independently verified saved log bindings, actual assembly, counts and zero exits. Source-matched frozen cf8f player preserved.
+
+Generated TransportProbe scene rewrite was archived under artifacts/agents/T-0042 and only that integrator-created rewrite restored. Owned validation players exited; root verified no Unity/player process, TCP10000 free and live lease available. Ordinary capture remains off. No new course trial, promotion, push or publishing. Updated handoff, evidence and transport knowledge concept; knowledge checker reports eight concepts, zero errors and zero warnings. Expired overnight heartbeat stays paused.
+
+### 2026-10-05T19:55:02.5495709-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+Received the independently authored, still-untracked docs/agents/proposals/LEARNING-next-steps.md and left it untouched. Its proposed heavy relabeling and two-instance experiments are not dispatched or leased by this note. Coordinate them with the freshness investigation before running. Enabling timing capture by itself never turns a scorer/latch association into a causal result; retain all failed/latched trials and distinguish exploratory from confirmatory comparisons. Next dispatch should review the proposal's underlying evidence and fix its inference criteria before selecting a bounded experiment.
