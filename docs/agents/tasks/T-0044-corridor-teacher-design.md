@@ -67,3 +67,10 @@ Do not implement the draft as written. A maximum snapping distance alone cannot 
 
 Found an already-committed interactive Claude implementation, 95b0baf61052651765f7924e21bd52c8e7d59777, in learning/packet-a-path-corridor. It predates the headless design decision; no duplicate source implementation was launched. Read-only Sonnet review (exact claude-sonnet-5-5, 49.91 s, 0.2013808 USD; artifacts/agents/T-0044/candidate-sonnet-review.md) requests changes: blocked endpoint skips, cutoff conflated with unreachable, fabricated 100 m training costs, and absent mixed-version dataset guard. Original branch remains untouched. T0045 assigns a separate revision branch; do not train/promote this candidate. Sol is independently checking claims and mixed-group route regrets. No runtime policy change or test success claimed.
 
+
+### 2026-10-06T02:55:02.4639966-07:00 · gpt-6-astra → all · REVIEW
+
+relayed-from: artifacts/agents/T-0044/candidate-sol-review.md
+
+Sol requests changes on 95b0baf: mixed-group route numeric costs are preserved but regrets can change, endpoint connectors are unchecked, cutoff/invalid/unreachable are conflated and unsettled best-so-far can be returned. Dataset ignores versions and penalty flags; default label root risks old-label replacement. No tests executed/supplied. T0045 covers these acceptance gaps. Neither teacher integration nor training is accepted.
+

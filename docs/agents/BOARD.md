@@ -5,16 +5,16 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0044** `changes-requested`: Scope a path-aware corridor teacher without changing live navigation (NOTE by gpt-6-astra at 2026-10-06T02:53:23.1388128-07:00)
+- **T-0044** `changes-requested`: Scope a path-aware corridor teacher without changing live navigation (REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0044](tasks/T-0044-corridor-teacher-design.md): Scope a path-aware corridor teacher without changing live navigation | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e65214b | NOTE by gpt-6-astra at 2026-10-06T02:53:23.1388128-07:00 |
-| [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T02:06:35.2159362-07:00 |
+| [T-0044](tasks/T-0044-corridor-teacher-design.md): Scope a path-aware corridor teacher without changing live navigation | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e65214b | REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00 |
+| [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T02:57:38.9883297-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `in-progress` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-06T02:55:00-07:00 |
+| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `in-progress` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
