@@ -4,26 +4,30 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
-**October 6 continuation:** the external two-instance route-weight comparison
-has completed and its failures are preserved. Weight0 passed7/10 full audits;
-weight8 passed9/10 planned trials (9/11 recorded attempts including one startup
-retry). Weight8 was slower on6/7 mutually audit-passing pairs. No default or
-promotion change follows. A subsequent baseline timing reproduction passed5/6
-planned trials, with one5/6 recovery-budget stop and one extra startup retry;
-both players stopped. Sol independently verified all seven attempts and trace
-coverage. Reports and confounders are in
-[October 6 evidence](evidence/navigation-2026-10-06.md). The isolated offline
-teacher revisions now pass91 C# checks,15 dataset tests and13 output-protection
-tests; both independent reviews accept the complete ranges for offline
-integration. Another external Claude session started `ab-route-3` at03:35 PDT;
-[T0050](agents/tasks/T-0050-active-route-comparison-3.md) owns its coordination.
-Wait for that active batch before integrating and running combined checks. The
-exact accepted ranges and locks are in T0049. Preserve external launcher,
-DisplayAwake/SandboxPanel, power-events and scene work; root has not reviewed or
-integrated it. No retraining or live navigation benefit is claimed.
-The overnight heartbeat resumed at the
-user's request through October6 10:00AM Pacific. Read the canonical board before
-starting work; no concurrent live session or Unity build without its lease.
+**October 6, 07:00 Pacific:** the larger `ab-route-3` comparison is closed.
+Baseline route0 passed28/30 full audits; route8 passed20/30 planned trials,
+20/32 recorded attempts. It reached6/6 once more but failed the ordered-loop
+audit. Paired results:19 both pass,9 baseline only,1 scorer only,1 neither.
+Weight8 was slower on11/19 mutually passing pairs. Do not promote it or pool
+this changed-player experiment with earlier batches. One perception freshness
+latch recurred while the simulator clock remained fresh; power causation is
+unproven. Sol independently reviewed all attempts and report identities.
+
+Offline teacher/dataset fixes are integrated at74967bf. Checks passed under
+all three simulator locks:13 Windows output tests,112 C# checks, core604 with
+13 skips plus85and4 tests; the skipped output suite passed on Windows. Both
+reviews accept this offline scope. No Unity Editor validation, production
+relabel/retraining or live navigation benefit is claimed. Details and preserved
+earlier failures: [October 6 evidence](evidence/navigation-2026-10-06.md).
+
+Current live owner is external `ab-corridor-v2` instance2, PID41980;
+[T0052](agents/tasks/T-0052-external-corridor-comparison.md). Its instance1 failed
+to acquire root's integration lease; no valid complete paired batch is implied.
+T0051's observed recovery probe was refused before Claude ran because instance2
+was busy. Leave it queued; do not bypass leases. Preserve external launcher,
+DisplayAwake/SandboxPanel, power-events and scene work, which root has not
+integrated. Read the board first. Overnight authorization ends October6 10AM
+Pacific, with no new missions after09:40 and no pushing/publishing.
 
 **October 5 current state:** the reviewed recovery build is frozen at
 **d6519e1ee323db0e66fd5953959f07cc56508cc5**. It passed643 combined checks and,

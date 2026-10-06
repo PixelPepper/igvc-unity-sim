@@ -70,7 +70,7 @@ failure onset. See `initial-pair-completion-phases.json` in the T0043 artifacts.
 No transport timing records were found in finished instance1's Unity log;
 T0042 tracing must not be assumed to have been enabled for this batch.
 
-## Offline teacher: not integrated
+## Offline teacher: integrated and tested
 
 An existing Claude branch supplied95b0baf. Independent reviews found unchecked
 endpoint attachments, a bounded search mislabeled as unreachable, an invented
@@ -94,12 +94,15 @@ partial/corrupt outputs and directory collisions. Final1a81e8a corrects two Wind
 fixture byte writes without changing assertions or runtime. Sonnet approved both
 diffs. Root's locked final validation passed13 output tests,91 C# checks and15
 dataset tests, with source/log hashes in `artifacts/agents/T-0049/validation-final.json`.
-The earlier two CRLF test failures remain archived. Sonnet and Sol accept the
-complete teacher and dataset ranges for offline integration. Combined integration
-validation remains pending. Earlier output-guard
-revisions are not accepted as the final implementation. These source ranges are
-still isolated on worker branches; no integration, retraining or live benefit
-is claimed. Successful refusal tests do not prove successful real-run relabeling.
+The earlier two CRLF test failures remain archived. Both complete ranges were
+integrated with cherry-pick -x, ending74967bf. Combined validation passed under
+all three leases:13 Windows output tests,112 C# checks including primary
+real-course/run fixtures, core604 tests with13 skips plus85and4 tests. The13
+skips are output tests independently passed on Windows. Knowledge8/0/0.
+Sol verified exact source matches and all logs in
+`artifacts/agents/T-0049/integration-validation.json`. Earlier output-guard
+revisions are not accepted alone. No production path-v3 relabel/retraining,
+Unity Editor validation or live benefit is claimed.
 
 ## Additional timing reproduction
 
@@ -130,13 +133,40 @@ This prevents a controlled-host-load claim; it does not establish causation.
 Future heavy validation holds all three simulator lease files throughout the
 checks, closing the gap between checking for idle players and starting work.
 
-## Current live ownership
+## Third route comparison: closed
 
 At03:35 another external Claude session started `ab-route-3`, sixty planned
-trials on seeds2341–2370 with paired route weights0/8. Root's locked offline
-checks had ended before launch. Preserve its live ownership; teacher integration
-and combined checks wait for its completion. [T0050](../agents/tasks/T-0050-active-route-comparison-3.md)
-binds the plan and requests a validation window before another batch.
+trials on seeds2341–2370 with paired route weights0/8. It finished with62
+attempts; both wrappers exited0. Root's offline integration/tests started after
+all audits closed. [T0050](../agents/tasks/T-0050-active-route-comparison-3.md)
+binds the plan, archived logs and independent Sol review.
+
+| Route weight | Recorded attempts | Reached6/6 | Full audit | Planned full audit |
+| --- | ---: | ---: | ---: | ---: |
+| 0 | 30 | 28/30 | 28/30 | 28/30 |
+| 8 | 32 | 21/32 | 20/32 | 20/30 |
+
+Paired audit outcomes:19 both pass,9 baseline only,1 scorer only,1 neither.
+On the19 mutually passing pairs, weight8 was slower11times: mean+6.137s,
+median+9.551s, aggregate+1.73%; backups3→4. These times are conditional on
+both passing, not averages proving failed runs are faster. All62 provenance
+settings/arguments matched the assigned weights. Ascending seeds, deterministic
+assignment, shared load and the changed player limit inference. No default
+change, pooling, causal or confirmatory-significance claim follows.
+
+Thirteen execution failures comprise5 backup refusals,4 recovery-budget stops,
+2 missing-grid failures,1 Nav2 rejection and1 freshness latch. Startup retries
+for2350/2365 remain failures. Weight8 seed2359 reached6/6 but failed only
+ordered_world_full_loop (39/77 gates, outside corridor at sample10462).
+Seed2354's camera/lane ages were.758s, depth.750s, but clock.033s; it does not
+establish an all-stream freeze. Seven health samples failed. Both archived logs
+show awake activation but no release evidence and no v3 traces. Empty output
+from the unreviewed power-query helper does not prove no Windows events.
+
+Merged reportSHA256:
+`40f4446dd2a326707e8b236ab183dea1df51287bb3127aacc689f48ae9e4f58b`.
+Root table: `artifacts/agents/T-0050/root-final-summary.json`; independent
+review: `sol-final-review.md` in the same folder. Every failed run/audit remains.
 
 This batch uses a newly built player; observed on-disk assembly SHA256 is
 `42afe009a61b2ff9ac1963965398206b374960554d9b6bd0e83a18bed1d3b1a9`.
@@ -164,8 +194,19 @@ expansion allowances are recorded, but exact time allowances and full rejected
 proposals are missing. Time-limited forward calls are a hypothesis; neither
 geometric impossibility nor timeout is established. No gate has been weakened.
 [T0051](../agents/tasks/T-0051-observed-recovery-probe.md) prepares one observed-input
-diagnostic after the active batch and integration checks finish. It remains
-undispatched and must be reported as a timing-dependent counterfactual.
+diagnostic after the active batch finishes. At06:58 the wrapper correctly
+refused an occupied instance2 lease before invoking Claude or any replay.
+It remains queued and must be reported as a timing-dependent counterfactual.
+
+## Current live ownership
+
+External `ab-corridor-v2` planned40 trials on2371–2390, fixed route8 with
+corridor0/8. Instance1 failed dispatch because root held its integration lock;
+instance2 started06:57:31, after root tests/locks ended06:57:18. Preserve its
+ownership and missing-arm data; do not call the incomplete assignment a paired
+comparison or silently retry it. [T0052](../agents/tasks/T-0052-external-corridor-comparison.md)
+records the plan, model-verification requirements and T0051 deferral. Its name
+does not establish label mode or model validity. No model promotion accepted.
 
 See [T0043](../agents/tasks/T-0043-active-scorer-comparison.md) and
 [T0045](../agents/tasks/T-0045-corridor-teacher-integrity.md) for current review
