@@ -216,15 +216,37 @@ def _load_snapshot_input(path):
 
 
 def label_mode(labels_path):
-    """The single corridor label mode of a labels.jsonl; ValueError on mixed or unknown modes."""
-    modes = {record.get('corridor_label', record.get('corridor_cost', LEGACY_CORRIDOR_LABEL))
-             for record in _read_jsonl(labels_path).values()}
+    """The single corridor label mode of a labels.jsonl; ValueError on mixed or unknown modes.
+
+    Every raw record is checked before _read_jsonl's index deduplication could
+    hide one: duplicate indices and contradictory corridor_label/corridor_cost
+    aliases are rejected rather than resolved by picking a row.
+    """
+    modes, seen = set(), set()
+    with Path(labels_path).open(encoding='utf-8') as stream:
+        for line in stream:
+            try:
+                record = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(record, dict):
+                continue
+            index = record.get('index')
+            if type(index) is int:
+                if index in seen:
+                    raise ValueError(f'{labels_path}#{index}: duplicate label index')
+                seen.add(index)
+            aliases = [record[key] for key in ('corridor_label', 'corridor_cost') if key in record]
+            if len(aliases) == 2 and aliases[0] != aliases[1]:
+                raise ValueError(f'{labels_path}#{index}: corridor_label {aliases[0]!r} '
+                                 f'contradicts corridor_cost {aliases[1]!r}')
+            mode = aliases[0] if aliases else LEGACY_CORRIDOR_LABEL
+            if mode not in CORRIDOR_LABELS:
+                raise ValueError(f'{labels_path}#{index}: unsupported corridor label mode {mode!r}')
+            modes.add(mode)
     if len(modes) > 1:
-        raise ValueError(f'{labels_path}: mixed corridor label modes {sorted(map(str, modes))}')
-    mode = modes.pop() if modes else LEGACY_CORRIDOR_LABEL
-    if mode not in CORRIDOR_LABELS:
-        raise ValueError(f'{labels_path}: unsupported corridor label mode {mode!r}')
-    return mode
+        raise ValueError(f'{labels_path}: mixed corridor label modes {sorted(modes)}')
+    return modes.pop() if modes else LEGACY_CORRIDOR_LABEL
 
 
 def _corridor_target(label_row, mode, labels_path, index):

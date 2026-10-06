@@ -252,6 +252,68 @@ class CorridorLabelModeTests(unittest.TestCase):
                 with self.subTest(case=k), self.assertRaises(ValueError):
                     build_corridor_rows(*paths, 'run', corridor_label=selected)
 
+    def rewrite_labels(self, labels_path, *edits):
+        """Replace labels.jsonl with one raw record per edit (a dict update of the original record)."""
+        base = json.loads(labels_path.read_text().splitlines()[0])
+        records = []
+        for edit in edits:
+            record = dict(base)
+            for key, value in edit.items():
+                if value is None:
+                    record.pop(key, None)
+                else:
+                    record[key] = value
+            records.append(record)
+        labels_path.write_text(''.join(json.dumps(r)+'\n' for r in records))
+
+    def test_raw_duplicates_and_contradictory_aliases_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            v3 = [_target('line_of_sight', 10.), _target('line_of_sight', 11.)]
+            cases = [
+                # Mixed modes sharing index 3: deduplication must not hide the legacy record.
+                ('path-v3', dict(corridor_label='path-v3'), dict(corridor_label=None)),
+                ('straight-v1', dict(corridor_label=None), dict(corridor_label='path-v3')),
+                # Same mode, same index: rejected instead of silently choosing a row.
+                ('path-v3', dict(corridor_label='path-v3'), dict(corridor_label='path-v3')),
+                ('straight-v1', dict(corridor_label=None), dict(corridor_label=None)),
+                # Contradictory aliases on one record, in either selected mode.
+                ('path-v3', dict(corridor_label='path-v3', corridor_cost='straight-v1')),
+                ('straight-v1', dict(corridor_label='straight-v1', corridor_cost='path-v3')),
+                ('path-v3', dict(corridor_label='path-v3', corridor_cost='path-v2')),
+                # Unknown and path-v2 modes, including via the legacy alias alone.
+                ('straight-v1', dict(corridor_label=None, corridor_cost='path-v2')),
+                ('path-v3', dict(corridor_label='bogus')),
+            ]
+            for k, (selected, *edits) in enumerate(cases):
+                case = tmp/str(k)
+                case.mkdir()
+                outcomes, labels = self.write(case, {3: ('path-v3', v3)})
+                self.rewrite_labels(labels, *edits)
+                with self.subTest(case=k), self.assertRaises(ValueError):
+                    build_corridor_rows(outcomes, labels, 'run', corridor_label=selected)
+
+    def test_valid_unique_records_and_agreeing_aliases_are_admitted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            v3 = [_target('grid_path', 19.), _target('line_of_sight', 11.)]
+            cases = [
+                ('path-v3', {}, [19., 11.]),
+                ('path-v3', dict(corridor_cost='path-v3'), [19., 11.]),
+                ('straight-v1', dict(corridor_label=None), [10., 11.]),
+                ('straight-v1', dict(corridor_label=None, corridor_cost='straight-v1'), [10., 11.]),
+                ('straight-v1', dict(corridor_label='straight-v1', corridor_cost='straight-v1'), [10., 11.]),
+            ]
+            for k, (selected, edit, costs) in enumerate(cases):
+                case = tmp/str(k)
+                case.mkdir()
+                outcomes, labels = self.write(case, {3: ('path-v3', v3)})
+                self.rewrite_labels(labels, edit)
+                with self.subTest(case=k):
+                    rows, stats = build_corridor_rows(outcomes, labels, 'run', corridor_label=selected)
+                    self.assertEqual([r['teacher_cost_m'] for r in rows], costs)
+                    self.assertEqual(stats['groups'], 1)
+
     def test_omissions_before_target_check_are_counted(self):
         with tempfile.TemporaryDirectory() as tmp:
             v3 = [_target('line_of_sight', 10.), _target('line_of_sight', 11.)]
