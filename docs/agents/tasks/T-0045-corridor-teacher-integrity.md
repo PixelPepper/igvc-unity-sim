@@ -1,7 +1,7 @@
 ---
 id: T-0045
 title: Make offline corridor labels honest about reachability and label versions
-status: changes-requested
+status: accepted
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -166,3 +166,15 @@ written. Two revision rounds used; rescope only this remaining issue as T0049,
 immutable generated output/fresh destination instead of more parsing complexity.
 T0049 reuses the clean worker checkout on a new branch; original T0045 branch and
 all failed/passing results retained. No more T0045 worker edits or heavy tests.
+
+### 2026-10-06T03:38:10.6221039-07:00 · gpt-6-astra → all · DECISION
+
+Accept only the combined complete teacher range e65214b..1a81e8a plus dataset
+range2572e87..e2b7ada for offline integration. Sonnet code reviews and final Sol
+evidence review have no blockers. Final locked tests13/91/15 pass; all log hashes
+independently verified. T0045's older candidate is NOT acceptable alone: T0049
+and T0047 are mandatory dependencies. Archive pointer for the preserved failed
+output log corrected without changing bytes/hash. No runtime/teacher-training
+promotion. Integration and check_core.sh wait for active T0050 ownership to end.
+Serial output writer and dangling-symlink limitations are documented; no real-run
+relabel or Unity Editor compilation claimed. Save other authors' working files.

@@ -1,15 +1,15 @@
 ---
 id: T-0049
 title: Keep generated teacher label outputs immutable
-status: review
+status: accepted
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0049-immutable-label-output
 base: 5411b9e460c7dd085ed956e38653bb8240e2551b
-candidate: 5a57d91d3a538eaffb71c9c02d896b74284307ae
-claim: implemented
+candidate: 1a81e8a459a7f169a76cf755a65c59ba0282564f
+claim: tested
 lease: none
 updated: 2026-10-06
 ---
@@ -68,3 +68,30 @@ keeping assertions strict and runtime untouched. No tests/builds; root reruns
 under locks. Commit one test-only revision. Do not overwrite prior handbacks.
 PowerShell5 initially aborted on native stderr; launcher-aborted log is distinct
 and not an application failure. Subsequent PowerShell7 run produced above result.
+
+### 2026-10-06T03:35:00-07:00 · gpt-6-astra → reviewers · HANDBACK
+
+Final candidate1a81e8a459a7f169a76cf755a65c59ba0282564f changes only two fixture
+writes to exact bytes; assertions/runtime unchanged. Sonnet approved the two-line
+diff (6.00s,USD0.013196). Opus revision actualUSD0.1051454/21.0s (ignore its rounded
+self-estimate). Root held all three live locks03:33:20–03:33:58:
+13 output tests PASS,91 C# checks PASS,15 dataset tests PASS at e2b7ada.
+Manifest artifacts/agents/T-0049/validation-final.json binds each source/log/hash.
+Real-run C# fixture unavailable/skipped; positive output cases only pass the guard
+before an invalid placeholder fails loading. No successful real-run relabel,
+Unity Editor compilation, training or live navigation benefit is claimed.
+Serial writer assumption and dangling-symlink limitation remain explicit.
+Previous CRLF failures and the PowerShell5 launcher abort remain archived.
+Final Sol evidence review requested before integration of both complete ranges.
+
+### 2026-10-06T03:38:10.6221039-07:00 · gpt-6-astra → all · DECISION
+
+Accept only the combined complete teacher range e65214b..1a81e8a plus dataset
+range2572e87..e2b7ada for offline integration. Sonnet code reviews and final Sol
+evidence review have no blockers. Final locked tests13/91/15 pass; all log hashes
+independently verified. T0045's older candidate is NOT acceptable alone: T0049
+and T0047 are mandatory dependencies. Archive pointer for the preserved failed
+output log corrected without changing bytes/hash. No runtime/teacher-training
+promotion. Integration and check_core.sh wait for active T0050 ownership to end.
+Serial output writer and dangling-symlink limitations are documented; no real-run
+relabel or Unity Editor compilation claimed. Save other authors' working files.
