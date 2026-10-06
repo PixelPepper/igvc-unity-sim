@@ -76,62 +76,70 @@ namespace IGVC.Reference.Teacher
         }
         public double CostToGo(double[] f, V2 p) => CostToGo(f, p, out _, out _);
 
-        /// <summary>True when every C-space cell sampled along a-b (half-cell steps) is free, ignoring the first
-        /// <paramref name="skipA"/> and last <paramref name="skipB"/> metres (a pose snapped out of an inflated cell).</summary>
-        public bool LineFree(V2 a, V2 b, double skipA = 0, double skipB = 0)
+        /// <summary>
+        /// True when every grid cell the segment a-b intersects is free C-space (supercover traversal; an exact corner
+        /// crossing also tests both side cells, matching <see cref="GridMap.CanMove"/>'s no-corner-cutting rule). Both
+        /// endpoint cells must be free: nothing is skipped or snapped, so a blocked pose never gains a connection.
+        /// </summary>
+        public bool SegmentFree(V2 a, V2 b)
         {
-            double len = V2.Distance(a, b); int n = Math.Max(1, (int)Math.Ceiling(len / (Grid.Cell * .5)));
-            for (int i = 0; i <= n; i++)
+            double cs = Grid.Cell, ax = (a.X - Grid.X0) / cs, ay = (a.Y - Grid.Y0) / cs, bx = (b.X - Grid.X0) / cs, by = (b.Y - Grid.Y0) / cs;
+            int x = (int)Math.Floor(ax), y = (int)Math.Floor(ay), x1 = (int)Math.Floor(bx), y1 = (int)Math.Floor(by);
+            if (!Map.Free(x, y) || !Map.Free(x1, y1)) return false;
+            double dx = bx - ax, dy = by - ay; int sx = Math.Sign(dx), sy = Math.Sign(dy);
+            double tdx = sx != 0 ? 1 / Math.Abs(dx) : double.PositiveInfinity, tdy = sy != 0 ? 1 / Math.Abs(dy) : double.PositiveInfinity;
+            double tx = sx > 0 ? (x + 1 - ax) * tdx : sx < 0 ? (ax - x) * tdx : double.PositiveInfinity;
+            double ty = sy > 0 ? (y + 1 - ay) * tdy : sy < 0 ? (ay - y) * tdy : double.PositiveInfinity;
+            int guard = Math.Abs(x1 - x) + Math.Abs(y1 - y) + 2;
+            while ((x != x1 || y != y1) && guard-- > 0)
             {
-                double s = len * i / n; if (s < skipA || len - s < skipB) continue;
-                if (!Map.Free(Grid.CellOf(V2.Lerp(a, b, (double)i / n)))) return false;
+                if (Math.Abs(tx - ty) < 1e-12) { if (!Map.Free(x + sx, y) || !Map.Free(x, y + sy)) return false; x += sx; y += sy; tx += tdx; ty += tdy; }
+                else if (tx < ty) { x += sx; tx += tdx; }
+                else { y += sy; ty += tdy; }
+                if (!Map.Free(x, y)) return false;
             }
-            return true;
+            return x == x1 && y == y1; // float drift past the end cell: conservatively not free
         }
+
+        /// <summary>Outcome of <see cref="PathFrom"/> for one target.</summary>
+        public enum Reach { Reached, Disconnected, SearchLimited, BlockedStart, BlockedTarget }
 
         private SearchSpace reach;
         /// <summary>
         /// Shortest C-space grid path length (m, 8-connected, same move model as <see cref="Field"/>) from
-        /// <paramref name="from"/> to each target, or NaN when unreachable within <paramref name="maxM"/>. A pose in a
-        /// blocked cell snaps to the free cells within 1 m plus the straight offset (as <see cref="CostToGo(double[], V2, out int, out bool)"/>).
-        /// One bounded Dijkstra that stops once every target is settled.
+        /// <paramref name="from"/> to each target, NaN unless <see cref="Reach.Reached"/>. Endpoints attach only to their
+        /// own free cell (straight in-cell offset to its centre; a cell is convex). A blocked or off-grid endpoint is
+        /// reported, never snapped. One Dijkstra on the reused search space, stopping once every target is settled:
+        /// targets unsettled when the next node exceeds <paramref name="maxM"/> are SearchLimited (unknown); targets
+        /// unsettled after the start's whole free component is exhausted are Disconnected (proven on this grid).
         /// </summary>
-        public double[] PathFrom(V2 from, IList<V2> targets, double maxM, out int expanded)
+        public double[] PathFrom(V2 from, IList<V2> targets, double maxM, out Reach[] status, out int expanded)
         {
-            expanded = 0; var res = new double[targets.Count]; for (int t = 0; t < res.Length; t++) res[t] = double.NaN;
-            if (targets.Count == 0) return res;
+            expanded = 0; int n = targets.Count; var res = new double[n]; status = new Reach[n];
+            for (int t = 0; t < n; t++) res[t] = double.NaN;
+            var at = new Dictionary<int, List<int>>(); int open = 0;
+            for (int t = 0; t < n; t++)
+            {
+                int c = Grid.CellOf(targets[t]);
+                if (!Map.Free(c)) { status[t] = Reach.BlockedTarget; continue; }
+                if (!at.TryGetValue(c, out var l)) at[c] = l = new List<int>();
+                l.Add(t); open++; status[t] = Reach.SearchLimited;
+            }
+            int start = Grid.CellOf(from);
+            if (!Map.Free(start)) { for (int t = 0; t < n; t++) if (status[t] == Reach.SearchLimited) status[t] = Reach.BlockedStart; return res; }
+            if (open == 0) return res;
             if (reach == null) reach = new SearchSpace(Map.Count);
             var S = reach; S.Begin(); var heap = S.Heap; double cell = Grid.Cell; int W = Map.W;
-            foreach (var (c, off) in Anchors(from)) if (off / cell < S.GOf(c)) { S.Touch(c, off / cell, -1); heap.Push(c, off / cell, -off / cell); }
-            if (heap.Count == 0) return res;
-            var anchors = new Dictionary<int, List<(int t, double off)>>(); var left = new int[targets.Count]; var best = new double[targets.Count];
-            var done = new bool[targets.Count]; int open = 0;
-            for (int t = 0; t < targets.Count; t++)
-            {
-                best[t] = double.PositiveInfinity;
-                foreach (var (c, off) in Anchors(targets[t]))
-                {
-                    if (!anchors.TryGetValue(c, out var l)) anchors[c] = l = new List<(int, double)>();
-                    l.Add((t, off)); left[t]++;
-                }
-                if (left[t] == 0) done[t] = true; else open++;
-            }
-            double maxCells = maxM / cell;
+            double startOff = V2.Distance(from, Grid.CellCenter(start)), maxCells = maxM / cell; bool capped = false;
+            S.Touch(start, 0, -1); heap.Push(start, 0, 0);
             while (heap.Count > 0 && open > 0)
             {
                 int u = heap.Pop(out double du);
                 if (S.Closed(u) || du > S.G[u] + 1e-9) continue;
-                if (du > maxCells) break;
-                for (int t = 0; t < done.Length; t++) if (!done[t] && du * cell >= best[t]) { done[t] = true; open--; }
-                if (open == 0) break;
+                if (du > maxCells) { capped = true; break; }
                 S.Close(u); expanded++;
-                if (anchors.TryGetValue(u, out var hits))
-                    foreach (var (t, off) in hits)
-                    {
-                        if (done[t]) continue;
-                        best[t] = Math.Min(best[t], du * cell + off);
-                        if (--left[t] == 0) { done[t] = true; open--; }
-                    }
+                if (at.TryGetValue(u, out var hits))
+                    foreach (int t in hits) { res[t] = startOff + du * cell + V2.Distance(Grid.CellCenter(u), targets[t]); status[t] = Reach.Reached; open--; }
                 int ux = u % W, uy = u / W;
                 for (int d = 0; d < 8; d++)
                 {
@@ -140,21 +148,8 @@ namespace IGVC.Reference.Teacher
                     if (!S.Closed(v) && nd < S.GOf(v) - 1e-12) { S.Touch(v, nd, u); heap.Push(v, nd, -nd); }
                 }
             }
-            for (int t = 0; t < res.Length; t++) if (!double.IsInfinity(best[t])) res[t] = best[t];
+            if (!capped) for (int t = 0; t < n; t++) if (status[t] == Reach.SearchLimited) status[t] = Reach.Disconnected;
             return res;
-        }
-        /// <summary>The point's own free cell (offset 0), else every free cell within 1 m with its straight offset.</summary>
-        private List<(int cell, double off)> Anchors(V2 p)
-        {
-            var o = new List<(int, double)>(); int c = Grid.CellOf(p); if (c < 0) return o;
-            if (Map.Free(c)) { o.Add((c, 0)); return o; }
-            int cx = c % Grid.W, cy = c / Grid.W, r = 10;
-            for (int dy = -r; dy <= r; dy++) for (int dx = -r; dx <= r; dx++)
-            {
-                int x = cx + dx, y = cy + dy; if (!Grid.InBounds(x, y) || dx * dx + dy * dy > r * r) continue;
-                int i = Grid.Index(x, y); if (Map.Free(i)) o.Add((i, V2.Distance(p, Grid.CellCenter(i))));
-            }
-            return o;
         }
 
         /// <summary>Steepest-descent route from p (first point = p itself) until the goal or <paramref name="maxLength"/>.</summary>

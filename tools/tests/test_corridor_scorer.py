@@ -166,5 +166,106 @@ class CorridorRerankTests(unittest.TestCase):
                 self.assertAlmostEqual(value, runtime[k][name], delta=1e-3, msg=name)
 
 
+def _target(status, cost):
+    return dict(status=status, entry_straight_m=3., entry_path_m=cost, cost_m=cost)
+
+
+class CorridorLabelModeTests(unittest.TestCase):
+    """build_corridor_rows: one explicit label mode, no guessed targets, counted omissions."""
+
+    def write(self, tmp, labels_by_index, plan_source='observed_lane_corridor'):
+        cmap = costmap()
+        diagnostics = {}
+        observed_navigation.select_observed_guidance(POINTS, ROBOT, YAW, GOAL, lookahead=7.,
+                                                     guidance_diagnostics=diagnostics)
+        candidates = outcome_candidates(diagnostics, None)
+        snapshot = dict(schema_version=1, input=dict(origin=cmap[0], resolution=RES, width=W, height=H,
+                        costs=cmap[4], robot_xy=ROBOT, robot_yaw=YAW, destination=GOAL), metadata={})
+        outcomes, labels = [], []
+        for index, (mode, per_candidate) in labels_by_index.items():
+            outcomes.append(dict(schema_version=2, index=index, destination_index=0, candidates=candidates,
+                                 plan=dict(source=plan_source)))
+            rows = []
+            for k, c in enumerate(candidates):
+                row = dict(source=c['source'], endpoint=c['endpoint'][:2], endpoint_cell='free',
+                           teacher_cost_m=10.+k, regret_m=float(k))
+                if per_candidate is not None:
+                    row['corridor_target'] = per_candidate[k]
+                rows.append(row)
+            label = dict(index=index, stamp_s=1., candidates=rows)
+            if mode is not None:
+                label['corridor_label'] = mode
+            labels.append(label)
+            with gzip.open(tmp/f'{index:05d}.json.gz', 'wt') as stream:
+                json.dump(snapshot, stream)
+        (tmp/'outcomes.jsonl').write_text(''.join(json.dumps(o)+'\n' for o in outcomes))
+        (tmp/'labels.jsonl').write_text(''.join(json.dumps(l)+'\n' for l in labels))
+        self.assertEqual(len(candidates), 2)
+        return tmp/'outcomes.jsonl', tmp/'labels.jsonl'
+
+    def test_path_v3_uses_separate_target_and_omits_whole_groups_with_counts(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # Decision 3: the legacy straight line prefers candidate 0, the grid detour reverses it.
+            # Decision 4: candidate 1 is search-limited -> the whole group goes, with a reason.
+            # Decision 5: candidate 0 is proven disconnected -> the whole group goes, never a penalty.
+            paths = self.write(Path(tmp), {
+                3: ('path-v3', [_target('grid_path', 19.), _target('line_of_sight', 11.)]),
+                4: ('path-v3', [_target('line_of_sight', 10.), _target('search_limited', None)]),
+                5: ('path-v3', [_target('disconnected', None), _target('line_of_sight', 11.)])})
+            rows, stats = build_corridor_rows(*paths, 'run', corridor_label='path-v3')
+        self.assertEqual([r['index'] for r in rows], [3, 3])
+        self.assertEqual([r['teacher_cost_m'] for r in rows], [19., 11.])
+        self.assertEqual([r['regret_m'] for r in rows], [8., 0.])
+        self.assertEqual([r['teacher_best'] for r in rows], [False, True])
+        self.assertEqual({r['corridor_status'] for r in rows}, {'grid_path', 'line_of_sight'})
+        self.assertEqual(stats['groups'], 1)
+        self.assertEqual(stats['omitted_target_groups'], 2)
+        self.assertEqual(stats['omitted_target'], {'search_limited': 1, 'disconnected': 1})
+        self.assertTrue(all(r['corridor_label'] == 'path-v3' for r in rows))
+
+    def test_legacy_mode_keeps_previous_rows_and_ignores_targets(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = self.write(Path(tmp), {3: (None, None)})
+            rows, stats = build_corridor_rows(*paths, 'run', corridor_label='straight-v1')
+        self.assertEqual([r['teacher_cost_m'] for r in rows], [10., 11.])
+        self.assertEqual([r['regret_m'] for r in rows], [0., 1.])
+        self.assertNotIn('corridor_label', rows[0])
+        self.assertEqual(stats['omitted_target_groups'], 0)
+
+    def test_mode_mismatch_mixed_and_incompatible_records_are_rejected(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            v3 = [_target('line_of_sight', 10.), _target('line_of_sight', 11.)]
+            cases = [
+                ('straight-v1', {3: ('path-v3', v3)}),                 # selected mode differs from labels
+                ('path-v3', {3: (None, None)}),                         # legacy labels used as path-v3
+                ('straight-v1', {3: ('path-v2', None)}),                # unaccepted overwritten-cost labels
+                ('path-v3', {3: ('path-v3', v3), 4: (None, None)}),     # mixed modes in one file
+                ('path-v3', {3: ('path-v3', None)}),                    # path-v3 record without corridor_target
+                ('path-v3', {3: ('path-v3', [_target('grid_path', None), _target('line_of_sight', 11.)])}),
+                ('path-v2', {3: ('path-v2', None)}),                    # unsupported selection
+            ]
+            for k, (selected, labels) in enumerate(cases):
+                case = tmp/str(k)
+                case.mkdir()
+                paths = self.write(case, labels)
+                with self.subTest(case=k), self.assertRaises(ValueError):
+                    build_corridor_rows(*paths, 'run', corridor_label=selected)
+
+    def test_omissions_before_target_check_are_counted(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            v3 = [_target('line_of_sight', 10.), _target('line_of_sight', 11.)]
+            paths = self.write(Path(tmp), {3: ('path-v3', v3)}, plan_source='grid')
+            rows, stats = build_corridor_rows(*paths, 'run', corridor_label='path-v3')
+        self.assertEqual((rows, stats['not_corridor_guidance'], stats['groups']), ([], 1, 0))
+
+    def test_cli_requires_an_explicit_corridor_label(self):
+        from build_dataset import main
+        with self.assertRaises(SystemExit):
+            main(['build', '--runs', 'x', '--kind', 'corridor'])
+        with self.assertRaises(SystemExit):
+            main(['build', '--runs', 'x', '--corridor-label', 'path-v3'])
+
+
 if __name__ == '__main__':
     unittest.main()

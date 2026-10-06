@@ -89,16 +89,16 @@ namespace IGVC.Reference.Teacher
         public double Cell = .1;
         public int Worst = 10;
         /// <summary>
-        /// Teacher cost of a lane-corridor candidate (source "corridor", no logged path): robot-to-entry leg plus the
-        /// entry's cost-to-go. "straight-v1" (labels before 2026-10-06) uses the straight line even through obstacles;
-        /// "path-v2" keeps the straight line only when it is C-space free and otherwise uses the grid shortest path,
-        /// with <see cref="UnreachablePenaltyM"/> added (and flagged) when the entry is not reachable within the bound.
-        /// Route candidates are labelled identically in both versions.
+        /// Corridor label mode, chosen explicitly (CLI --corridor-label). Legacy fields (teacher_cost_m, regret_m, plan
+        /// regret, best candidate) are identical in every mode: straight robot-to-entry line plus the entry's cost-to-go.
+        /// "straight-v1" (default: the meaning of all earlier labels) writes only those. "path-v3" additionally writes a
+        /// separate corridor_target per lane-corridor candidate: the straight leg only when every intersected cell is
+        /// free, else the grid shortest path; blocked endpoints, search-limited and disconnected entries get a status and
+        /// no cost. (The unaccepted "path-v2" overwrote teacher_cost_m and is no longer produced.)
         /// </summary>
-        public string CorridorCost = PathV2;
-        public const string StraightV1 = "straight-v1", PathV2 = "path-v2";
-        public double UnreachablePenaltyM = 100;
-        /// <summary>Robot-to-entry search bound: min(cap, 2 x farthest blocked entry + 10 m).</summary>
+        public string CorridorCost = StraightV1;
+        public const string StraightV1 = "straight-v1", PathV3 = "path-v3";
+        /// <summary>Fixed robot-to-entry search bound (m of grid path); entries beyond it are "search_limited", never costed.</summary>
         public double CorridorSearchCapM = 60;
     }
 

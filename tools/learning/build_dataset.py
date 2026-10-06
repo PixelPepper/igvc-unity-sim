@@ -25,6 +25,15 @@ Two steps:
             the logged candidate plus the decision's own observed snapshot
             (pose, GPS destination, costmap): the same function the runtime
             re-rank uses. y is the teacher regret within the corridor group.
+            ``--corridor-label`` (required with ``--kind corridor``) selects
+            the target: ``straight-v1`` = legacy teacher_cost_m (straight line
+            to the entry, even through walls); ``path-v3`` = the separate
+            corridor_target.cost_m (grid-path aware). Every label record must
+            carry that mode (records without one are legacy straight-v1);
+            other or mixed modes abort. Under path-v3 a whole decision group
+            is omitted when any member's target is unavailable (blocked,
+            search-limited, disconnected): no cost is guessed. All omissions
+            are counted by reason in the stats.
 
 Teacher/world-derived values appear ONLY as targets (``teacher_cost_m``,
 ``regret_m``, ``teacher_best``); features come from what the robot logged.
@@ -52,6 +61,12 @@ FEATURES = ('score', 'weighted_cost', 'path_length_m', 'local_path_length_m',
     'lethal_fraction_ahead', 'hazard_cells_vs_chosen', 'corridor_entry_distance_m')
 COPY_FILES = ('course.json', 'run.json', 'autonomy.json')
 CORRIDOR_SOURCE = 'corridor'
+# Corridor label modes written by reference_lab `label --corridor-label`; records without one predate it (legacy).
+LEGACY_CORRIDOR_LABEL = 'straight-v1'
+CORRIDOR_LABELS = (LEGACY_CORRIDOR_LABEL, 'path-v3')
+AVAILABLE_TARGETS = ('line_of_sight', 'grid_path')
+CORRIDOR_TARGET_STATUSES = AVAILABLE_TARGETS+('disconnected', 'search_limited', 'blocked_robot', 'blocked_entry',
+                                              'entry_no_cost_to_go')
 
 
 def _replay_one(path, fraction):
@@ -155,6 +170,7 @@ def _joined(outcomes_path, labels_path, stats):
         stats['decisions'] += 1
         outcome, label = outcomes[index], labels.get(index)
         if label is None or not isinstance(label.get('candidates'), list):
+            stats['unlabelled'] = stats.get('unlabelled', 0)+1
             continue
         candidates, labelled = outcome.get('candidates') or [], label['candidates']
         if len(candidates) != len(labelled) or any(
@@ -199,26 +215,81 @@ def _load_snapshot_input(path):
         return json.load(stream)['input']
 
 
-def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None):
+def label_mode(labels_path):
+    """The single corridor label mode of a labels.jsonl; ValueError on mixed or unknown modes."""
+    modes = {record.get('corridor_label', record.get('corridor_cost', LEGACY_CORRIDOR_LABEL))
+             for record in _read_jsonl(labels_path).values()}
+    if len(modes) > 1:
+        raise ValueError(f'{labels_path}: mixed corridor label modes {sorted(map(str, modes))}')
+    mode = modes.pop() if modes else LEGACY_CORRIDOR_LABEL
+    if mode not in CORRIDOR_LABELS:
+        raise ValueError(f'{labels_path}: unsupported corridor label mode {mode!r}')
+    return mode
+
+
+def _corridor_target(label_row, mode, labels_path, index):
+    """(cost, None) or (None, omission reason) for one corridor candidate label."""
+    if mode == LEGACY_CORRIDOR_LABEL:
+        cost = label_row.get('teacher_cost_m')
+        return (cost, None) if _finite(cost) else (None, 'nonfinite_legacy_cost')
+    target = label_row.get('corridor_target')
+    if not isinstance(target, dict) or target.get('status') not in CORRIDOR_TARGET_STATUSES:
+        raise ValueError(f'{labels_path}#{index}: path-v3 corridor candidate without a valid corridor_target')
+    if target['status'] not in AVAILABLE_TARGETS:
+        return None, target['status']
+    if not _finite(target.get('cost_m')):
+        raise ValueError(f'{labels_path}#{index}: available corridor_target without a finite cost_m')
+    return target['cost_m'], None
+
+
+def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None,
+                        corridor_label=LEGACY_CORRIDOR_LABEL):
     """One row per accepted corridor proposal of decisions with >= 2 of them.
 
     Only decisions whose executed guidance was the observed corridor count
     (otherwise the corridor choice did not steer the robot). Costmap features
-    come from the decision's own snapshot (observed inputs only).
+    come from the decision's own snapshot (observed inputs only). The target
+    is the selected ``corridor_label`` mode's cost; labels in any other mode
+    raise ValueError. Under path-v3 a group with any unavailable target is
+    omitted whole (``omitted_target`` counts reasons per candidate status).
     """
     from lane_corridor_policy import corridor_feature_rows
-    stats = dict(decisions=0, joined=0, mismatched=0, groups=0, rows=0, not_corridor_guidance=0,
-                 missing_snapshot=0)
+    if corridor_label not in CORRIDOR_LABELS:
+        raise ValueError(f'unsupported corridor label mode {corridor_label!r}')
+    found = label_mode(labels_path)
+    if found != corridor_label:
+        raise ValueError(f'{labels_path}: labels are {found}, dataset selected {corridor_label}')
+    stats = dict(decisions=0, joined=0, mismatched=0, unlabelled=0, groups=0, rows=0, fewer_than_two=0,
+                 not_corridor_guidance=0, missing_snapshot=0, dropped_candidates={}, omitted_target_groups=0,
+                 omitted_target={})
     rows = []
     decisions_dir = Path(decisions_dir) if decisions_dir is not None else Path(outcomes_path).parent
     for index, outcome, label, candidates, labelled in _joined(outcomes_path, labels_path, stats):
-        group = [(c, l) for c, l in zip(candidates, labelled)
-                 if c.get('source') == CORRIDOR_SOURCE and _finite(l.get('teacher_cost_m'))
-                 and len(c['endpoint']) >= 3 and _finite(c.get('score'))]
-        if len(group) < 2:
+        group, unavailable = [], []
+        for c, l in zip(candidates, labelled):
+            if c.get('source') != CORRIDOR_SOURCE:
+                continue
+            if len(c['endpoint']) < 3 or not _finite(c.get('score')):
+                stats['dropped_candidates']['no_entry_direction_or_score'] = \
+                    stats['dropped_candidates'].get('no_entry_direction_or_score', 0)+1
+                continue
+            cost, reason = _corridor_target(l, corridor_label, labels_path, index)
+            if reason == 'nonfinite_legacy_cost':  # legacy behaviour: drop the candidate, now counted
+                stats['dropped_candidates'][reason] = stats['dropped_candidates'].get(reason, 0)+1
+            elif reason is not None:
+                unavailable.append(reason)
+            else:
+                group.append((c, l, cost))
+        if len(group)+len(unavailable) < 2:
+            stats['fewer_than_two'] += 1
             continue
         if (outcome.get('plan') or {}).get('source') != 'observed_lane_corridor':
             stats['not_corridor_guidance'] += 1
+            continue
+        if unavailable:
+            stats['omitted_target_groups'] += 1
+            for reason in unavailable:
+                stats['omitted_target'][reason] = stats['omitted_target'].get(reason, 0)+1
             continue
         try:
             inputs = _load_snapshot_input(decisions_dir/f'{index:05d}.json.gz')
@@ -230,29 +301,31 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
             continue
         proposals = [dict(c.get('features') or {}, score=c['score'], entry=c['endpoint'][:2],
                           direction=[math.cos(c['endpoint'][2]), math.sin(c['endpoint'][2])])
-                     for c, _ in group]
+                     for c, _, _ in group]
         features = corridor_feature_rows(proposals, robot, yaw, destination, costmap)
         # The detector keeps the lowest score (outcomes list corridors in that order).
         heuristic = min(range(len(group)), key=lambda k: (group[k][0]['score'], k))
-        best_index = min(range(len(group)), key=lambda k: group[k][1]['teacher_cost_m'])
-        best = group[best_index][1]['teacher_cost_m']
+        best_index = min(range(len(group)), key=lambda k: group[k][2])
+        best = group[best_index][2]
         stats['groups'] += 1
-        for k, ((candidate, label_row), row_features) in enumerate(zip(group, features)):
-            rows.append(dict(run=run_name, index=index, group=f'{run_name}:{index}',
+        for k, ((candidate, label_row, cost), row_features) in enumerate(zip(group, features)):
+            row = dict(run=run_name, index=index, group=f'{run_name}:{index}',
                 destination_index=outcome.get('destination_index'), stamp_s=label.get('stamp_s'),
                 source=CORRIDOR_SOURCE, heuristic_choice=k == heuristic,
                 features={name: value for name, value in row_features.items() if _finite(value)},
                 endpoint=candidate['endpoint'][:2], endpoint_cell=label_row.get('endpoint_cell'),
-                teacher_cost_m=label_row['teacher_cost_m'],
-                regret_m=round(label_row['teacher_cost_m']-best, 4), teacher_best=k == best_index,
-                replayed=bool(outcome.get('replayed'))))
+                teacher_cost_m=cost, regret_m=round(cost-best, 4), teacher_best=k == best_index,
+                replayed=bool(outcome.get('replayed')))
+            if corridor_label != LEGACY_CORRIDOR_LABEL:  # legacy rows keep their exact previous shape
+                row.update(corridor_label=corridor_label, corridor_status=label_row['corridor_target']['status'])
+            rows.append(row)
             stats['rows'] += 1
     return rows, stats
 
 
-def _build_one(kind, outcomes, labels, name):
+def _build_one(kind, outcomes, labels, name, corridor_label=None):
     if kind == 'corridor':
-        return build_corridor_rows(outcomes, labels, name)
+        return build_corridor_rows(outcomes, labels, name, corridor_label=corridor_label)
     return build_rows(outcomes, labels, name)
 
 
@@ -274,7 +347,12 @@ def main(argv=None):
     build.add_argument('--kind', choices=('route', 'corridor'), default='route',
                        help='route candidates (default) or accepted lane-corridor proposals')
     build.add_argument('--jobs', type=int, default=1, help='parallel runs (corridor reads snapshots)')
+    build.add_argument('--corridor-label', choices=CORRIDOR_LABELS,
+                       help='required with --kind corridor: straight-v1 (legacy teacher_cost_m) or path-v3 '
+                            '(corridor_target.cost_m, unavailable groups omitted); labels must match')
     args = parser.parse_args(argv)
+    if args.command == 'build' and (args.kind == 'corridor') != (args.corridor_label is not None):
+        parser.error('--corridor-label is required with --kind corridor and only valid with it')
 
     def run_path(value, root):
         path = Path(value)
@@ -297,11 +375,16 @@ def main(argv=None):
             report[name] = dict(error='missing outcomes.jsonl or labels.jsonl')
             continue
         work.append((name, outcomes, labels))
-    if args.jobs > 1 and work:
-        with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-            results = list(pool.map(_build_one, *zip(*[(args.kind, o, l, n) for n, o, l in work])))
-    else:
-        results = [_build_one(args.kind, o, l, n) for n, o, l in work]
+    try:  # a label-mode mismatch in any run aborts the whole dataset (no partial or mixed output)
+        if args.jobs > 1 and work:
+            with ProcessPoolExecutor(max_workers=args.jobs) as pool:
+                results = list(pool.map(_build_one, *zip(*[(args.kind, o, l, n, args.corridor_label)
+                                                           for n, o, l in work])))
+        else:
+            results = [_build_one(args.kind, o, l, n, args.corridor_label) for n, o, l in work]
+    except ValueError as error:
+        print(f'REJECTED: {error}', file=sys.stderr)
+        return 2
     for (name, _, _), (rows, stats) in zip(work, results):
         all_rows += rows
         report[name] = stats
@@ -309,7 +392,7 @@ def main(argv=None):
     with args.out.open('w', encoding='utf-8') as stream:
         for row in all_rows:
             stream.write(json.dumps(row, separators=(',', ':'))+'\n')
-    summary = dict(out=str(args.out), kind=args.kind, runs=report, rows=len(all_rows),
+    summary = dict(out=str(args.out), kind=args.kind, corridor_label=args.corridor_label, runs=report, rows=len(all_rows),
                    groups=len({r['group'] for r in all_rows}),
                    runs_with_groups=len({r['run'] for r in all_rows}))
     args.out.with_suffix('.summary.json').write_text(json.dumps(summary, indent=2)+'\n', encoding='utf-8')

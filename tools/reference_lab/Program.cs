@@ -15,7 +15,7 @@ public static class Program
 {
     private const string FrozenCourse = "artifacts/sandbox/runs/20261002T035715-45c98a0f/course.json";
     private const string RealRun = "artifacts/sandbox/runs/20261002T061204-d4510a99";
-    private const string Usage = "usage: check [--course course.json] [--real-run <run-folder>] [--keep-going] | label (--run <run-folder> | --runs <dir-or-glob>) [--out <dir>] [--horizon 5] [--ceilings 0.6,2.2] [--corridor-cost path-v2|straight-v1]";
+    private const string Usage = "usage: check [--course course.json] [--real-run <run-folder>] [--keep-going] | label (--run <run-folder> | --runs <dir-or-glob>) [--out <dir>] [--horizon 5] [--ceilings 0.6,2.2] [--corridor-label straight-v1|path-v3]";
 
     public static int Main(string[] args)
     {
@@ -68,10 +68,10 @@ public static class Program
         var options = new LabelOptions { HorizonS = double.Parse(Option(args, "--horizon", "5"), inv) };
         string ceilings = Option(args, "--ceilings", null);
         if (ceilings != null) options.SpeedCeilings = Array.ConvertAll(ceilings.Split(','), s => double.Parse(s, inv));
-        // Corridor candidate teacher cost: path-v2 (default since 2026-10-06) or straight-v1 (the earlier labels). Write
-        // new versions to a separate root with --out (e.g. artifacts/learning/labels-replayed-v2) so old datasets stay intact.
-        options.CorridorCost = Option(args, "--corridor-cost", LabelOptions.PathV2);
-        if (options.CorridorCost != LabelOptions.PathV2 && options.CorridorCost != LabelOptions.StraightV1) { Console.Error.WriteLine(Usage); return 2; }
+        // Corridor label mode: straight-v1 (default, legacy fields only) or path-v3 (adds separate corridor_target fields;
+        // legacy fields unchanged). Write path-v3 to its own root with --out (e.g. artifacts/learning/labels-replayed-v3).
+        options.CorridorCost = Option(args, "--corridor-label", LabelOptions.StraightV1);
+        if (options.CorridorCost != LabelOptions.PathV3 && options.CorridorCost != LabelOptions.StraightV1) { Console.Error.WriteLine(Usage); return 2; }
         var runs = new List<string>();
         if (one != null) runs.Add(Path.GetFullPath(one));
         else
@@ -99,7 +99,7 @@ public static class Program
                 File.WriteAllText(Path.Combine(target, "traps.json"), res.TrapsJson + "\n");
                 var plan = res.Labels.ConvertAll(l => l.RegretVsTeacherM).FindAll(v => !double.IsNaN(v));
                 double mean = 0, max = double.NaN; foreach (var v in plan) { mean += v / plan.Count; max = double.IsNaN(max) ? v : Math.Max(max, v); }
-                Console.WriteLine(FormattableString.Invariant($"LABELLED {run.Name} snapshots={run.Snapshots.Count} labelled={res.Labels.Count} outcomes=v{(run.OutcomeSchema == 2 ? 2 : 1)} reachable={res.AllReachable} goal_mismatch_max={res.MaxMismatch:0.000}m plan_regret_mean={mean:0.00}m max={max:0.00}m traps={res.Traps.Count} status={run.Status} corridor_cost={options.CorridorCost} corridor={res.CorridorCandidates} line_of_sight={res.CorridorLineOfSight} grid_path={res.CorridorGridPath} unreachable={res.CorridorUnreachable} expanded={res.CorridorExpanded} seconds={watch.Elapsed.TotalSeconds:0.0} -> {target}"));
+                Console.WriteLine(FormattableString.Invariant($"LABELLED {run.Name} snapshots={run.Snapshots.Count} labelled={res.Labels.Count} outcomes=v{(run.OutcomeSchema == 2 ? 2 : 1)} reachable={res.AllReachable} goal_mismatch_max={res.MaxMismatch:0.000}m plan_regret_mean={mean:0.00}m max={max:0.00}m traps={res.Traps.Count} status={run.Status} corridor_label={options.CorridorCost} corridor={res.CorridorCandidates} line_of_sight={res.Count(Labeler.LineOfSight)} grid_path={res.Count(Labeler.GridPath)} unavailable={res.CorridorCandidates - res.Count(Labeler.LineOfSight) - res.Count(Labeler.GridPath)} expanded={res.CorridorExpanded} seconds={watch.Elapsed.TotalSeconds:0.0} -> {target}"));
                 foreach (var t in res.Traps) Console.WriteLine("  TRAP " + Labeler.Describe(t));
             }
             catch (Exception e) { failed++; Console.WriteLine($"FAILED {dir}: {e.Message}"); }

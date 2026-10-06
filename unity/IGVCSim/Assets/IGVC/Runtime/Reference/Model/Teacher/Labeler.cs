@@ -7,8 +7,11 @@ namespace IGVC.Reference.Teacher
     {
         public string Source = ""; public V2 End; public double PathLength, Cost, Regret = double.NaN, Score = double.NaN;
         public bool StraightLine; public string EndCell = "free";
-        /// <summary>path-v2 corridor leg: Corridor marks a relabelled candidate (extra JSON fields); others stay as v1.</summary>
-        public bool Corridor, LineOfSight, EntryUnreachable; public double StraightM = double.NaN, EntryPathM = double.NaN;
+        /// <summary>path-v3 corridor target, separate from the legacy Cost/Regret: Corridor marks a candidate that has one;
+        /// TargetCostM is NaN unless TargetStatus is line_of_sight or grid_path.</summary>
+        public bool Corridor; public string TargetStatus = "";
+        public double StraightM = double.NaN, EntryPathM = double.NaN, TargetCostM = double.NaN;
+        public bool TargetAvailable => TargetStatus == Labeler.LineOfSight || TargetStatus == Labeler.GridPath;
     }
     public sealed class ExecLabel { public double HorizonS, PathLength, Progress, Cost, Regret; public V2 After; }
 
@@ -52,8 +55,9 @@ namespace IGVC.Reference.Teacher
         public bool AllReachable { get { foreach (var d in Destinations) if (!d.Reachable) return false; return Destinations.Count > 0; } }
         public double MaxMismatch { get { double m = 0; foreach (var d in Destinations) m = Math.Max(m, d.Mismatch); return m; } }
         public List<string> Lines = new List<string>(); public string Summary = "", TrapsJson = "";
-        /// <summary>path-v2 corridor counts: relabelled candidates, those with a free straight line, grid-path ones, unreachable ones.</summary>
-        public int CorridorCandidates, CorridorLineOfSight, CorridorGridPath, CorridorUnreachable, CorridorSearches, CorridorExpanded;
+        /// <summary>path-v3 corridor target counts by status (ordinal order of <see cref="Labeler.TargetStatuses"/>), searches, expanded cells.</summary>
+        public int CorridorCandidates, CorridorSearches, CorridorExpanded; public int[] CorridorStatus = new int[Labeler.TargetStatuses.Length];
+        public int Count(string status) => CorridorStatus[Array.IndexOf(Labeler.TargetStatuses, status)];
     }
 
     /// <summary>Labels every saved decision of a finished run with the full-knowledge teacher (offline only).</summary>
@@ -82,7 +86,7 @@ namespace IGVC.Reference.Teacher
                 d.Reached = HindsightTeacher.Reached(f); d.Reachable = d.GoalCell >= 0 && d.Reached >= T.FreeCells / 2;
                 res.Destinations.Add(d);
             }
-            if (O.CorridorCost != LabelOptions.PathV2 && O.CorridorCost != LabelOptions.StraightV1) throw new ArgumentException("unknown corridor cost version " + O.CorridorCost);
+            if (O.CorridorCost != LabelOptions.PathV3 && O.CorridorCost != LabelOptions.StraightV1) throw new ArgumentException("unknown corridor label mode " + O.CorridorCost);
             foreach (var s in snaps) res.Labels.Add(LabelOne(run, s, snaps, dests, res.Speeds, res));
             FindTraps(run, snaps, res);
             foreach (var l in res.Labels) res.Lines.Add(LabelJson(l));
@@ -119,10 +123,11 @@ namespace IGVC.Reference.Teacher
             {
                 L.Candidates = new List<CandLabel>(); double best = double.PositiveInfinity;
                 foreach (var c in s.Candidates) L.Candidates.Add(Cand(s, c, f));
-                if (O.CorridorCost == LabelOptions.PathV2) CorridorPaths(s, L, f, res);
                 for (int k = 0; k < L.Candidates.Count; k++) if (L.Candidates[k].Cost < best) { best = L.Candidates[k].Cost; L.BestCandidate = k; }
                 foreach (var cl in L.Candidates) cl.Regret = cl.Cost - best;
                 if (L.Plan != null && L.BestCandidate >= 0) L.RegretM = L.Plan.Cost - best;
+                // Additive only: legacy costs, regrets and the best candidate above are final before this runs.
+                if (O.CorridorCost == LabelOptions.PathV3) CorridorTargets(s, L, f, res);
             }
             L.Executed = Executed(run, s, snaps, f, L.CostToGo);
             if (s.HasAfter) { L.OutcomeProgressTeacher = L.CostToGo - T.CostToGo(f, s.After); L.OutcomeProgressLogged = s.ProgressM; }
@@ -140,36 +145,56 @@ namespace IGVC.Reference.Teacher
         }
 
         public const string CorridorSource = "corridor";
+        public const string LineOfSight = "line_of_sight", GridPath = "grid_path", Disconnected = "disconnected", SearchLimited = "search_limited",
+            BlockedRobot = "blocked_robot", BlockedEntry = "blocked_entry", EntryNoCostToGo = "entry_no_cost_to_go";
+        /// <summary>Every corridor_target status; only the first two carry a cost.</summary>
+        public static readonly string[] TargetStatuses = { LineOfSight, GridPath, Disconnected, SearchLimited, BlockedRobot, BlockedEntry, EntryNoCostToGo };
         /// <summary>
-        /// path-v2: a lane-corridor candidate's robot-to-entry leg is the straight line only when that line is free in
-        /// C-space; otherwise the grid shortest path from the robot (one bounded Dijkstra per snapshot); an entry
-        /// not reachable within the bound costs straight line + <see cref="LabelOptions.UnreachablePenaltyM"/>.
-        /// Route candidates (logged paths) are not touched.
+        /// path-v3: a separate corridor target for each lane-corridor candidate (source corridor, no logged path), leaving
+        /// its legacy Cost/Regret untouched. Robot and entry must lie in free C-space cells (never snapped); the leg is
+        /// the straight line when every intersected cell is free, else the grid shortest path (one Dijkstra per snapshot,
+        /// fixed <see cref="LabelOptions.CorridorSearchCapM"/>). The entry's cost-to-go must come from its own cell.
+        /// Unavailable targets keep a status and NaN cost (written as null): no penalty is ever invented.
         /// </summary>
-        private void CorridorPaths(SnapshotIn s, SnapshotLabel L, double[] f, RunLabels res)
+        private void CorridorTargets(SnapshotIn s, SnapshotLabel L, double[] f, RunLabels res)
         {
-            var idx = new List<int>(); var targets = new List<V2>(); double far = 0;
-            bool robotFree = T.CodeAt(s.Robot) == OccupancyGrid.Free;
+            var idx = new List<int>(); var targets = new List<V2>(); var ctg = new double[L.Candidates.Count];
+            bool robotFree = T.CodeAt(s.Robot) == OccupancyGrid.Free, unavailable = false;
             for (int k = 0; k < L.Candidates.Count; k++)
             {
                 var cl = L.Candidates[k]; if (cl.Source != CorridorSource || !cl.StraightLine) continue;
                 cl.Corridor = true; cl.StraightM = cl.PathLength; res.CorridorCandidates++;
-                bool entryFree = T.CodeAt(cl.End) == OccupancyGrid.Free;
-                cl.LineOfSight = T.LineFree(s.Robot, cl.End, robotFree ? 0 : 1, entryFree ? 0 : 1);
-                if (cl.LineOfSight) { cl.EntryPathM = cl.PathLength; res.CorridorLineOfSight++; continue; }
-                idx.Add(k); targets.Add(cl.End); far = Math.Max(far, cl.StraightM);
+                ctg[k] = T.CostToGo(f, cl.End, out _, out bool snapped);
+                if (!robotFree) cl.TargetStatus = BlockedRobot;
+                else if (T.CodeAt(cl.End) != OccupancyGrid.Free) cl.TargetStatus = BlockedEntry;
+                else if (snapped || double.IsNaN(ctg[k]) || double.IsInfinity(ctg[k])) cl.TargetStatus = EntryNoCostToGo;
+                else if (T.SegmentFree(s.Robot, cl.End)) { cl.TargetStatus = LineOfSight; cl.EntryPathM = cl.StraightM; }
+                else { idx.Add(k); targets.Add(cl.End); }
             }
-            if (idx.Count == 0) return;
-            var path = T.PathFrom(s.Robot, targets, Math.Min(O.CorridorSearchCapM, 2 * far + 10), out int expanded);
-            res.CorridorSearches++; res.CorridorExpanded += expanded;
-            bool unreachable = false;
-            for (int j = 0; j < idx.Count; j++)
+            if (idx.Count > 0)
             {
-                var cl = L.Candidates[idx[j]]; double ctg = cl.Cost - cl.PathLength;
-                if (double.IsNaN(path[j])) { cl.EntryUnreachable = unreachable = true; cl.Cost = cl.StraightM + O.UnreachablePenaltyM + ctg; res.CorridorUnreachable++; }
-                else { cl.EntryPathM = cl.PathLength = path[j]; cl.StraightLine = false; cl.Cost = path[j] + ctg; res.CorridorGridPath++; }
+                var path = T.PathFrom(s.Robot, targets, O.CorridorSearchCapM, out var reach, out int expanded);
+                res.CorridorSearches++; res.CorridorExpanded += expanded;
+                for (int j = 0; j < idx.Count; j++)
+                {
+                    var cl = L.Candidates[idx[j]];
+                    switch (reach[j])
+                    {
+                        case HindsightTeacher.Reach.Reached: cl.TargetStatus = GridPath; cl.EntryPathM = path[j]; break;
+                        case HindsightTeacher.Reach.Disconnected: cl.TargetStatus = Disconnected; break;
+                        case HindsightTeacher.Reach.SearchLimited: cl.TargetStatus = SearchLimited; break;
+                        case HindsightTeacher.Reach.BlockedStart: cl.TargetStatus = BlockedRobot; break;
+                        default: cl.TargetStatus = BlockedEntry; break;
+                    }
+                }
             }
-            if (unreachable) L.Flags.Add("corridor_entry_unreachable");
+            for (int k = 0; k < L.Candidates.Count; k++)
+            {
+                var cl = L.Candidates[k]; if (!cl.Corridor) continue;
+                res.CorridorStatus[Array.IndexOf(TargetStatuses, cl.TargetStatus)]++;
+                if (cl.TargetAvailable) cl.TargetCostM = cl.EntryPathM + ctg[k]; else unavailable = true;
+            }
+            if (unavailable) L.Flags.Add("corridor_target_unavailable");
         }
 
         private ExecLabel Executed(RunIn run, SnapshotIn s, List<SnapshotIn> snaps, double[] f, double costHere)
@@ -267,7 +292,7 @@ namespace IGVC.Reference.Teacher
         private string LabelJson(SnapshotLabel l)
         {
             var j = new JsonOut().O();
-            j.K("schema_version").I(1).K("corridor_cost").S(O.CorridorCost).K("index").I(l.Index).K("destination_index").I(l.Dest).K("stamp_s").N(l.Stamp, 3);
+            j.K("schema_version").I(1).K("corridor_label").S(O.CorridorCost).K("index").I(l.Index).K("destination_index").I(l.Dest).K("stamp_s").N(l.Stamp, 3);
             j.K("robot").A().N(l.Robot.X).N(l.Robot.Y).N(l.Yaw).EA().K("destination").P(l.Destination).K("robot_cell").S(l.RobotCell);
             j.K("flags").A(); foreach (var f in l.Flags) j.S(f); j.EA();
             j.K("teacher").O().K("cost_to_go_m").N(l.CostToGo).K("lookahead_m").N(l.Lookahead).K("local_goal").P(l.LocalGoal).K("local_goal_yaw").N(l.LocalGoalYaw)
@@ -281,14 +306,15 @@ namespace IGVC.Reference.Teacher
             j.K("outcome_progress_teacher_m").N(l.OutcomeProgressTeacher).K("outcome_progress_logged_m").N(l.OutcomeProgressLogged);
             return j.EO().ToString();
         }
-        /// <summary>One candidate as written in labels.jsonl (route candidates: the v1 fields only).</summary>
-        public static string CandidateJson(CandLabel c) { var j = new JsonOut(); CandJson(j, c); return j.ToString(); }
-        private static void CandJson(JsonOut j, CandLabel c)
+        /// <summary>One candidate as written in labels.jsonl; <paramref name="legacyOnly"/> omits the additive corridor_target.</summary>
+        public static string CandidateJson(CandLabel c, bool legacyOnly = false) { var j = new JsonOut(); CandJson(j, c, legacyOnly); return j.ToString(); }
+        private static void CandJson(JsonOut j, CandLabel c, bool legacyOnly = false)
         {
             if (c == null) { j.Null(); return; }
             j.O().K("source").S(c.Source).K("endpoint").P(c.End).K("endpoint_cell").S(c.EndCell).K("path_length_m").N(c.PathLength).K("straight_line").B(c.StraightLine)
                 .K("score").N(c.Score).K("teacher_cost_m").N(c.Cost).K("regret_m").N(c.Regret);
-            if (c.Corridor) j.K("entry_straight_m").N(c.StraightM).K("entry_path_m").N(c.EntryPathM).K("entry_line_of_sight").B(c.LineOfSight).K("entry_unreachable").B(c.EntryUnreachable);
+            if (c.Corridor && !legacyOnly)
+                j.K("corridor_target").O().K("status").S(c.TargetStatus).K("entry_straight_m").N(c.StraightM).K("entry_path_m").N(c.EntryPathM).K("cost_m").N(c.TargetCostM).EO();
             j.EO();
         }
         private static void Stat(JsonOut j, string key, IEnumerable<double> values)
@@ -304,10 +330,13 @@ namespace IGVC.Reference.Teacher
              .K("warning").S("Derived from WORLD course geometry: offline training/evaluation labels only; never an input to the running robot.")
              .K("run").S(r.Run.Name).K("course").S(r.Run.Course.Identity).K("run_status").S(r.Run.Status).K("run_reason").S(r.Run.Reason)
              .K("outcome_schema").I(r.Run.OutcomeSchema).K("executed_source").S("trajectory").K("horizon_s").N(O.HorizonS)
-             .K("corridor_cost").S(O.CorridorCost);
-            j.K("corridor_labels").O().K("candidates").I(r.CorridorCandidates).K("line_of_sight").I(r.CorridorLineOfSight).K("grid_path").I(r.CorridorGridPath)
-             .K("unreachable").I(r.CorridorUnreachable).K("unreachable_penalty_m").N(O.UnreachablePenaltyM).K("search_cap_m").N(O.CorridorSearchCapM)
-             .K("searches").I(r.CorridorSearches).K("expanded_cells").I(r.CorridorExpanded).EO();
+             .K("corridor_label").S(O.CorridorCost);
+            if (O.CorridorCost == LabelOptions.PathV3)
+            {
+                j.K("corridor_targets").O().K("candidates").I(r.CorridorCandidates).K("status").O();
+                for (int k = 0; k < TargetStatuses.Length; k++) j.K(TargetStatuses[k]).I(r.CorridorStatus[k]);
+                j.EO().K("search_cap_m").N(O.CorridorSearchCapM).K("searches").I(r.CorridorSearches).K("expanded_cells").I(r.CorridorExpanded).EO();
+            }
             j.K("grid").O().K("cell_m").N(T.Cell).K("width").I(T.Grid.W).K("height").I(T.Grid.H).K("clearance_m").N(T.Grid.Clearance).K("free_cells").I(T.FreeCells).K("seam").B(false).EO();
             j.K("speed").A(); foreach (var s in r.Speeds) j.O().K("ceiling_mps").N(s.Ceiling).K("lap_time_s").N(s.LapTime, 2).K("blocked_stations").I(s.BlockedStations).EO(); j.EA();
             j.K("destinations").A();
