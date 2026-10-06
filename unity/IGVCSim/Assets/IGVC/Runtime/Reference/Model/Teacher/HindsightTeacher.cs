@@ -76,6 +76,87 @@ namespace IGVC.Reference.Teacher
         }
         public double CostToGo(double[] f, V2 p) => CostToGo(f, p, out _, out _);
 
+        /// <summary>True when every C-space cell sampled along a-b (half-cell steps) is free, ignoring the first
+        /// <paramref name="skipA"/> and last <paramref name="skipB"/> metres (a pose snapped out of an inflated cell).</summary>
+        public bool LineFree(V2 a, V2 b, double skipA = 0, double skipB = 0)
+        {
+            double len = V2.Distance(a, b); int n = Math.Max(1, (int)Math.Ceiling(len / (Grid.Cell * .5)));
+            for (int i = 0; i <= n; i++)
+            {
+                double s = len * i / n; if (s < skipA || len - s < skipB) continue;
+                if (!Map.Free(Grid.CellOf(V2.Lerp(a, b, (double)i / n)))) return false;
+            }
+            return true;
+        }
+
+        private SearchSpace reach;
+        /// <summary>
+        /// Shortest C-space grid path length (m, 8-connected, same move model as <see cref="Field"/>) from
+        /// <paramref name="from"/> to each target, or NaN when unreachable within <paramref name="maxM"/>. A pose in a
+        /// blocked cell snaps to the free cells within 1 m plus the straight offset (as <see cref="CostToGo(double[], V2, out int, out bool)"/>).
+        /// One bounded Dijkstra that stops once every target is settled.
+        /// </summary>
+        public double[] PathFrom(V2 from, IList<V2> targets, double maxM, out int expanded)
+        {
+            expanded = 0; var res = new double[targets.Count]; for (int t = 0; t < res.Length; t++) res[t] = double.NaN;
+            if (targets.Count == 0) return res;
+            if (reach == null) reach = new SearchSpace(Map.Count);
+            var S = reach; S.Begin(); var heap = S.Heap; double cell = Grid.Cell; int W = Map.W;
+            foreach (var (c, off) in Anchors(from)) if (off / cell < S.GOf(c)) { S.Touch(c, off / cell, -1); heap.Push(c, off / cell, -off / cell); }
+            if (heap.Count == 0) return res;
+            var anchors = new Dictionary<int, List<(int t, double off)>>(); var left = new int[targets.Count]; var best = new double[targets.Count];
+            var done = new bool[targets.Count]; int open = 0;
+            for (int t = 0; t < targets.Count; t++)
+            {
+                best[t] = double.PositiveInfinity;
+                foreach (var (c, off) in Anchors(targets[t]))
+                {
+                    if (!anchors.TryGetValue(c, out var l)) anchors[c] = l = new List<(int, double)>();
+                    l.Add((t, off)); left[t]++;
+                }
+                if (left[t] == 0) done[t] = true; else open++;
+            }
+            double maxCells = maxM / cell;
+            while (heap.Count > 0 && open > 0)
+            {
+                int u = heap.Pop(out double du);
+                if (S.Closed(u) || du > S.G[u] + 1e-9) continue;
+                if (du > maxCells) break;
+                for (int t = 0; t < done.Length; t++) if (!done[t] && du * cell >= best[t]) { done[t] = true; open--; }
+                if (open == 0) break;
+                S.Close(u); expanded++;
+                if (anchors.TryGetValue(u, out var hits))
+                    foreach (var (t, off) in hits)
+                    {
+                        if (done[t]) continue;
+                        best[t] = Math.Min(best[t], du * cell + off);
+                        if (--left[t] == 0) { done[t] = true; open--; }
+                    }
+                int ux = u % W, uy = u / W;
+                for (int d = 0; d < 8; d++)
+                {
+                    if (!Map.CanMove(ux, uy, d)) continue;
+                    int v = u + GridMap.DY[d] * W + GridMap.DX[d]; double nd = du + GridMap.StepCost[d];
+                    if (!S.Closed(v) && nd < S.GOf(v) - 1e-12) { S.Touch(v, nd, u); heap.Push(v, nd, -nd); }
+                }
+            }
+            for (int t = 0; t < res.Length; t++) if (!double.IsInfinity(best[t])) res[t] = best[t];
+            return res;
+        }
+        /// <summary>The point's own free cell (offset 0), else every free cell within 1 m with its straight offset.</summary>
+        private List<(int cell, double off)> Anchors(V2 p)
+        {
+            var o = new List<(int, double)>(); int c = Grid.CellOf(p); if (c < 0) return o;
+            if (Map.Free(c)) { o.Add((c, 0)); return o; }
+            int cx = c % Grid.W, cy = c / Grid.W, r = 10;
+            for (int dy = -r; dy <= r; dy++) for (int dx = -r; dx <= r; dx++)
+            {
+                int x = cx + dx, y = cy + dy; if (!Grid.InBounds(x, y) || dx * dx + dy * dy > r * r) continue;
+                int i = Grid.Index(x, y); if (Map.Free(i)) o.Add((i, V2.Distance(p, Grid.CellCenter(i))));
+            }
+            return o;
+        }
+
         /// <summary>Steepest-descent route from p (first point = p itself) until the goal or <paramref name="maxLength"/>.</summary>
         public List<V2> Route(double[] f, V2 p, double maxLength = double.PositiveInfinity, List<int> cells = null)
         {

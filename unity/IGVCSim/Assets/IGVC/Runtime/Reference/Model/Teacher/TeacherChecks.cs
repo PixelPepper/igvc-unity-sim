@@ -14,6 +14,7 @@ namespace IGVC.Reference.Teacher
         public static void Run(CheckContext c)
         {
             DeadEnd(c);
+            CorridorPath(c);
             Geodesy(c);
             Real(c);
         }
@@ -65,6 +66,63 @@ namespace IGVC.Reference.Teacher
             bool same = again.Lines.Count == res.Lines.Count && again.Summary == res.Summary && again.TrapsJson == res.TrapsJson;
             for (int i = 0; same && i < res.Lines.Count; i++) same = res.Lines[i] == again.Lines[i];
             c.Check(same, "teacher: labels identical across two runs");
+        }
+
+        /// <summary>A wall crosses the straight line to corridor entry A (open behind it via a gap near the north edge);
+        /// entry B is in plain view. A route candidate with a logged path rides along.</summary>
+        public static CourseGeometry WallCourse() => SyntheticCourses.Stadium(40, 8, 3, .25,
+            new CourseObstacle { Id = "wall", Kind = "barricade", X = 3, Y = -1.5, Yaw = Math.PI / 2, Length = 4, Width = .4 });
+        /// <summary>The robot is boxed in by four barricades: every entry outside is unreachable from it.</summary>
+        public static CourseGeometry BoxCourse() => SyntheticCourses.Stadium(40, 8, 3, .25,
+            new CourseObstacle { Id = "e", Kind = "barricade", X = 1.5, Y = 0, Yaw = Math.PI / 2, Length = 3.4, Width = .4 },
+            new CourseObstacle { Id = "w", Kind = "barricade", X = -1.5, Y = 0, Yaw = Math.PI / 2, Length = 3.4, Width = .4 },
+            new CourseObstacle { Id = "n", Kind = "barricade", X = 0, Y = 1.5, Yaw = 0, Length = 3.4, Width = .4 },
+            new CourseObstacle { Id = "s", Kind = "barricade", X = 0, Y = -1.5, Yaw = 0, Length = 3.4, Width = .4 });
+        public static readonly V2 BehindWall = new V2(4, -1.5), InView = new V2(3.5, 2);
+
+        public static RunIn CorridorRun(CourseGeometry course, string name, params V2[] entries)
+        {
+            var run = new RunIn { Name = name, Course = course, Status = "stopped", Reason = "synthetic" };
+            run.Goals.Add(new V2(16, 0));
+            var s = new SnapshotIn { Index = 1, DestinationIndex = 0, Robot = new V2(0, 0), Yaw = 0, Destination = new V2(16, 0), StampS = 10, Action = "sent_goal" };
+            s.Candidates = new List<CandidateIn>();
+            foreach (var e in entries) s.Candidates.Add(new CandidateIn { End = e, Source = Labeler.CorridorSource, Score = 1 });
+            // Route candidate with a logged path straight through the wall: its label must not depend on the corridor version.
+            s.Candidates.Add(new CandidateIn { End = new V2(5, -1), Source = "grid", Path = new List<V2> { new V2(0, 0), new V2(2.5, -.5), new V2(5, -1) } });
+            s.Plan = new CandidateIn { End = entries[0], Source = "observed_lane_corridor" };
+            run.Snapshots.Add(s);
+            run.TrajT = new[] { 10.0, 11 }; run.TrajP = new[] { new V2(0, 0), new V2(.5, 0) }; run.TrajYaw = new[] { 0.0, 0 };
+            return run;
+        }
+
+        static void CorridorPath(CheckContext c)
+        {
+            var o1 = new LabelOptions { SpeedCeilings = new[] { .6 }, CorridorCost = LabelOptions.StraightV1 };
+            var o2 = new LabelOptions { SpeedCeilings = new[] { .6 } };
+            var teacher = new HindsightTeacher(WallCourse());
+            var v1 = new Labeler(teacher, o1).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
+            var v2 = new Labeler(teacher, o2).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
+            CandLabel a1 = v1.Labels[0].Candidates[0], b1 = v1.Labels[0].Candidates[1], a2 = v2.Labels[0].Candidates[0], b2 = v2.Labels[0].Candidates[1];
+            string F1(double v) => v.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture);
+            c.Check(!a2.LineOfSight && !a2.EntryUnreachable && a2.EntryPathM > a2.StraightM + 1 && a2.Cost > a1.Cost + 1,
+                "teacher path-v2: wall across the straight line makes the entry leg longer (" + F1(a2.StraightM) + " m straight, " + F1(a2.EntryPathM) + " m grid path)");
+            c.Check(b2.LineOfSight && b2.Cost == b1.Cost && b2.EntryPathM == b2.StraightM, "teacher path-v2: an entry in plain view keeps its straight-line cost (" + F1(b2.Cost) + " m)");
+            // Within the corridor group (build_dataset --kind corridor ranks corridor candidates only).
+            c.Check(a1.Cost < b1.Cost - .2 && b2.Cost < a2.Cost - .2 && a2.Regret > b2.Regret,
+                "teacher path-v2: prefers the reachable entry in view (" + F1(b2.Cost) + " vs " + F1(a2.Cost) + " m); straight-v1 preferred the one behind the wall (" + F1(a1.Cost) + " vs " + F1(b1.Cost) + " m)");
+            bool routeSame = Labeler.CandidateJson(v1.Labels[0].Candidates[2]) == Labeler.CandidateJson(v2.Labels[0].Candidates[2]) && v1.Labels[0].Candidates[2].Cost > 0
+                && Labeler.CandidateJson(v1.Labels[0].Plan) == Labeler.CandidateJson(v2.Labels[0].Plan);
+            c.Check(routeSame && v2.Lines[0].Contains("\"corridor_cost\":\"path-v2\"") && v1.Summary.Contains("\"corridor_cost\":\"straight-v1\""),
+                "teacher path-v2: route candidate and plan labels byte-identical to straight-v1; label version recorded");
+            var again = new Labeler(new HindsightTeacher(WallCourse()), o2).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
+            c.Check(again.Lines[0] == v2.Lines[0] && again.Summary == v2.Summary, "teacher path-v2: corridor labels identical across two runs");
+
+            var box = new Labeler(new HindsightTeacher(BoxCourse()), o2).Label(CorridorRun(BoxCourse(), "synthetic-box", new V2(5, 0), new V2(-5, 0)));
+            var bl = box.Labels[0]; var e0 = bl.Candidates[0];
+            double ctg = e0.Cost - e0.StraightM - o2.UnreachablePenaltyM;
+            c.Check(e0.EntryUnreachable && bl.Candidates[1].EntryUnreachable && bl.Flags.Contains("corridor_entry_unreachable") && box.CorridorUnreachable == 2
+                && !double.IsNaN(e0.Cost) && !double.IsInfinity(e0.Cost) && Math.Abs(ctg - 11) < 1.5 && box.Summary.Contains("\"unreachable\":2"),
+                "teacher path-v2: boxed-in robot gets a finite " + F1(o2.UnreachablePenaltyM) + " m penalty and a flag on both entries (" + F1(e0.Cost) + " m)");
         }
 
         static void Geodesy(CheckContext c)

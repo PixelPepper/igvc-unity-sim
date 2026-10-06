@@ -7,6 +7,8 @@ namespace IGVC.Reference.Teacher
     {
         public string Source = ""; public V2 End; public double PathLength, Cost, Regret = double.NaN, Score = double.NaN;
         public bool StraightLine; public string EndCell = "free";
+        /// <summary>path-v2 corridor leg: Corridor marks a relabelled candidate (extra JSON fields); others stay as v1.</summary>
+        public bool Corridor, LineOfSight, EntryUnreachable; public double StraightM = double.NaN, EntryPathM = double.NaN;
     }
     public sealed class ExecLabel { public double HorizonS, PathLength, Progress, Cost, Regret; public V2 After; }
 
@@ -50,6 +52,8 @@ namespace IGVC.Reference.Teacher
         public bool AllReachable { get { foreach (var d in Destinations) if (!d.Reachable) return false; return Destinations.Count > 0; } }
         public double MaxMismatch { get { double m = 0; foreach (var d in Destinations) m = Math.Max(m, d.Mismatch); return m; } }
         public List<string> Lines = new List<string>(); public string Summary = "", TrapsJson = "";
+        /// <summary>path-v2 corridor counts: relabelled candidates, those with a free straight line, grid-path ones, unreachable ones.</summary>
+        public int CorridorCandidates, CorridorLineOfSight, CorridorGridPath, CorridorUnreachable, CorridorSearches, CorridorExpanded;
     }
 
     /// <summary>Labels every saved decision of a finished run with the full-knowledge teacher (offline only).</summary>
@@ -78,14 +82,15 @@ namespace IGVC.Reference.Teacher
                 d.Reached = HindsightTeacher.Reached(f); d.Reachable = d.GoalCell >= 0 && d.Reached >= T.FreeCells / 2;
                 res.Destinations.Add(d);
             }
-            foreach (var s in snaps) res.Labels.Add(LabelOne(run, s, snaps, dests, res.Speeds));
+            if (O.CorridorCost != LabelOptions.PathV2 && O.CorridorCost != LabelOptions.StraightV1) throw new ArgumentException("unknown corridor cost version " + O.CorridorCost);
+            foreach (var s in snaps) res.Labels.Add(LabelOne(run, s, snaps, dests, res.Speeds, res));
             FindTraps(run, snaps, res);
             foreach (var l in res.Labels) res.Lines.Add(LabelJson(l));
             res.Summary = SummaryJson(res); res.TrapsJson = TrapsJson(res);
             return res;
         }
 
-        private SnapshotLabel LabelOne(RunIn run, SnapshotIn s, List<SnapshotIn> snaps, SortedDictionary<int, DestInfo> dests, SpeedProfile[] speeds)
+        private SnapshotLabel LabelOne(RunIn run, SnapshotIn s, List<SnapshotIn> snaps, SortedDictionary<int, DestInfo> dests, SpeedProfile[] speeds, RunLabels res)
         {
             var L = new SnapshotLabel { Index = s.Index, Dest = s.DestinationIndex, Stamp = s.StampS, Robot = s.Robot, Yaw = s.Yaw, Destination = s.Destination, Lookahead = s.Lookahead, Action = s.Action, Admitted = s.Admitted };
             var f = T.FieldFor(s.Destination);
@@ -113,11 +118,9 @@ namespace IGVC.Reference.Teacher
             if (s.Candidates != null && s.Candidates.Count > 0)
             {
                 L.Candidates = new List<CandLabel>(); double best = double.PositiveInfinity;
-                foreach (var c in s.Candidates)
-                {
-                    var cl = Cand(s, c, f); L.Candidates.Add(cl);
-                    if (cl.Cost < best) { best = cl.Cost; L.BestCandidate = L.Candidates.Count - 1; }
-                }
+                foreach (var c in s.Candidates) L.Candidates.Add(Cand(s, c, f));
+                if (O.CorridorCost == LabelOptions.PathV2) CorridorPaths(s, L, f, res);
+                for (int k = 0; k < L.Candidates.Count; k++) if (L.Candidates[k].Cost < best) { best = L.Candidates[k].Cost; L.BestCandidate = k; }
                 foreach (var cl in L.Candidates) cl.Regret = cl.Cost - best;
                 if (L.Plan != null && L.BestCandidate >= 0) L.RegretM = L.Plan.Cost - best;
             }
@@ -134,6 +137,39 @@ namespace IGVC.Reference.Teacher
             else { cl.PathLength = V2.Distance(s.Robot, c.End); cl.StraightLine = true; }
             cl.Cost = cl.PathLength + T.CostToGo(f, c.End);
             return cl;
+        }
+
+        public const string CorridorSource = "corridor";
+        /// <summary>
+        /// path-v2: a lane-corridor candidate's robot-to-entry leg is the straight line only when that line is free in
+        /// C-space; otherwise the grid shortest path from the robot (one bounded Dijkstra per snapshot); an entry
+        /// not reachable within the bound costs straight line + <see cref="LabelOptions.UnreachablePenaltyM"/>.
+        /// Route candidates (logged paths) are not touched.
+        /// </summary>
+        private void CorridorPaths(SnapshotIn s, SnapshotLabel L, double[] f, RunLabels res)
+        {
+            var idx = new List<int>(); var targets = new List<V2>(); double far = 0;
+            bool robotFree = T.CodeAt(s.Robot) == OccupancyGrid.Free;
+            for (int k = 0; k < L.Candidates.Count; k++)
+            {
+                var cl = L.Candidates[k]; if (cl.Source != CorridorSource || !cl.StraightLine) continue;
+                cl.Corridor = true; cl.StraightM = cl.PathLength; res.CorridorCandidates++;
+                bool entryFree = T.CodeAt(cl.End) == OccupancyGrid.Free;
+                cl.LineOfSight = T.LineFree(s.Robot, cl.End, robotFree ? 0 : 1, entryFree ? 0 : 1);
+                if (cl.LineOfSight) { cl.EntryPathM = cl.PathLength; res.CorridorLineOfSight++; continue; }
+                idx.Add(k); targets.Add(cl.End); far = Math.Max(far, cl.StraightM);
+            }
+            if (idx.Count == 0) return;
+            var path = T.PathFrom(s.Robot, targets, Math.Min(O.CorridorSearchCapM, 2 * far + 10), out int expanded);
+            res.CorridorSearches++; res.CorridorExpanded += expanded;
+            bool unreachable = false;
+            for (int j = 0; j < idx.Count; j++)
+            {
+                var cl = L.Candidates[idx[j]]; double ctg = cl.Cost - cl.PathLength;
+                if (double.IsNaN(path[j])) { cl.EntryUnreachable = unreachable = true; cl.Cost = cl.StraightM + O.UnreachablePenaltyM + ctg; res.CorridorUnreachable++; }
+                else { cl.EntryPathM = cl.PathLength = path[j]; cl.StraightLine = false; cl.Cost = path[j] + ctg; res.CorridorGridPath++; }
+            }
+            if (unreachable) L.Flags.Add("corridor_entry_unreachable");
         }
 
         private ExecLabel Executed(RunIn run, SnapshotIn s, List<SnapshotIn> snaps, double[] f, double costHere)
@@ -231,7 +267,7 @@ namespace IGVC.Reference.Teacher
         private string LabelJson(SnapshotLabel l)
         {
             var j = new JsonOut().O();
-            j.K("schema_version").I(1).K("index").I(l.Index).K("destination_index").I(l.Dest).K("stamp_s").N(l.Stamp, 3);
+            j.K("schema_version").I(1).K("corridor_cost").S(O.CorridorCost).K("index").I(l.Index).K("destination_index").I(l.Dest).K("stamp_s").N(l.Stamp, 3);
             j.K("robot").A().N(l.Robot.X).N(l.Robot.Y).N(l.Yaw).EA().K("destination").P(l.Destination).K("robot_cell").S(l.RobotCell);
             j.K("flags").A(); foreach (var f in l.Flags) j.S(f); j.EA();
             j.K("teacher").O().K("cost_to_go_m").N(l.CostToGo).K("lookahead_m").N(l.Lookahead).K("local_goal").P(l.LocalGoal).K("local_goal_yaw").N(l.LocalGoalYaw)
@@ -245,11 +281,15 @@ namespace IGVC.Reference.Teacher
             j.K("outcome_progress_teacher_m").N(l.OutcomeProgressTeacher).K("outcome_progress_logged_m").N(l.OutcomeProgressLogged);
             return j.EO().ToString();
         }
+        /// <summary>One candidate as written in labels.jsonl (route candidates: the v1 fields only).</summary>
+        public static string CandidateJson(CandLabel c) { var j = new JsonOut(); CandJson(j, c); return j.ToString(); }
         private static void CandJson(JsonOut j, CandLabel c)
         {
             if (c == null) { j.Null(); return; }
             j.O().K("source").S(c.Source).K("endpoint").P(c.End).K("endpoint_cell").S(c.EndCell).K("path_length_m").N(c.PathLength).K("straight_line").B(c.StraightLine)
-                .K("score").N(c.Score).K("teacher_cost_m").N(c.Cost).K("regret_m").N(c.Regret).EO();
+                .K("score").N(c.Score).K("teacher_cost_m").N(c.Cost).K("regret_m").N(c.Regret);
+            if (c.Corridor) j.K("entry_straight_m").N(c.StraightM).K("entry_path_m").N(c.EntryPathM).K("entry_line_of_sight").B(c.LineOfSight).K("entry_unreachable").B(c.EntryUnreachable);
+            j.EO();
         }
         private static void Stat(JsonOut j, string key, IEnumerable<double> values)
         {
@@ -263,7 +303,11 @@ namespace IGVC.Reference.Teacher
             j.K("schema_version").I(1).K("kind").S("hindsight_teacher_labels")
              .K("warning").S("Derived from WORLD course geometry: offline training/evaluation labels only; never an input to the running robot.")
              .K("run").S(r.Run.Name).K("course").S(r.Run.Course.Identity).K("run_status").S(r.Run.Status).K("run_reason").S(r.Run.Reason)
-             .K("outcome_schema").I(r.Run.OutcomeSchema).K("executed_source").S("trajectory").K("horizon_s").N(O.HorizonS);
+             .K("outcome_schema").I(r.Run.OutcomeSchema).K("executed_source").S("trajectory").K("horizon_s").N(O.HorizonS)
+             .K("corridor_cost").S(O.CorridorCost);
+            j.K("corridor_labels").O().K("candidates").I(r.CorridorCandidates).K("line_of_sight").I(r.CorridorLineOfSight).K("grid_path").I(r.CorridorGridPath)
+             .K("unreachable").I(r.CorridorUnreachable).K("unreachable_penalty_m").N(O.UnreachablePenaltyM).K("search_cap_m").N(O.CorridorSearchCapM)
+             .K("searches").I(r.CorridorSearches).K("expanded_cells").I(r.CorridorExpanded).EO();
             j.K("grid").O().K("cell_m").N(T.Cell).K("width").I(T.Grid.W).K("height").I(T.Grid.H).K("clearance_m").N(T.Grid.Clearance).K("free_cells").I(T.FreeCells).K("seam").B(false).EO();
             j.K("speed").A(); foreach (var s in r.Speeds) j.O().K("ceiling_mps").N(s.Ceiling).K("lap_time_s").N(s.LapTime, 2).K("blocked_stations").I(s.BlockedStations).EO(); j.EA();
             j.K("destinations").A();

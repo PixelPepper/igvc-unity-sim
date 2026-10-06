@@ -88,6 +88,18 @@ namespace IGVC.Reference.Teacher
         public double StallWindowS = 20, StallProgressM = .5, PreviewM = 10;
         public double Cell = .1;
         public int Worst = 10;
+        /// <summary>
+        /// Teacher cost of a lane-corridor candidate (source "corridor", no logged path): robot-to-entry leg plus the
+        /// entry's cost-to-go. "straight-v1" (labels before 2026-10-06) uses the straight line even through obstacles;
+        /// "path-v2" keeps the straight line only when it is C-space free and otherwise uses the grid shortest path,
+        /// with <see cref="UnreachablePenaltyM"/> added (and flagged) when the entry is not reachable within the bound.
+        /// Route candidates are labelled identically in both versions.
+        /// </summary>
+        public string CorridorCost = PathV2;
+        public const string StraightV1 = "straight-v1", PathV2 = "path-v2";
+        public double UnreachablePenaltyM = 100;
+        /// <summary>Robot-to-entry search bound: min(cap, 2 x farthest blocked entry + 10 m).</summary>
+        public double CorridorSearchCapM = 60;
     }
 
     /// <summary>Minimal deterministic JSON writer (invariant culture, fixed decimals, NaN/Inf as null).</summary>
