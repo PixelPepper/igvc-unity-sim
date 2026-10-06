@@ -546,6 +546,49 @@ class TransportTimingDiagnosticsTest(unittest.TestCase):
         mixed = log_text(self.complete_run().records) + log_text(self.v3_run().records, noise=False)
         self.assertEqual(self.summarize(mixed)['status'], 'incomplete')
 
+    def test_v3_fixed_range_and_order_must_be_observable(self):
+        p = ProducerV3()
+        p.sample(.1)
+        p.fixed_sample(.2)
+        p.stop(.9)
+        self.assertEqual(self.summarize(log_text(p.records))['status'], 'complete')
+        records = [dict(r) for r in p.records]
+        records[1]['fixed_first_mono_s'] = .15       # one sample cannot span a range
+        self.assertEqual(self.summarize(log_text(records))['status'], 'incomplete')
+        p = ProducerV3()
+        p.sample(.1)
+        p.fixed_sample(.2)
+        p.fixed_sample(.3)
+        p.stop(.9)
+        records = [dict(r) for r in p.records]
+        records[1]['fixed_first_mono_s'] = .25       # the only gap must equal the endpoint span
+        self.assertEqual(self.summarize(log_text(records))['status'], 'incomplete')
+        p = ProducerV3()
+        p.sample(.1)
+        p.fixed_sample(.2)
+        p.sample(1.1)
+        p.record('window', 1.1001)
+        p.fixed_sample(.3)                           # each stream increases, but .3 precedes the previous record
+        p.sample(2.2)
+        p.stop(2.3)
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertTrue(any('before_previous_record_bracket' in i for i in report['integrity_issues']))
+        p = ProducerV3()                             # legitimate: carried gap across a boundary and a no-fixed window
+        p.sample(.1)
+        p.fixed_sample(.2)
+        p.sample(1.1)
+        p.record('window', 1.1001)
+        p.sample(2.2)
+        p.record('window', 2.2001)
+        p.fixed_sample(2.25)
+        p.sample(3.3)
+        p.stop(3.4)
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        self.assertEqual(p.records[2]['fixed_samples'], 0)
+        self.assertAlmostEqual(p.records[3]['window_max_fixed_gap_s'], 2.05)
+
     def test_cli_requires_output_and_never_overwrites(self):
         p = Producer()
         t = p.run(70)

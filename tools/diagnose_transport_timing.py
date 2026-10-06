@@ -171,8 +171,11 @@ def _optional(value):
     return value is None or _finite(value)
 
 
-def _check_v3(record, name, frames, bracket, header_bracket, state, issues):
-    """v3 sample streams: counts, order and exact producer copies. State advances from valid fields only."""
+def _check_v3(record, name, frames, bracket, header_bracket, prior_after, state, issues):
+    """v3 sample streams: counts, order and exact producer copies. State advances from valid fields only.
+
+    prior_after is the end of the previous record's UTC bracket: FixedUpdate reads the same main-thread Stopwatch,
+    so a new fixed sample cannot have been observed before that record was built."""
     missing = [key for key in V3_FIELDS if key not in record]
     if missing:
         issues.append('v3_fields_missing at %s: %s' % (name, missing[:MAX_LISTED]))
@@ -202,12 +205,14 @@ def _check_v3(record, name, frames, bracket, header_bracket, state, issues):
         if not (first is None and last is None and gap is None and gap_end is None and sim_start is None
                 and sim_end is None and carried == previous):
             issues.append('fixed_fields_without_fixed_samples at %s' % name)
-    elif first is None or last is None or carried != last or first > last or first < 0:
+    elif first is None or last is None or carried != last or first > last or first < 0 or (n == 1 and first != last):
         issues.append('fixed_range_invalid at %s' % name)
     elif previous is not None and first < previous:
         issues.append('fixed_sample_before_previous at %s' % name)
     elif previous is None and header_bracket and first < header_bracket[1]:
         issues.append('fixed_sample_before_header_bracket at %s' % name)
+    elif prior_after is not None and first < prior_after:
+        issues.append('fixed_sample_before_previous_record_bracket at %s' % name)
     elif bracket and last > bracket[0]:
         issues.append('fixed_sample_after_record_bracket at %s' % name)
     else:
@@ -223,6 +228,8 @@ def _check_v3(record, name, frames, bracket, header_bracket, state, issues):
             issues.append('fixed_gap_invalid at %s' % name)
         elif gap * gaps < span - tolerance or (previous is not None and first - previous > gap + tolerance):
             issues.append('fixed_gap_below_necessary_lower_bound at %s' % name)  # a boundary-spanning gap was lost
+        elif gaps == 1 and (abs(gap - span) > tolerance or gap_end != last):
+            issues.append('fixed_single_gap_not_endpoint_span at %s' % name)
     # The producer copies exact doubles: a strict running maximum keeps the end time of its first occurrence.
     expected = state['cumulative'], state['cumulative_end']
     if gap is not None and (expected[0] is None or gap > expected[0]):
@@ -373,7 +380,7 @@ def validate(records):
         if bracket and mono is not None and _finite(mono) and bracket[0] < mono:
             issues.append('utc_read_before_last_frame at %s' % name)
         if v3:
-            _check_v3(record, name, frames, bracket, header_bracket, fixed, issues)
+            _check_v3(record, name, frames, bracket, header_bracket, last_after, fixed, issues)
         elif any(key in record for key in V3_FIELDS):
             issues.append('v3_fields_in_v2_record at %s' % name)
         last_warning = record.get('cumulative_last_queue_full_observed_mono_s')
