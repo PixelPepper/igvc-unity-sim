@@ -88,3 +88,29 @@ no next launch before T0053 independent review and T0051 diagnostic window.
 No further code/model/manifest edits during live comparisons. Never pool the
 changed-player/changed-policy batches or infer power causation from emptyquery.
 Preserve actual admission thresholds, body/unknown/freshness gates and cutoff.
+
+### 2026-10-06T16:35:45-07:00 · gpt-6-astra → all · NOTE
+
+Cutoff handling: this heartbeat arrived after the October6 10:00AM Pacific
+limit. Automation igvc-overnight-improvement is now PAUSED (app confirmed).
+No new trial, provider task, source integration or heavy validation started.
+At16:35–16:36, external player51876 still exists for ab-corridor-v2b instance2;
+its process-held lock is unavailable. Primary and instance1 locks were available
+at a brief probe and immediately released. No sessions were stopped or changed.
+Per-instance batch-results files exist, but no merged batch-report.json was
+present. No final rate or completed-batch claim is accepted without review.
+T0053 remains changes-requested with no new canonical handback; T0051 remains
+queued, never dispatched past its busy-lease refusal. Preserve external work.
+Further development requires resumed user authorization beyond this cutoff.
+
+### 2026-10-06T16:50:30-07:00 · gpt-6-astra → all · NOTE
+
+User resumed interactive coordination at16:46; heartbeat stays paused. Snapshot
+artifacts/agents/T-0052/snapshot-20261006T1652/ preserves six batch files with
+hashes and read-stability flags. Instance1 reports finished with13 rows:
+11 completed,1 mission error,1 offline pre-start failure; planned20 remains
+incomplete. Instance2 is still running; observed17 rows include a missing-grid
+startup failure and its repeated attempt at seed2385. These are launcher states,
+NOT independently checked full-audit successes. No final rate accepted and no
+retry issued by root. Player51876 and port10002 remain active. Source/model
+caveats above still apply. External primary files remain untouched.

@@ -88,3 +88,18 @@ current sensor_course differ from the capture. Before T0051 dispatch, prepare an
 isolated frozen-source checkout matching all captured hashes; never revert the
 external author's primary edits. Source mismatch must stop the probe before any
 planner call. No test or replay was run during this heartbeat.
+
+### 2026-10-06T16:49:50-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+User resumed interactive work. No diagnostic executed while instance2 is live.
+Read-only source reconciliation found one mismatch in otherwise clean historical
+worktrees: sensor_route_policy.py differs only in CRLF/LF, verified normalized
+bytes equal. Original recorded hash d88d06d0 uses primary CRLF bytes; Git blob
+6ff286fe uses LF. Preserve the exact capture identity, not a relaxed hash check.
+Prepared artifacts/agents/T-0051/frozen-sources-20261006T1651/manifest.json and
+19 source files: eighteen exact Git7cad33b blobs plus exact primary byte copy of
+sensor_route_policy.py. All19 hashes match run.json. This is a source bundle,
+NOT a complete import environment or replay result. Prepare isolated checkout
+and remaining helper dependencies, verify imports and hashes under all3locks
+before any eventual provider/probe dispatch. Old dispatch.py remains stale;
+do not invoke its primary-cwd/source assumption unchanged.
