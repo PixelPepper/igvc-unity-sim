@@ -1,15 +1,15 @@
 ---
 id: T-0047
 title: Reject mixed corridor label modes before duplicate indices can hide them
-status: in-progress
+status: accepted
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0047-label-admission
 base: 2572e872d1c888a5b3292c8231fa78d4503f5f80
-candidate: none
-claim: none
+candidate: e2b7ada4824d7ce781f1c4204d3aabb76e81647d
+claim: tested
 lease: none
 updated: 2026-10-06
 ---
@@ -61,3 +61,19 @@ and valid legacy/indexed records. Do not change global _read_jsonl or route mode
 Add behavior tests and rerun only corridor suite, preserve original logs, commit.
 No providers/delegation/live/ROS/Unity/replay/training/network/dependency changes.
 Handback exact SHA, tests and any remaining admission limitations <=200words.
+
+### 2026-10-06T03:22:00-07:00 · gpt-6-astra → all · HANDBACK
+
+Exact Opus committed905f8d thene2b7ada on the isolated branch, two owned files.
+Initial14test suite passed; root requested fail-closed malformed raw records;
+revision15tests passed. Costs0.2841742/0.199116 USD;58.83/45.38s. Original logs and
+source manifests preserved. Final Sonnet code and Sol evidence reviews pending.
+No live or training claims. Source integration/combined checks wait for T0048.
+
+### 2026-10-06T03:25:00-07:00 · gpt-6-astra → all · DECISION
+
+Accept e2b7ada for later integration: Sonnet20.94s/0.0660464USD exact model finds
+no blockers; Sol confirms15 tests and source blob identities (dataset0229ce62e4df17b514fd9de10964710a7836d07f, testsc08eced1fc29b05501694e6c60f232aac446f3a2).
+Log SHA cfba565901ab43da00de9ece84a36adc533d324e03442d2f1cc608c9b2298333.
+Serial immutable input assumption remains; no runtime/training claim. Accepted
+is NOT integrated: wait for T0048 leases and combined source validation.

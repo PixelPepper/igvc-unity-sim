@@ -1,7 +1,7 @@
 ---
 id: T-0043
 title: Reconcile the already-running learned-route comparison and preserve its evidence
-status: in-progress
+status: review
 priority: P1
 owner: gpt-6-astra
 reviewers: claude-sonnet-5-5, gpt-6.1-sol

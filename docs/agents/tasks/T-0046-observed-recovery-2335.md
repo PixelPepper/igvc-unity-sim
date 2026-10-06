@@ -1,7 +1,7 @@
 ---
 id: T-0046
 title: Explain the baseline seed2335 recovery refusal from saved observations
-status: in-progress
+status: review
 priority: P1
 owner: gpt-6.1-sol
 reviewers: claude-sonnet-5-5

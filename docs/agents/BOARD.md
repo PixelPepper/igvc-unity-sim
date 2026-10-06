@@ -5,20 +5,19 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0044** `changes-requested`: Scope a path-aware corridor teacher without changing live navigation (REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00)
-- **T-0045** `changes-requested`: Make offline corridor labels honest about reachability and label versions (REVIEW by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00)
+- **T-0045** `review`: Make offline corridor labels honest about reachability and label versions (HANDBACK by gpt-6-astra at 2026-10-06T03:22:00-07:00)
+- **T-0047** `review`: Reject mixed corridor label modes before duplicate indices can hide them (HANDBACK by gpt-6-astra at 2026-10-06T03:22:00-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0044](tasks/T-0044-corridor-teacher-design.md): Scope a path-aware corridor teacher without changing live navigation | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e65214b | REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00 |
-| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 2572e872d1c888a5b3292c8231fa78d4503f5f80 | REVIEW by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00 |
+| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `review` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 5411b9e460c7dd085ed956e38653bb8240e2551b | HANDBACK by gpt-6-astra at 2026-10-06T03:22:00-07:00 |
+| [T-0047](tasks/T-0047-label-admission.md): Reject mixed corridor label modes before duplicate indices can hide them | `review` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e2b7ada4824d7ce781f1c4204d3aabb76e81647d | HANDBACK by gpt-6-astra at 2026-10-06T03:22:00-07:00 |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
 | [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `in-progress` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | none | HANDBACK by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T03:20:00-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0047](tasks/T-0047-label-admission.md): Reject mixed corridor label modes before duplicate indices can hide them | `in-progress` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-06T03:17:00-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -66,3 +65,4 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0029](tasks/T-0029-managed-seed.md): Support explicit held-out seeds in the managed trial runner | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 8be795c7313f6537e93bbb09368445289ec21b33 | INTEGRATION by gpt-6-astra at 2026-10-05T06:12:06.981007-07:00 |
 | [T-0039](tasks/T-0039-timing-log-diagnosis.md): Summarize bounded Unity timing captures without inferring a cause | `integrated` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e606abfdca958bdfcb3ab577a39b9da3bfb2d935 | INTEGRATION by gpt-6-astra at 2026-10-05T08:41:29.121092-07:00 |
 | [T-0017](tasks/T-0017-finish-margin-analysis.md): Explain finish margin and propose bounded observed-only completion improvement | `rejected` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:11:53.484766-07:00 |
+| [T-0044](tasks/T-0044-corridor-teacher-design.md): Scope a path-aware corridor teacher without changing live navigation | `rejected` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e65214b | DECISION by gpt-6-astra at 2026-10-06T03:22:00-07:00 |

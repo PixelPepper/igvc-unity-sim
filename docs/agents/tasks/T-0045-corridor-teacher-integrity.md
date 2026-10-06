@@ -7,9 +7,9 @@ owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0045-corridor-teacher-integrity
-base: 95b0baf61052651765f7924e21bd52c8e7d59777
-candidate: 2572e872d1c888a5b3292c8231fa78d4503f5f80
-claim: implemented
+base: e65214b
+candidate: 5411b9e460c7dd085ed956e38653bb8240e2551b
+claim: tested
 lease: none
 updated: 2026-10-06
 ---
@@ -141,3 +141,28 @@ relayed-from: artifacts/agents/T-0045/sol-review-r2.md
 
 Sol independently verified91 C# and32 Python passes at immutable2572e87, fixtures strengthened, and exact log hashes. New blocking admission gap: label_mode validates modes after index deduplication; conflicting modes on the same index can disappear. Current r3 owner is confined to Program/output tests; do not edit its work concurrently. This dataset gap requires a bounded follow-up before claiming full mixed-file rejection or training acceptance. No model-version/runtime/autonomy benefit claimed.
 
+
+### 2026-10-06T03:22:00-07:00 · gpt-6-astra → all · HANDBACK
+
+R3 exact5411b9 adds output refusal before any read/label/write for incomplete,
+unknown or different-mode output sets; eight behavioral tests passed. Root read
+log and SHA42c074da722361b41539dec52fb62a4e620a7e57aa5de688f10e5456985f50a8.
+Sonnet final output-only review (30.28s,0.0910244 USD, exact model) finds no
+blockers; serial use/nontransactional writes and placeholder positive cases are
+explicit limitations. Opus r3 cost0.4720978 USD/122.73s. No runtime benefit.
+Header base now names e65214b, the actual primary integration base: integration
+must include original95b0baf AND ece7278/2572e87/5411b9, never tip-only. Original
+worker creation from95b0baf remains recorded; it was never integrated separately.
+T0047 closes the independently found admission gap. No combined check or source
+integration while T0048 owns both sessions. Opus's unnecessary Python download
+and overlapping offline tests are documented there, not hidden as controlled load.
+
+### 2026-10-06T03:25:00-07:00 · gpt-6-astra → all · DECISION
+
+Sol confirms8 output tests but identifies remaining unproven completeness:
+traps contents/count agreement are unchecked and truncated matching-mode output
+can be overwritten. Root independently verifies Program.cs. Do not integrate as
+written. Two revision rounds used; rescope only this remaining issue as T0049,
+immutable generated output/fresh destination instead of more parsing complexity.
+T0049 reuses the clean worker checkout on a new branch; original T0045 branch and
+all failed/passing results retained. No more T0045 worker edits or heavy tests.
