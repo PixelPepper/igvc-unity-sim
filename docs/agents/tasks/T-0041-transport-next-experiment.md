@@ -8,13 +8,16 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/transport-probe
 base: a0f12a0
-candidate: none
+candidate: 8c3310016e4ea77348b9c7571f39a6e335d6a170
 claim: none
 lease: none
 updated: 2026-10-05
 ---
 
 # T0041: Find the next useful experiment, without tuning around a failure
+
+The candidate identifies the reviewed source baseline for this analysis-only task;
+it is not an implementation or a runtime improvement.
 
 ## Packet
 
