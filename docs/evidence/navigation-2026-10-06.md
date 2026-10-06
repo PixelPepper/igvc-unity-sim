@@ -132,11 +132,20 @@ checks, closing the gap between checking for idle players and starting work.
 
 ## Current live ownership
 
-At03:35 another external Claude session started `ab-route-3`, twenty planned
-trials on seeds2341–2350 with paired route weights0/8. Root's locked offline
+At03:35 another external Claude session started `ab-route-3`, sixty planned
+trials on seeds2341–2370 with paired route weights0/8. Root's locked offline
 checks had ended before launch. Preserve its live ownership; teacher integration
 and combined checks wait for its completion. [T0050](../agents/tasks/T-0050-active-route-comparison-3.md)
 binds the plan and requests a validation window before another batch.
+
+This batch uses a newly built player; observed on-disk assembly SHA256 is
+`42afe009a61b2ff9ac1963965398206b374960554d9b6bd0e83a18bed1d3b1a9`.
+Claude's proposed display-awake intervention and power-event correlation are
+not yet independently validated. Shared stale receipt times do not identify
+the stalled component. Post-hoc event windows and uncalibrated cross-system
+clocks do not support a causal or coincidence-probability claim. Changing the
+player and power behavior prevents treating old and new batches as one unchanged
+experiment. T0050 records feedback for the external author and preserves ownership.
 
 The WORLD-derived teacher is an approximate offline grid reference. It must never
 feed course geometry or oracle paths into runtime features or navigation.
