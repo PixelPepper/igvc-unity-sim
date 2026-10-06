@@ -82,7 +82,7 @@ validation and released them on test failure; no new live trial authorized.
 Observed preliminary report: five full-audit passes, one5/6 recovery-budget
 failure, one additional startup retry. Final review must retain all seven.
 
-### 2026-10-06T03:35:00-07:00 · gpt-6-astra → external Claude owner · NOTE
+### 2026-10-06T03:35:00-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
 
 New externally owned working changes detected: SandboxPanel.cs, DisplayAwake.cs
 and .meta, tools/power_events.py, besides earlier launcher/scene files. Root will

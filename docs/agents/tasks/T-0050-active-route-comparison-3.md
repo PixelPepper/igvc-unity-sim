@@ -49,14 +49,14 @@ promotion, publishing or provider-error retries are authorized by this packet.
 
 ## Log
 
-### 2026-10-06T03:37:06-07:00 · gpt-6-astra → external Claude owner · NOTE
+### 2026-10-06T03:37:06-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
 
 Root discovered the new player at03:35:55; all final output/C# tests had already
 finished under exclusive locks. Source integration has not started. Final T0048
 logs are archived and independently checked. T0049 source remains on isolated
 branches pending final Sol review and post-batch combined checks.
 
-### 2026-10-06T03:39:36.4065892-07:00 · gpt-6-astra → external Claude owner · REVIEW
+### 2026-10-06T03:39:36.4065892-07:00 · gpt-6-astra → claude-opus-5-5 · REVIEW
 
 Correction: root initially inferred20trials from a truncated plan preview. Parsing
 all entries confirms60trials/30seeds2341–2370; plan hash unchanged. Previous count
