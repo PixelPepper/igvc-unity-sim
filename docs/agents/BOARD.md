@@ -6,7 +6,6 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 ## Needs attention
 
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
-- **T-0046** `review`: Explain the baseline seed2335 recovery refusal from saved observations (HANDBACK by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00)
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00)
 
 ## Active
@@ -14,10 +13,10 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
-| [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `review` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | 7cad33b | HANDBACK by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | REVIEW by gpt-6-astra at 2026-10-06T03:39:36.4065892-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0051](tasks/T-0051-observed-recovery-probe.md): Reconstruct rejected forward recovery proposals from observed inputs | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none |  |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -26,6 +25,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0022](tasks/T-0022-observed-recovery-diagnosis.md): Explain observed recovery refusal in failed connector repeat | `accepted` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:48:38.404428-07:00 |
 | [T-0041](tasks/T-0041-transport-next-experiment.md): Select a discriminating experiment for the unresolved transport interruption | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 8c3310016e4ea77348b9c7571f39a6e335d6a170 | DECISION by gpt-6-astra at 2026-10-05T19:36:04.895617-07:00 |
+| [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `accepted` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | 7cad33b | DECISION by gpt-6-astra at 2026-10-06T04:43:24.2600198-07:00 |
 | [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `accepted` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 5411b9e460c7dd085ed956e38653bb8240e2551b | DECISION by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00 |
 | [T-0047](tasks/T-0047-label-admission.md): Reject mixed corridor label modes before duplicate indices can hide them | `accepted` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | e2b7ada4824d7ce781f1c4204d3aabb76e81647d | DECISION by gpt-6-astra at 2026-10-06T03:25:00-07:00 |
 | [T-0049](tasks/T-0049-immutable-label-output.md): Keep generated teacher label outputs immutable | `accepted` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 1a81e8a459a7f169a76cf755a65c59ba0282564f | DECISION by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00 |
