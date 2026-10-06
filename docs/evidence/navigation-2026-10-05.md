@@ -87,8 +87,10 @@ The output path must be new. Reports distinguish sampled frame gaps, asynchronou
 warning observations, and the unmeasured tail; they do not diagnose a cause.
 T0040 completed the two bounded reproduction attempts before09:00PDT. Both
 produced6/6 completion and all20 audit checks. The earlier freshness failure did
-not recur. Sonnet accepted the diagnostic interpretation; the final Sol evidence
-review is still pending, so the batch is not accepted as fully reviewed.
+not recur. Sonnet accepted the diagnostic interpretation. Sol subsequently verified raw
+run/audit bindings, health and recovery evidence with explicit limits: timing and
+frozen-runtime checks were completed by the coordinator separately. Both reviews
+are complete; these are accepted diagnostic results, not promotion evidence.
 
 | Diagnostic attempt | Elapsed seconds | Health pass/fail/unknown | Maximum health gap seconds | Checked backups | Swept clearance metres | Return distance metres |
 |---|---:|---|---:|---:|---:|---:|

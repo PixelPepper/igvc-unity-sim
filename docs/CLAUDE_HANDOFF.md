@@ -32,8 +32,10 @@ T0039 added the reviewed offline `tools/diagnose_transport_timing.py` report
 (7947325;18 native Windows tests passed, real-log hashes independently checked).
 T0040 completed both diagnostic repeats (6/6/all20 in368.40s and349.60s);
 no freshness failure reproduced. One checked0.6m backup in the first, none in the
-second; nearer-station search still unexercised. Sonnet review complete, final Sol
-review pending. Overnight heartbeat is paused after cutoff; no simulator running.
+second; nearer-station search still unexercised. Sonnet and qualified Sol reviews complete; coordinator separately verified raw
+timing/input/runtime identities. Overnight heartbeat remains paused; user resumed
+interactive multi-agent work. No simulator running. T0041 investigates the next
+discriminating transport experiment; no new runtime fix is claimed.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,
