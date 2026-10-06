@@ -8,6 +8,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00)
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
+- **T-0053** `changes-requested`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T07:47:19-07:00)
 
 ## Active
 
@@ -16,9 +17,10 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
-| [T-0052](tasks/T-0052-external-corridor-comparison.md): Preserve the externally launched corridor comparison and its failed dispatch | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T06:59:58-07:00 |
+| [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `changes-requested` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-06T07:47:19-07:00 |
+| [T-0052](tasks/T-0052-external-corridor-comparison.md): Preserve the externally launched corridor comparison and its failed dispatch | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | REVIEW by gpt-6-astra at 2026-10-06T07:42:47.9321155-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0051](tasks/T-0051-observed-recovery-probe.md): Reconstruct rejected forward recovery proposals from observed inputs | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T07:00:52.4162753-07:00 |
+| [T-0051](tasks/T-0051-observed-recovery-probe.md): Reconstruct rejected forward recovery proposals from observed inputs | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T07:42:47.9321155-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed

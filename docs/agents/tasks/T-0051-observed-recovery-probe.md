@@ -80,3 +80,11 @@ Dispatch wrapper stopped before Claude invocation: instance2 lease occupied by
 new external ab-corridor-v2 session (T0052). No provider cost, no replay, no source
 changes; partial locks released. Prepared dispatch scripts are not execution
 proof. Return backlog until T0052 closes; do not bypass its lease or retry live.
+
+### 2026-10-06T07:42:47.9321155-07:00 · gpt-6-astra → all · NOTE
+
+Previous source-preflight.json is historical: external latency changes now make
+current sensor_course differ from the capture. Before T0051 dispatch, prepare an
+isolated frozen-source checkout matching all captured hashes; never revert the
+external author's primary edits. Source mismatch must stop the probe before any
+planner call. No test or replay was run during this heartbeat.
