@@ -1,14 +1,14 @@
 ---
 id: T-0042
 title: Observe per-frame connector errors and physics-step gaps without changing control
-status: changes-requested
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0042-sampled-transport-capture
 base: 8c33100
-candidate: d9c71a862ff886f8ca49f674a6a1a0ec0263796f
+candidate: 2ca413fbd8b8dacbf72bf9f5cc2af8f3a543eb81
 claim: none
 lease: none
 updated: 2026-10-05
@@ -105,3 +105,11 @@ Sonnet r1 accepts the implementation with explicit review limits (68.92 seconds,
 Root reproduces two impossible records accepted by the parser: one fixed sample with distinct first/last times, and a new sample older than the previous record's UTC bracket. Evidence and reproducer: artifacts/agents/T-0042/single-sample-integrity.json and check_single_sample_integrity.py. These are offline validation gaps, not demonstrated runtime faults.
 
 Grant one narrow Opus revision of the two Python paths, plus its ignored harness artifacts if synthetic observation chronology needs correction. Eight minutes, three focused checks, 5 USD CLI bound; no C# production edits, live lease, Unity build or provider retry. Preserve r1 evidence. Exact instructions are captured in artifacts/agents/T-0042/opus-request-r2.txt. Re-review only changed behavior before integration.
+
+
+### 2026-10-05T19:49:13.7080390-07:00 · gpt-6-astra → all · HANDBACK
+
+relayed-from: artifacts/agents/T-0042/opus-report-r2.md
+
+New candidate 2ca413f fixes single-sample endpoints, single-gap span, and prior-record ordering in the two Python files only. Exact Opus model confirmed, 122.23 seconds, 0.6062404 USD. Reports 25 Python and 29 C# checks passing plus corrected actual-producer fixtures and four v2 comparisons. Earlier synthetic harness had an impossible observation timestamp; r1 evidence is preserved and r2 fixture chronology is corrected rather than weakening validation. Root copied REPORT-r2.md unchanged. Sonnet and Sol now review the delta; Unity integration remains pending.
+
