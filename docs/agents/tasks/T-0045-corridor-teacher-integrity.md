@@ -8,7 +8,7 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0045-corridor-teacher-integrity
 base: 95b0baf61052651765f7924e21bd52c8e7d59777
-candidate: ece7278f95b92434a01e9fdb4cfbf7f3e4a964f2
+candidate: 2572e872d1c888a5b3292c8231fa78d4503f5f80
 claim: implemented
 lease: none
 updated: 2026-10-06
@@ -108,3 +108,36 @@ limits centre-grid distance or whole attachment path, with a boundary test and
 consistent documentation. Explain logged-path corridor handling/fail-closed
 behavior and Euclidean-versus-octile target approximation. Keep changes bounded.
 Return <=300 words: exact commit, test evidence, addressed findings, limitations.
+
+### 2026-10-06T03:13:00-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+Second and final revision round: protect partial/ambiguous label outputs before
+integration. r2 reports91 C# checks and32 Python tests passed; root independently
+verified four CLI rejections (missing output, legacy root, descendant, normalized
+legacy path), saved primary artifacts/agents/T-0045/cli-isolation-r2.json.
+Sonnet reviewed exact2572e87, no code-blocking regression, but notes existing
+labels.jsonl without summary can be silently overwritten. Root treats that as a
+blocking evidence-preservation defect. Sonnet's restricted file tool could not
+read canonical packet; its code review does not imply packet compliance.
+
+Same worktree/owner. Scope now only tools/reference_lab/Program.cs and a focused
+output-isolation test (may add tools/tests/test_reference_label_output.py). Five
+minutes, 5 USD, exact Opus once, no provider retries/delegation. Preserve all
+existing r1/r2 evidence and source. No Unity/live/replay/real-run relabel/training.
+Refuse output directories with labels but missing/invalid/unknown-mode metadata;
+handle legacy corridor_cost metadata (including path-v2) explicitly, and never
+silently claim a different-mode directory is legacy. Prevent overwriting unknown
+or inconsistent output state. Prefer conservative refusal of existing generated
+output to an elaborate write transaction; regeneration can target a fresh dir.
+Do not add unsafe recursive deletion or overwrite modes. Add meaningful isolated
+behavior tests proving existing bytes stay unchanged and fresh output remains
+allowed. Root's four CLI cases need not be repeated if unaffected. Run only new
+focused checks/compilation, commit explicitly owned files, hand back <=300words
+with exact SHA, logs and limitations. No changes to navigation/teacher algorithm.
+
+### 2026-10-06T03:14:54.0092328-07:00 · gpt-6-astra → all · REVIEW
+
+relayed-from: artifacts/agents/T-0045/sol-review-r2.md
+
+Sol independently verified91 C# and32 Python passes at immutable2572e87, fixtures strengthened, and exact log hashes. New blocking admission gap: label_mode validates modes after index deduplication; conflicting modes on the same index can disappear. Current r3 owner is confined to Program/output tests; do not edit its work concurrently. This dataset gap requires a bounded follow-up before claiming full mixed-file rejection or training acceptance. No model-version/runtime/autonomy benefit claimed.
+

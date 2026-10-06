@@ -6,17 +6,18 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 ## Needs attention
 
 - **T-0044** `changes-requested`: Scope a path-aware corridor teacher without changing live navigation (REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00)
-- **T-0045** `changes-requested`: Make offline corridor labels honest about reachability and label versions (DECISION by gpt-6-astra at 2026-10-06T03:04:00-07:00)
+- **T-0045** `changes-requested`: Make offline corridor labels honest about reachability and label versions (REVIEW by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0044](tasks/T-0044-corridor-teacher-design.md): Scope a path-aware corridor teacher without changing live navigation | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e65214b | REVIEW by gpt-6-astra at 2026-10-06T02:55:02.4639966-07:00 |
-| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | ece7278f95b92434a01e9fdb4cfbf7f3e4a964f2 | DECISION by gpt-6-astra at 2026-10-06T03:04:00-07:00 |
+| [T-0045](tasks/T-0045-corridor-teacher-integrity.md): Make offline corridor labels honest about reachability and label versions | `changes-requested` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 2572e872d1c888a5b3292c8231fa78d4503f5f80 | REVIEW by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00 |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
-| [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `in-progress` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | none | DISPATCH by gpt-6-astra at 2026-10-06T03:08:00-07:00 |
+| [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `in-progress` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | none | HANDBACK by gpt-6-astra at 2026-10-06T03:14:54.0092328-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0047](tasks/T-0047-label-admission.md): Reject mixed corridor label modes before duplicate indices can hide them | `in-progress` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-06T03:15:00-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed

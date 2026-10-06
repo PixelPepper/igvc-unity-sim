@@ -48,3 +48,10 @@ Root relays your output; no writing canonical headers.
 
 Independent read-only failure diagnosis while Opus owns the offline teacher.
 Current runtime remains unchanged. No course or privileged route inputs allowed.
+
+### 2026-10-06T03:14:54.0092328-07:00 · gpt-6-astra → all · HANDBACK
+
+relayed-from: artifacts/agents/T-0046/sol-recovery-review.md
+
+Root independently confirmed all five proposal rejections are trap_progress_below_0.5m (max0.366m), not rear obstruction. Sol verified bound observed capture with zero lanes and broad GPS guidance. No stale-sensor conclusion follows from the combined guard name. Existing trace cannot distinguish incomplete forward search from poor proposal selection. No replay was performed; next check must preserve effective per-candidate allocation or explicitly label a counterfactual. No runtime change or weakened threshold accepted.
+
