@@ -69,6 +69,73 @@ class Producer:
         return self.record('stopped', utc_mono, note=note)
 
 
+class ProducerV3(Producer):
+    """Schema v3 shape: the v2 fields plus per-sample error counts and an independent FixedUpdate stream."""
+
+    def __init__(self, interval=1.0, cap=1200):
+        super().__init__(interval, cap)
+        self.records[0].update(schema=diag.SCHEMA_V3, sample_stream_semantics='Two independent sample streams.')
+        self.update_errors = self.total_update_errors = 0
+        self.fixed_last = self.cumulative_fixed = self.cumulative_fixed_end = None
+        self.total_fixed = self.total_fixed_errors = 0
+        self.reset_fixed()
+
+    def reset_fixed(self):
+        self.update_errors = self.fixed = self.fixed_errors = 0
+        self.fixed_first = self.fixed_gap = self.fixed_gap_end = self.fixed_sim_start = self.fixed_sim_end = None
+
+    def sample(self, t, sim=None, error=False):
+        self.update_errors += error
+        self.total_update_errors += error
+        return super().sample(t, sim)
+
+    def fixed_sample(self, t, sim=None, error=False):
+        if self.fixed_last is not None:
+            gap = t - self.fixed_last
+            if self.fixed_gap is None or gap > self.fixed_gap:
+                self.fixed_gap, self.fixed_gap_end = gap, t
+            if self.cumulative_fixed is None or gap > self.cumulative_fixed:
+                self.cumulative_fixed, self.cumulative_fixed_end = gap, t
+        if self.fixed == 0:
+            self.fixed_first, self.fixed_sim_start = t, t if sim is None else sim
+        self.fixed_sim_end = t if sim is None else sim
+        self.fixed_last = t
+        self.fixed += 1
+        self.total_fixed += 1
+        self.fixed_errors += error
+        self.total_fixed_errors += error
+
+    def record(self, kind, utc_mono, lines=0, error=False, note=None):
+        record = super().record(kind, utc_mono, lines, error, note)
+        record['schema'] = diag.SCHEMA_V3
+        record.update({'update_error_samples': self.update_errors, 'total_update_error_samples': self.total_update_errors,
+                       'fixed_samples': self.fixed, 'total_fixed_samples': self.total_fixed,
+                       'fixed_error_samples': self.fixed_errors, 'total_fixed_error_samples': self.total_fixed_errors,
+                       'fixed_first_mono_s': self.fixed_first, 'fixed_last_mono_s': self.fixed_last if self.fixed else None,
+                       'cumulative_last_fixed_mono_s': self.fixed_last, 'window_max_fixed_gap_s': self.fixed_gap,
+                       'window_max_fixed_gap_end_mono_s': self.fixed_gap_end,
+                       'cumulative_max_fixed_gap_s': self.cumulative_fixed,
+                       'cumulative_max_fixed_gap_end_mono_s': self.cumulative_fixed_end,
+                       'fixed_sim_time_start_s': self.fixed_sim_start, 'fixed_sim_time_end_s': self.fixed_sim_end})
+        self.reset_fixed()
+        return record
+
+    def run_v3(self, updates, step=1/64, fixed_per_update=2, start=0., errors=(), fixed_until=None):
+        """Updates at `step`, each preceded by fixed samples evenly inside it (none after fixed_until)."""
+        t = start
+        for i in range(updates):
+            for k in range(fixed_per_update):
+                f = t - step + (k + 1) * step / fixed_per_update
+                if f >= 1e-3 and (fixed_until is None or f <= fixed_until):
+                    self.fixed_sample(f)
+            if self.sample(t, error=i in errors):
+                self.record('exhausted' if len(self.records) == self.cap-1 else 'window', t + 1e-4)
+                if len(self.records) >= self.cap:
+                    return t
+            t += step
+        return t
+
+
 def log_text(records, noise=True, raw_lines=()):
     lines = ['Initialize engine version: 6000.3.23f1', 'IGVC_COURSE_VARIANT_READY seed=2029'] if noise else []
     for record in records:
@@ -360,6 +427,124 @@ class TransportTimingDiagnosticsTest(unittest.TestCase):
             self.assertEqual(diag.main(['--unity-log', str(missing), '--output', str(out)]), 2)
             self.assertFalse(out.exists())
             self.assertEqual(diag.main(['--unity-log', directory, '--output', str(out)]), 2)
+
+    def v3_run(self):
+        p = ProducerV3()
+        t = p.run_v3(150, errors=(10, 11, 12))
+        p.fixed_sample(t - 1/128, error=True)
+        p.stop(t + .05)
+        return p
+
+    def test_v3_counts_subsecond_error_samples_and_fixed_samples(self):
+        p = self.v3_run()
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        self.assertTrue(all(r.get('connection_error') is False for r in p.records[1:]))  # record-time reads saw none
+        streams = report['sample_streams']
+        self.assertEqual((streams['update_error_samples']['error_samples_total'],
+                          streams['update_error_samples']['first_and_last_seq_with_error_samples']), (3, [1, 1]))
+        fixed = streams['fixed_update']
+        self.assertEqual((fixed['status'], fixed['fixed_samples_total'], fixed['error_samples_total']),
+                         ('available', 299, 1))
+        self.assertEqual(fixed['first_and_last_seq_with_error_samples'], [3, 3])  # the partial final window
+        self.assertAlmostEqual(fixed['producer_cumulative_max_fixed_gap_s'], 1/128)
+        self.assertAlmostEqual(fixed['unsampled_fixed_tail_s'], .05 + 1/128)
+        self.assertIn('not a unique main-thread cause', report['uncertainty']['samples'])
+
+    def test_v3_fixed_gap_spanning_reporting_boundaries_stays_visible(self):
+        p = ProducerV3()
+        t = p.run_v3(130, fixed_until=.9)           # fixed samples stop at 0.9 s while Updates continue
+        t = p.run_v3(70, start=t)                   # resume: the ~1.1 s gap ends two records later
+        p.stop(t + .01)
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        fixed = report['sample_streams']['fixed_update']
+        self.assertEqual((fixed['records_without_fixed_samples'], fixed['first_and_last_seq_without_fixed_samples']),
+                         (1, [2, 2]))
+        worst = fixed['largest_window_fixed_gaps'][0]
+        self.assertEqual(worst['seq'], 3)
+        self.assertGreater(worst['window_max_fixed_gap_s'], 1.1)
+        self.assertEqual(fixed['producer_cumulative_max_fixed_gap_end_mono_s'], worst['gap_end_mono_s'])
+        self.assertEqual(p.records[2]['cumulative_last_fixed_mono_s'], p.records[1]['fixed_last_mono_s'])
+        records = [dict(r) for r in p.records]      # dropping the boundary-spanning gap is detected
+        for r in records[3:]:
+            r['cumulative_max_fixed_gap_s'], r['cumulative_max_fixed_gap_end_mono_s'] = 1/128, 1/128
+        records[3]['window_max_fixed_gap_s'] = 1/128
+        records[3]['window_max_fixed_gap_end_mono_s'] = records[3]['fixed_first_mono_s'] + 1/128
+        report = self.summarize(log_text(records))
+        self.assertEqual(report['status'], 'incomplete')
+        self.assertIsNone(report['sample_streams']['fixed_update']['unsampled_fixed_tail_s'])
+
+    def test_v3_without_fixed_samples_is_unavailable_not_healthy(self):
+        p = ProducerV3()
+        t = p.run_v3(100, fixed_per_update=0)
+        p.stop(t + .01)
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        fixed = report['sample_streams']['fixed_update']
+        self.assertTrue(fixed['status'].startswith('unavailable'))
+        self.assertIn('not healthy', fixed['status'])
+        self.assertEqual(fixed['largest_window_fixed_gaps'], [])
+        self.assertIsNone(fixed['producer_cumulative_max_fixed_gap_s'])
+        self.assertIsNone(fixed['unsampled_fixed_tail_s'])
+        p = ProducerV3()
+        p.stop(.05)                                  # stop before any sample of either stream
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        self.assertTrue(report['sample_streams']['update_error_samples']['status'].startswith('unavailable'))
+
+    def test_v3_cap_exhaustion_is_complete(self):
+        p = ProducerV3(cap=4)
+        p.run_v3(400)
+        report = self.summarize(log_text(p.records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        self.assertEqual(report['final']['kind'], 'exhausted')
+
+    def test_v2_logs_stay_valid_and_report_v3_metrics_unavailable(self):
+        report = self.summarize(log_text(self.complete_run().records))
+        self.assertEqual(report['status'], 'complete', report.get('integrity_issues'))
+        self.assertTrue(report['sample_streams']['status'].startswith('unavailable'))
+        self.assertNotIn('fixed_update', report['sample_streams'])
+
+    def test_v3_malformed_counts_order_and_mixed_schema_are_incomplete(self):
+        def drop(field):
+            return lambda r: r[2].pop(field)
+        cases = {'fixed total jump': lambda r: r[2].__setitem__('total_fixed_samples', r[2]['total_fixed_samples'] + 1),
+                 'fixed errors exceed samples': lambda r: r[2].__setitem__('fixed_error_samples', r[2]['fixed_samples'] + 1),
+                 'update errors exceed frames': lambda r: [r[2].__setitem__('update_error_samples', r[2]['frames'] + 1),
+                                                           r[2].__setitem__('total_update_error_samples', 10**4)],
+                 'negative update errors': lambda r: r[2].__setitem__('update_error_samples', -1),
+                 'string count': lambda r: r[2].__setitem__('fixed_samples', '3'),
+                 'null count': lambda r: r[2].__setitem__('total_fixed_error_samples', None),
+                 'fixed out of order': lambda r: r[2].__setitem__('fixed_first_mono_s', r[1]['fixed_last_mono_s'] - .5),
+                 'fixed after record bracket': lambda r: [r[2].__setitem__('fixed_last_mono_s', r[2]['mono_before_utc_s'] + 1),
+                                                          r[2].__setitem__('cumulative_last_fixed_mono_s',
+                                                                           r[2]['mono_before_utc_s'] + 1)],
+                 'negative fixed gap': lambda r: r[2].__setitem__('window_max_fixed_gap_s', -1/128),
+                 'gap end outside window': lambda r: r[2].__setitem__('window_max_fixed_gap_end_mono_s', 0.),
+                 'cumulative end changed': lambda r: [x.__setitem__('cumulative_max_fixed_gap_end_mono_s', 7.)
+                                                      for x in r[1:]],
+                 'fields on empty fixed window': lambda r: [x.__setitem__('fixed_samples', 0) for x in r[2:3]],
+                 'missing v3 field': drop('fixed_sim_time_end_s'),
+                 'mixed schema': lambda r: r[2].__setitem__('schema', diag.SCHEMA),
+                 'v3 header semantics missing': lambda r: r[0].pop('sample_stream_semantics'),
+                 'fixed bool': lambda r: r[2].__setitem__('fixed_last_mono_s', True)}
+        for name, corrupt in cases.items():
+            with self.subTest(name):
+                records = [dict(r) for r in self.v3_run().records]
+                corrupt(records)
+                report = self.summarize(log_text(records))
+                self.assertEqual(report['status'], 'incomplete', name)
+                self.assertTrue(report['derived_fields'].startswith('unvalidated'))
+        p = self.v3_run()
+        text = log_text(p.records).replace('"window_max_fixed_gap_s":%r' % p.records[2]['window_max_fixed_gap_s'],
+                                           '"window_max_fixed_gap_s":1e400', 1)
+        self.assertEqual(self.summarize(text)['status'], 'incomplete')
+        v2 = [dict(r) for r in self.complete_run().records]
+        v2[2]['fixed_samples'] = 0                   # a v3 field inside a v2 log is inconsistent
+        self.assertEqual(self.summarize(log_text(v2))['status'], 'incomplete')
+        mixed = log_text(self.complete_run().records) + log_text(self.v3_run().records, noise=False)
+        self.assertEqual(self.summarize(mixed)['status'], 'incomplete')
 
     def test_cli_requires_output_and_never_overwrites(self):
         p = Producer()

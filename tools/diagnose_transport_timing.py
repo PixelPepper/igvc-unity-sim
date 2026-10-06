@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Summarize opt-in Unity transport timing records (schema igvc_transport_timing_v2) from a player log.
+"""Summarize opt-in Unity transport timing records (schema igvc_transport_timing_v2 or v3) from a player log.
 
 Read-only and offline. Streams the log once, hashes its exact bytes for binding,
 and validates the trace before summarizing it. Missing, malformed or conflicting
@@ -12,6 +12,9 @@ Conservatively, any line over the size cap (even an unrelated one) is an
 integrity issue, so a tracing-off log containing one reports incomplete rather
 than unavailable. Exact-equality checks rely on the producer's C# "R" double
 formatting, which round-trips losslessly.
+Schema v3 adds per-sample connection-error counts and an independent FixedUpdate
+sample stream; for v2 logs those metrics are reported unavailable, never zero.
+A log must use one schema throughout; mixed versions are incomplete.
 """
 
 import argparse
@@ -23,6 +26,14 @@ import re
 import sys
 
 SCHEMA = 'igvc_transport_timing_v2'
+SCHEMA_V3 = 'igvc_transport_timing_v3'
+SCHEMAS = (SCHEMA, SCHEMA_V3)
+# Fields every v3 body record carries (null where unavailable) and no v2 record may carry.
+V3_FIELDS = ('update_error_samples', 'total_update_error_samples', 'fixed_samples', 'total_fixed_samples',
+             'fixed_error_samples', 'total_fixed_error_samples', 'fixed_first_mono_s', 'fixed_last_mono_s',
+             'cumulative_last_fixed_mono_s', 'window_max_fixed_gap_s', 'window_max_fixed_gap_end_mono_s',
+             'cumulative_max_fixed_gap_s', 'cumulative_max_fixed_gap_end_mono_s', 'fixed_sim_time_start_s',
+             'fixed_sim_time_end_s')
 MARKER = b'igvc_transport_timing'
 MAX_LINE_BYTES = 65536
 MAX_RECORDS = 1300          # producer cap is 1200 (header included); more is an integrity problem
@@ -41,7 +52,13 @@ UNCERTAINTY = {
                 'never proves that nothing was dropped. The per-record count and the cumulative last-observation time '
                 'are updated asynchronously: they are not a coherent pair and not exact per-window attribution.',
     'coverage': 'nominal_exhaustion_after_first_sample_s is nominal, not a maximum. mono_s of the final record is '
-                'the last sampled frame, not the stop time; the tail after it is unsampled.'}
+                'the last sampled frame, not the stop time; the tail after it is unsampled.',
+    'samples': 'v3 only. Update and FixedUpdate are independent sample streams. Fixed samples belong to the record built '
+               'after them, not to the Update window start; a fixed gap is attributed to the record where its later '
+               'sample arrives. Error counts are asynchronous bool reads per sample: not exact intervals or durations, '
+               'and zero does not prove no error. A fixed gap means no sampled FixedUpdate callback, not a unique '
+               'main-thread cause. Fixed sim time has unspecified component order and proves neither publish, enqueue, '
+               'send nor delivery, nor cross-host alignment. Zero fixed samples is unavailable timing, not healthy.'}
 
 
 INT_LIMIT = 2**63
@@ -150,13 +167,122 @@ def _check_bracket(record, name, issues):
     return before, after
 
 
+def _optional(value):
+    return value is None or _finite(value)
+
+
+def _check_v3(record, name, frames, bracket, header_bracket, state, issues):
+    """v3 sample streams: counts, order and exact producer copies. State advances from valid fields only."""
+    missing = [key for key in V3_FIELDS if key not in record]
+    if missing:
+        issues.append('v3_fields_missing at %s: %s' % (name, missing[:MAX_LISTED]))
+        return
+    get = record.get
+    upd, upd_total = get('update_error_samples'), get('total_update_error_samples')
+    if not (_int(upd) and upd >= 0 and _int(frames) and upd <= frames and _int(upd_total)
+            and upd_total == state['update_errors'] + upd):
+        issues.append('update_error_count_contradiction at %s' % name)
+    n, n_total = get('fixed_samples'), get('total_fixed_samples')
+    err, err_total = get('fixed_error_samples'), get('total_fixed_error_samples')
+    counts_ok = (_int(n) and n >= 0 and _int(n_total) and n_total == state['total'] + n
+                 and _int(err) and 0 <= err <= n and _int(err_total) and err_total == state['errors'] + err)
+    if not counts_ok:
+        issues.append('fixed_count_contradiction at %s' % name)
+    first, last, carried = get('fixed_first_mono_s'), get('fixed_last_mono_s'), get('cumulative_last_fixed_mono_s')
+    gap, gap_end = get('window_max_fixed_gap_s'), get('window_max_fixed_gap_end_mono_s')
+    cumulative, cumulative_end = get('cumulative_max_fixed_gap_s'), get('cumulative_max_fixed_gap_end_mono_s')
+    sim_start, sim_end = get('fixed_sim_time_start_s'), get('fixed_sim_time_end_s')
+    if not all(_optional(v) for v in (first, last, carried, gap, gap_end, cumulative, cumulative_end, sim_start, sim_end)):
+        issues.append('fixed_value_non_finite_or_wrong_type at %s' % name)
+        return
+    previous = state['last']
+    if not counts_ok:
+        pass
+    elif n == 0:
+        if not (first is None and last is None and gap is None and gap_end is None and sim_start is None
+                and sim_end is None and carried == previous):
+            issues.append('fixed_fields_without_fixed_samples at %s' % name)
+    elif first is None or last is None or carried != last or first > last or first < 0:
+        issues.append('fixed_range_invalid at %s' % name)
+    elif previous is not None and first < previous:
+        issues.append('fixed_sample_before_previous at %s' % name)
+    elif previous is None and header_bracket and first < header_bracket[1]:
+        issues.append('fixed_sample_before_header_bracket at %s' % name)
+    elif bracket and last > bracket[0]:
+        issues.append('fixed_sample_after_record_bracket at %s' % name)
+    else:
+        # n new samples give n gaps after a carried last sample; the very first fixed samples give n-1.
+        gaps = n if previous is not None else n - 1
+        start = previous if previous is not None else first
+        span = last - start
+        tolerance = 1e-9 * max(1., span)
+        if gaps <= 0:
+            if gap is not None or gap_end is not None:
+                issues.append('fixed_gap_without_two_samples at %s' % name)
+        elif gap is None or gap_end is None or gap < 0 or not first <= gap_end <= last or gap_end - gap < start - tolerance:
+            issues.append('fixed_gap_invalid at %s' % name)
+        elif gap * gaps < span - tolerance or (previous is not None and first - previous > gap + tolerance):
+            issues.append('fixed_gap_below_necessary_lower_bound at %s' % name)  # a boundary-spanning gap was lost
+    # The producer copies exact doubles: a strict running maximum keeps the end time of its first occurrence.
+    expected = state['cumulative'], state['cumulative_end']
+    if gap is not None and (expected[0] is None or gap > expected[0]):
+        expected = gap, gap_end
+    if (cumulative, cumulative_end) != expected:
+        issues.append('fixed_cumulative_gap_contradiction at %s' % name)
+    state['update_errors'] = upd_total if _int(upd_total) else state['update_errors']
+    state['total'] = n_total if _int(n_total) else state['total']
+    state['errors'] = err_total if _int(err_total) else state['errors']
+    state['last'] = carried if carried is not None else state['last']
+    state['cumulative'], state['cumulative_end'] = cumulative, cumulative_end
+
+
+def _sample_streams(body, final, validated):
+    """Bounded v3 summaries. Unavailable streams are labelled, never reported as zero or healthy."""
+    last = body[-1] if body else {}
+    frames, fixed_total = last.get('total_frames'), last.get('total_fixed_samples')
+
+    def seqs(rows):
+        return [_short(rows[0].get('seq')), _short(rows[-1].get('seq'))] if rows else None
+    update_errors = [r for r in body if _int(r.get('update_error_samples')) and r['update_error_samples'] > 0]
+    fixed_errors = [r for r in body if _int(r.get('fixed_error_samples')) and r['fixed_error_samples'] > 0]
+    without_fixed = [r for r in body if _int(r.get('fixed_samples')) and r['fixed_samples'] == 0]
+    gaps = sorted((r for r in body if _finite(r.get('window_max_fixed_gap_s'))),
+                  key=lambda r: r['window_max_fixed_gap_s'], reverse=True)[:MAX_LISTED]
+    carried = last.get('cumulative_last_fixed_mono_s')
+    tail = None
+    if validated and final and _finite(carried) and _finite(final.get('mono_before_utc_s')):
+        tail = final['mono_before_utc_s'] - carried
+    return {
+        'update_error_samples': {
+            'status': 'available' if _int(frames) and frames > 0 else 'unavailable: no Update sample observed',
+            'update_samples_total': _short(frames), 'error_samples_total': _short(last.get('total_update_error_samples')),
+            'records_with_error_samples': len(update_errors), 'first_and_last_seq_with_error_samples': seqs(update_errors)},
+        'fixed_update': {
+            'status': 'available' if _int(fixed_total) and fixed_total > 0
+            else 'unavailable: no FixedUpdate sample observed (timing unknown, not healthy)',
+            'fixed_samples_total': _short(fixed_total), 'error_samples_total': _short(last.get('total_fixed_error_samples')),
+            'records_with_error_samples': len(fixed_errors), 'first_and_last_seq_with_error_samples': seqs(fixed_errors),
+            'records_without_fixed_samples': len(without_fixed),
+            'first_and_last_seq_without_fixed_samples': seqs(without_fixed),
+            'largest_window_fixed_gaps': [{'seq': _short(r.get('seq')), 'window_max_fixed_gap_s': r['window_max_fixed_gap_s'],
+                                           'gap_end_mono_s': _short(r.get('window_max_fixed_gap_end_mono_s')),
+                                           'fixed_sim_time_start_s': _short(r.get('fixed_sim_time_start_s')),
+                                           'fixed_sim_time_end_s': _short(r.get('fixed_sim_time_end_s'))} for r in gaps],
+            'producer_cumulative_max_fixed_gap_s': _short(last.get('cumulative_max_fixed_gap_s')),
+            'producer_cumulative_max_fixed_gap_end_mono_s': _short(last.get('cumulative_max_fixed_gap_end_mono_s')),
+            'last_fixed_sample_mono_s': _short(carried),
+            'unsampled_fixed_tail_s': tail,
+            'unsampled_fixed_tail_meaning': 'from the last fixed sample to the START of the final record\'s UTC bracket; '
+                                            'a gap not closed by a later fixed sample, not attributable to any cause'}}
+
+
 def validate(records):
     """Return (header, body records, issues). Any issue makes the evidence incomplete."""
     issues = []
     if not records:
         return None, [], issues
     schemas = {_text(r.get('schema')) or '<missing or non-string>' for r in records}
-    if schemas != {SCHEMA}:
+    if schemas not in ({SCHEMA}, {SCHEMA_V3}):
         issues.append('unsupported_or_mixed_schema: %s' % [_short(s) for s in sorted(schemas)[:MAX_LISTED]])
     header = records[0] if records[0].get('kind') == 'header' else None
     if header is None:
@@ -166,6 +292,10 @@ def validate(records):
               and _int(header.get('mono_frequency_hz')) and header['mono_frequency_hz'] > 0
               and isinstance(header.get('queue_full_prefix'), str)):
         issues.append('header_fields_missing_or_invalid')
+    v3 = header is not None and header.get('schema') == SCHEMA_V3
+    if v3 and not isinstance(header.get('sample_stream_semantics'), str):
+        issues.append('v3_header_semantics_missing')
+    fixed = {'total': 0, 'errors': 0, 'update_errors': 0, 'last': None, 'cumulative': None, 'cumulative_end': None}
     header_bracket = _check_bracket(header, 'header', issues) if header is not None else None
     interval = header.get('report_interval_s') if header is not None and _finite(header.get('report_interval_s')) else None
     body = records[1:] if header is not None else records
@@ -242,6 +372,10 @@ def validate(records):
             issues.append('mono_s_decreased at %s' % name)
         if bracket and mono is not None and _finite(mono) and bracket[0] < mono:
             issues.append('utc_read_before_last_frame at %s' % name)
+        if v3:
+            _check_v3(record, name, frames, bracket, header_bracket, fixed, issues)
+        elif any(key in record for key in V3_FIELDS):
+            issues.append('v3_fields_in_v2_record at %s' % name)
         last_warning = record.get('cumulative_last_queue_full_observed_mono_s')
         if not (last_warning is None or (_finite(last_warning) and last_warning >= 0)):
             issues.append('warning_time_invalid at %s' % name)
@@ -268,7 +402,7 @@ def summarize(path):
                         'trace_records_parsed': len(records)},
               'uncertainty': UNCERTAINTY}
     if not records and not read_issues:
-        report['status'] = 'unavailable: no %s records (tracing off or not reached)' % SCHEMA
+        report['status'] = 'unavailable: no %s or %s records (tracing off or not reached)' % SCHEMAS
         return report
     header, body, issues = validate(records)
     issues = read_issues + issues
@@ -311,6 +445,11 @@ def summarize(path):
         'cumulative_last_observed_mono_s': _short(last.get('cumulative_last_queue_full_observed_mono_s')) if last else None,
         'records_reporting_connection_error': sum(1 for r in body if r.get('connection_error') is True)}
     final = last if last is not None and _text(last.get('kind')) in FINAL_KINDS else None
+    if header is not None and header.get('schema') == SCHEMA_V3:
+        report['sample_streams'] = _sample_streams(body, final, validated)
+    else:
+        report['sample_streams'] = {'status': 'unavailable: not a v3 trace; no per-sample connection-error or '
+                                              'FixedUpdate metrics (never inferred as zero)'}
     tail = None
     if validated and final and _finite(final.get('mono_before_utc_s')) and _finite(final.get('mono_s')):
         tail = final['mono_before_utc_s'] - final['mono_s']

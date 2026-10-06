@@ -10,8 +10,9 @@ namespace IGVC
 {
     /// <summary>
     /// OPT-IN, observe-only timing trace. Added only by an explicit opt-in hookup, then Initialize()d once.
-    /// Each Update samples a Stopwatch monotonic clock, the frame gap and the probe SimTime into a
-    /// TransportTimingWindow; at most one compact JSON Debug.Log record per wall second, capped in total.
+    /// Each Update samples a Stopwatch monotonic clock, the frame gap, the probe SimTime and the connection-error
+    /// flag into a TransportTimingWindow; each FixedUpdate samples the same into an independent fixed stream.
+    /// At most one compact JSON Debug.Log record per wall second, capped in total.
     /// The threaded log callback only counts the connector's exact queue-full warning with Interlocked
     /// operations (no Unity API, no allocation, no logging); counts are folded into the next record.
     /// Coverage is one continuous interval: disabling or destroying the component ends tracing permanently
@@ -104,10 +105,17 @@ namespace IGVC
             if (record != null) Debug.Log(record);
         }
 
+        // Observation only: one clock read, SimTime and the connection-error bool per physics step; never makes a record due.
+        private void FixedUpdate()
+        {
+            if (!initialized || window.Ended) return;
+            window.SampleFixed(Mono(Stopwatch.GetTimestamp()), probe.SimTime, ros.HasConnectionError);
+        }
+
         private void Update()
         {
             if (!initialized || window.Ended) return;
-            if (!window.Sample(Mono(Stopwatch.GetTimestamp()), probe.SimTime)) return;
+            if (!window.Sample(Mono(Stopwatch.GetTimestamp()), probe.SimTime, ros.HasConnectionError)) return;
             long delta = TakeWarnings(out double lastObserved);
             ReadUtc(out string utc, out double before, out double after);
             string record = window.Emit(utc, before, after, delta, lastObserved, ros.HasConnectionError);
