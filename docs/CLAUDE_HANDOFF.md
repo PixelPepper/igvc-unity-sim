@@ -30,7 +30,10 @@ coverage unknown. Warning counts are not drops. The original failure remains
 unresolved and this pass does not replace qualification.
 T0039 added the reviewed offline `tools/diagnose_transport_timing.py` report
 (7947325;18 native Windows tests passed, real-log hashes independently checked).
-T0040 defines up to two further diagnostic repeats; no live grant/session yet.
+T0040 completed both diagnostic repeats (6/6/all20 in368.40s and349.60s);
+no freshness failure reproduced. One checked0.6m backup in the first, none in the
+second; nearer-station search still unexercised. Sonnet review complete, final Sol
+review pending. Overnight heartbeat is paused after cutoff; no simulator running.
 2030 was preselected before that outcome and remains ungenerated and untested.
 Promotion is blocked, with no retry-selected pass or relaxed freshness limits.
 Return margins are narrow; no causal speed gain,

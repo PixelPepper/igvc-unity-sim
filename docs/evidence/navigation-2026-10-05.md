@@ -85,7 +85,34 @@ python tools/diagnose_transport_timing.py --unity-log artifacts/iterations/2026-
 
 The output path must be new. Reports distinguish sampled frame gaps, asynchronous
 warning observations, and the unmeasured tail; they do not diagnose a cause.
-Two further reproduction attempts are bounded in T0040 but have not been started.
+T0040 completed the two bounded reproduction attempts before09:00PDT. Both
+produced6/6 completion and all20 audit checks. The earlier freshness failure did
+not recur. Sonnet accepted the diagnostic interpretation; the final Sol evidence
+review is still pending, so the batch is not accepted as fully reviewed.
+
+| Diagnostic attempt | Elapsed seconds | Health pass/fail/unknown | Maximum health gap seconds | Checked backups | Swept clearance metres | Return distance metres |
+|---|---:|---|---:|---:|---:|---:|
+| 1 | 368.395837 | 3685/0/0 | 0.154946 | 1 | 0.126444 | 0.392305 |
+| 2 | 349.597994 | 3498/0/0 | 0.123448 | 0 | 0.269619 | 0.377930 |
+
+Both health intervals have complete coverage. Attempt1 backed0.6m after the
+original observed recovery target was clear; the new nearer-station search was
+not exercised. Same19 policy files,20a18f3 source,cf8f4a64 player and2029 inputs.
+Timing traces contain393/373 records, with0.0512366/0.0484108s maximum observed
+Update gaps and95/110 startup warning observations. Neither has a terminal record;
+final tails remain unknown. Behavior varies between runs. No cause, speed benefit,
+failure-rate bound or replacement qualification follows from these passes.
+
+Jobs: `artifacts/iterations/2026-10-05/timed-2029-reproduction-{1,2}`.
+Run SHA256 values:
+
+- `a455669708da3335f65c15f8c57562586e2eaf9b40bb0bb8ac96227e68e7dd0b`
+- `2e7b997771bedd1e9e4b97a0c526985015aeb9507d145558b2b3a4adbacf7bd7`
+
+The overnight heartbeat was paused on receipt of the delayed post-cutoff wakeup
+at19:25PDT. No new trial was started after the cutoff. Simulator shutdown was
+rechecked: no player, port10000free and exclusive lease available. Promotion stays
+blocked; original failures and all diagnostic passes remain in the ledger.
 
 ## Three verified seed2027 passes
 
