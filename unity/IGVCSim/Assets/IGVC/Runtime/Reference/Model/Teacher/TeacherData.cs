@@ -98,7 +98,8 @@ namespace IGVC.Reference.Teacher
         /// </summary>
         public string CorridorCost = StraightV1;
         public const string StraightV1 = "straight-v1", PathV3 = "path-v3";
-        /// <summary>Fixed robot-to-entry search bound (m of grid path); entries beyond it are "search_limited", never costed.</summary>
+        /// <summary>Fixed bound (m) on the WHOLE robot-to-entry grid leg (both in-cell attachment offsets plus the octile
+        /// centre path); entries whose leg would exceed it are "search_limited", never costed.</summary>
         public double CorridorSearchCapM = 60;
     }
 

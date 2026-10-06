@@ -69,9 +69,13 @@ public static class Program
         string ceilings = Option(args, "--ceilings", null);
         if (ceilings != null) options.SpeedCeilings = Array.ConvertAll(ceilings.Split(','), s => double.Parse(s, inv));
         // Corridor label mode: straight-v1 (default, legacy fields only) or path-v3 (adds separate corridor_target fields;
-        // legacy fields unchanged). Write path-v3 to its own root with --out (e.g. artifacts/learning/labels-replayed-v3).
+        // legacy fields unchanged). path-v3 must name its own --out root (e.g. artifacts/learning/labels-path-v3).
         options.CorridorCost = Option(args, "--corridor-label", LabelOptions.StraightV1);
         if (options.CorridorCost != LabelOptions.PathV3 && options.CorridorCost != LabelOptions.StraightV1) { Console.Error.WriteLine(Usage); return 2; }
+        // path-v3 has no default output: it must name its own root, never inside the legacy artifacts/learning/labels.
+        string legacyRoot = Path.GetFullPath(Path.Combine(root ?? ".", "artifacts", "learning", "labels"));
+        if (options.CorridorCost == LabelOptions.PathV3 && (outDir == null || (Path.GetFullPath(outDir).TrimEnd('\\', '/') + Path.DirectorySeparatorChar).StartsWith(legacyRoot + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)))
+        { Console.Error.WriteLine("--corridor-label path-v3 requires --out outside " + legacyRoot); return 2; }
         var runs = new List<string>();
         if (one != null) runs.Add(Path.GetFullPath(one));
         else
@@ -93,6 +97,9 @@ public static class Program
                 if (!teachers.TryGetValue(run.Course.Identity, out var teacher)) teachers[run.Course.Identity] = teacher = new HindsightTeacher(run.Course);
                 var res = new Labeler(teacher, options).Label(run);
                 string target = one != null && outDir != null ? outDir : Path.Combine(outDir ?? Path.Combine(root ?? ".", "artifacts", "learning", "labels"), run.Name);
+                // Never overwrite labels of another corridor mode (a summary without corridor_label is straight-v1).
+                string existing = ExistingCorridorLabel(Path.Combine(target, "summary.json"));
+                if (existing != null && existing != options.CorridorCost) throw new InvalidOperationException("refusing to overwrite " + existing + " labels in " + target + " with " + options.CorridorCost);
                 Directory.CreateDirectory(target);
                 File.WriteAllText(Path.Combine(target, "labels.jsonl"), string.Join("\n", res.Lines) + "\n");
                 File.WriteAllText(Path.Combine(target, "summary.json"), res.Summary + "\n");
@@ -109,6 +116,12 @@ public static class Program
     }
 
     private static double D(JsonElement e) => e.ValueKind == JsonValueKind.Number ? e.GetDouble() : double.NaN;
+    private static string ExistingCorridorLabel(string summary)
+    {
+        if (!File.Exists(summary)) return null;
+        using var d = JsonDocument.Parse(File.ReadAllText(summary));
+        return Has(d.RootElement, "corridor_label", out var v) ? v.GetString() : LabelOptions.StraightV1;
+    }
     private static bool Has(JsonElement e, string name, out JsonElement v) { v = default; return e.ValueKind == JsonValueKind.Object && e.TryGetProperty(name, out v) && v.ValueKind != JsonValueKind.Null; }
     private static V2 Pt(JsonElement e) => new V2(D(e[0]), D(e[1]));
     private static List<V2> Pts(JsonElement e) { var l = new List<V2>(); foreach (var p in e.EnumerateArray()) l.Add(Pt(p)); return l; }

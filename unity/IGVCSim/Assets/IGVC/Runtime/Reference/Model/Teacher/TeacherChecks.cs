@@ -78,21 +78,23 @@ namespace IGVC.Reference.Teacher
             new CourseObstacle { Id = "w", Kind = "barricade", X = -2.5, Y = 0, Yaw = Math.PI / 2, Length = 5.4, Width = .4 },
             new CourseObstacle { Id = "n", Kind = "barricade", X = 0, Y = 2.5, Yaw = 0, Length = 5.4, Width = .4 },
             new CourseObstacle { Id = "s", Kind = "barricade", X = 0, Y = -2.5, Yaw = 0, Length = 5.4, Width = .4 });
-        public static readonly V2 BehindWall = new V2(4, -1.5), InView = new V2(3.5, 2), InWall = new V2(3, -1.5);
+        /// <summary>Robot start off every cell centre (non-zero attachment offset); A behind the wall, B in plain view.</summary>
+        public static readonly V2 Start = new V2(.03, -.02), BehindWall = new V2(4, -1.5), InView = new V2(2, 2.2), InWall = new V2(3, -1.5);
 
-        public static RunIn CorridorRun(CourseGeometry course, string name, params V2[] entries) => CorridorRun(course, name, new V2(0, 0), entries);
-        public static RunIn CorridorRun(CourseGeometry course, string name, V2 robot, params V2[] entries)
+        /// <summary>One snapshot at <paramref name="robot"/> with the given corridor entries, then a route candidate whose
+        /// logged path is long (30 m) so the corridor entries decide the legacy minimum.</summary>
+        public static RunIn CorridorRun(CourseGeometry course, string name, V2 robot, V2[] entries)
         {
             var run = new RunIn { Name = name, Course = course, Status = "stopped", Reason = "synthetic" };
             run.Goals.Add(new V2(16, 0));
             var s = new SnapshotIn { Index = 1, DestinationIndex = 0, Robot = robot, Yaw = 0, Destination = new V2(16, 0), StampS = 10, Action = "sent_goal" };
             s.Candidates = new List<CandidateIn>();
             foreach (var e in entries) s.Candidates.Add(new CandidateIn { End = e, Source = Labeler.CorridorSource, Score = 1 });
-            // Route candidate with a logged path straight through the wall: its label must not depend on the corridor version.
-            s.Candidates.Add(new CandidateIn { End = new V2(5, -1), Source = "grid", Path = new List<V2> { new V2(0, 0), new V2(2.5, -.5), new V2(5, -1) } });
+            // Route candidate with a logged path: its label must not depend on the corridor version.
+            s.Candidates.Add(new CandidateIn { End = new V2(5, -1), Source = "grid", PathLength = 30, Path = new List<V2> { robot, new V2(2.5, -.5), new V2(5, -1) } });
             s.Plan = new CandidateIn { End = entries[0], Source = "observed_lane_corridor" };
             run.Snapshots.Add(s);
-            run.TrajT = new[] { 10.0, 11 }; run.TrajP = new[] { new V2(0, 0), new V2(.5, 0) }; run.TrajYaw = new[] { 0.0, 0 };
+            run.TrajT = new[] { 10.0, 11 }; run.TrajP = new[] { robot, robot + new V2(.5, 0) }; run.TrajYaw = new[] { 0.0, 0 };
             return run;
         }
 
@@ -102,55 +104,90 @@ namespace IGVC.Reference.Teacher
             LabelOptions V1() => new LabelOptions { SpeedCeilings = new[] { .6 } };
             LabelOptions V3(double cap = 60) => new LabelOptions { SpeedCeilings = new[] { .6 }, CorridorCost = LabelOptions.PathV3, CorridorSearchCapM = cap };
             c.Check(new LabelOptions().CorridorCost == LabelOptions.StraightV1, "teacher corridor: default label mode is the legacy straight-v1");
-            var teacher = new HindsightTeacher(WallCourse());
-            var v1 = new Labeler(teacher, V1()).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
-            var v3 = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
-            CandLabel a1 = v1.Labels[0].Candidates[0], b1 = v1.Labels[0].Candidates[1], a3 = v3.Labels[0].Candidates[0], b3 = v3.Labels[0].Candidates[1];
+            var teacher = new HindsightTeacher(WallCourse()); var g = teacher.Grid; var m = teacher.Map; double cs = teacher.Cell;
+            var wall = new[] { BehindWall, InView };
+            c.Check(teacher.CodeAt(Start) == OccupancyGrid.Free && teacher.CodeAt(BehindWall) == OccupancyGrid.Free && teacher.CodeAt(InView) == OccupancyGrid.Free
+                && teacher.CodeAt(InWall) != OccupancyGrid.Free, "teacher path-v3 fixture: robot and both intended entries are free cells, the wall point is not");
+            var v1 = new Labeler(teacher, V1()).Label(CorridorRun(WallCourse(), "synthetic-wall", Start, wall));
+            var v3 = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-wall", Start, wall));
+            SnapshotLabel l1 = v1.Labels[0], l3 = v3.Labels[0];
+            c.Check(l1.Candidates.Count == 3 && l3.Candidates.Count == 3, "teacher path-v3 fixture: two corridor entries plus one route candidate");
+            CandLabel a1 = l1.Candidates[0], b1 = l1.Candidates[1], a3 = l3.Candidates[0], b3 = l3.Candidates[1], r3 = l3.Candidates[2];
 
             // Genuine detour vs free line.
             c.Check(a3.TargetStatus == Labeler.GridPath && a3.EntryPathM > a3.StraightM + 1 && a3.TargetCostM > a3.Cost + 1,
                 "teacher path-v3: wall across the straight line gives a grid detour (" + F1(a3.StraightM) + " m straight, " + F1(a3.EntryPathM) + " m path)");
             c.Check(b3.TargetStatus == Labeler.LineOfSight && b3.TargetCostM == b3.Cost && b3.EntryPathM == b3.StraightM,
                 "teacher path-v3: an entry in plain view keeps the straight-line cost (" + F1(b3.TargetCostM) + " m)");
+
+            // Mixed route/corridor group where substituting the corridor target WOULD switch the minimum (A -> B):
+            // legacy best, costs, regrets (incl. the route candidate's, measured against A) and plan regret stay straight-v1.
             c.Check(a1.Cost < b1.Cost - .2 && b3.TargetCostM < a3.TargetCostM - .2,
                 "teacher path-v3: corridor target prefers the reachable entry (" + F1(b3.TargetCostM) + " vs " + F1(a3.TargetCostM) + " m); legacy preferred the walled one (" + F1(a1.Cost) + " vs " + F1(b1.Cost) + " m)");
-
-            // Mixed route/corridor group: every legacy number (costs, regrets, best, plan regret) is unchanged.
-            SnapshotLabel l1 = v1.Labels[0], l3 = v3.Labels[0];
-            bool same = l1.Candidates.Count == l3.Candidates.Count && l1.BestCandidate == l3.BestCandidate && l1.RegretM.Equals(l3.RegretM)
-                && Labeler.CandidateJson(l1.Plan) == Labeler.CandidateJson(l3.Plan, true);
+            bool same = l1.BestCandidate == l3.BestCandidate && l1.RegretM.Equals(l3.RegretM) && Labeler.CandidateJson(l1.Plan) == Labeler.CandidateJson(l3.Plan, true);
             for (int k = 0; same && k < l1.Candidates.Count; k++)
                 same = Labeler.CandidateJson(l1.Candidates[k]) == Labeler.CandidateJson(l3.Candidates[k], true) && l1.Candidates[k].Regret.Equals(l3.Candidates[k].Regret);
-            c.Check(same && l1.Candidates[2].Source == "grid" && !v1.Lines[0].Contains("corridor_target") && v3.Lines[0].Contains("\"corridor_target\":")
+            c.Check(same && l3.BestCandidate == 0 && a3.Regret == 0 && b3.Regret > .2 && r3.Source == "grid" && !r3.Corridor && Math.Abs(r3.Regret - (r3.Cost - a3.Cost)) < 1e-12
+                && l3.RegretM == 0 && !v1.Lines[0].Contains("corridor_target") && v3.Lines[0].Contains("\"corridor_target\":")
                 && v3.Lines[0].Contains("\"corridor_label\":\"path-v3\"") && v1.Summary.Contains("\"corridor_label\":\"straight-v1\""),
-                "teacher path-v3: mixed group legacy costs/regrets/best/plan regret identical to straight-v1; target fields additive, mode recorded");
+                "teacher path-v3: mixed group keeps legacy best (walled A), costs, regrets (route " + F1(r3.Regret) + " m) and plan regret; target fields additive, mode recorded");
 
             // Blocked endpoints never gain a connection (the old code skipped 1 m or snapped through the wall).
-            var bad = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-in-wall", InWall, new V2(4.2, -1.5), BehindWall)).Labels[0];
-            var badEntry = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-entry-in-wall", InWall, InView)).Labels[0];
-            c.Check(teacher.CodeAt(InWall) != OccupancyGrid.Free && bad.Candidates[0].TargetStatus == Labeler.BlockedRobot
-                && bad.Candidates[1].TargetStatus == Labeler.BlockedRobot && double.IsNaN(bad.Candidates[0].TargetCostM)
+            var bad = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-in-wall", InWall, new[] { new V2(4.2, -1.5), BehindWall })).Labels[0];
+            var badEntry = new Labeler(teacher, V3()).Label(CorridorRun(WallCourse(), "synthetic-entry-in-wall", Start, new[] { InWall, InView })).Labels[0];
+            c.Check(bad.Candidates[0].TargetStatus == Labeler.BlockedRobot && bad.Candidates[1].TargetStatus == Labeler.BlockedRobot
+                && double.IsNaN(bad.Candidates[0].TargetCostM) && double.IsNaN(bad.Candidates[1].TargetCostM) && !double.IsNaN(bad.Candidates[0].Cost)
                 && !teacher.SegmentFree(InWall, new V2(4.2, -1.5)) && bad.Flags.Contains("corridor_target_unavailable"),
-                "teacher path-v3: a robot inside the wall gets blocked_robot, no cost, no line of sight");
+                "teacher path-v3: a robot inside the wall gets blocked_robot, no cost, no line of sight (legacy cost kept)");
             c.Check(badEntry.Candidates[0].TargetStatus == Labeler.BlockedEntry && double.IsNaN(badEntry.Candidates[0].TargetCostM)
-                && badEntry.Candidates[1].TargetStatus == Labeler.LineOfSight,
+                && badEntry.Candidates[1].TargetStatus == Labeler.LineOfSight && !teacher.SegmentFree(Start, InWall),
                 "teacher path-v3: an entry inside the wall gets blocked_entry and no cost; the free entry is unaffected");
 
             // A search cutoff is unknown, not disconnected; a sealed box is proven disconnected; no penalty is invented.
-            var capped = new Labeler(teacher, V3(2)).Label(CorridorRun(WallCourse(), "synthetic-capped", BehindWall, InView));
+            var capped = new Labeler(teacher, V3(2)).Label(CorridorRun(WallCourse(), "synthetic-capped", Start, wall));
             var ca = capped.Labels[0].Candidates[0];
             c.Check(ca.TargetStatus == Labeler.SearchLimited && double.IsNaN(ca.TargetCostM) && capped.Labels[0].Candidates[1].TargetStatus == Labeler.LineOfSight
                 && capped.Summary.Contains("\"search_limited\":1") && capped.Summary.Contains("\"disconnected\":0"),
                 "teacher path-v3: a 2 m search cap leaves the detoured entry search_limited (not disconnected, no cost)");
-            var box = new Labeler(new HindsightTeacher(BoxCourse()), V3()).Label(CorridorRun(BoxCourse(), "synthetic-box", new V2(5, 0), new V2(-5, 0)));
+            // The cap bounds the whole attached leg (offsets included), not just the centre-to-centre grid distance.
+            double P = a3.EntryPathM, offs = V2.Distance(Start, g.CellCenter(g.CellOf(Start))) + V2.Distance(BehindWall, g.CellCenter(g.CellOf(BehindWall)));
+            var atCap = new Labeler(teacher, V3(P)).Label(CorridorRun(WallCourse(), "synthetic-at-cap", Start, wall)).Labels[0].Candidates[0];
+            var underCap = new Labeler(teacher, V3(P - offs / 2)).Label(CorridorRun(WallCourse(), "synthetic-under-cap", Start, wall)).Labels[0].Candidates[0];
+            c.Check(offs > .02 && atCap.TargetStatus == Labeler.GridPath && atCap.EntryPathM == P && underCap.TargetStatus == Labeler.SearchLimited && double.IsNaN(underCap.TargetCostM),
+                "teacher path-v3: cap = whole leg " + F1(P) + " m is reached; cap below it by half the " + F1(offs) + " m attachment offsets (centre path still inside) is search_limited");
+            var box = new Labeler(new HindsightTeacher(BoxCourse()), V3()).Label(CorridorRun(BoxCourse(), "synthetic-box", Start, new[] { new V2(5, 0), new V2(-5, 0) }));
             var bl = box.Labels[0];
             c.Check(bl.Candidates[0].TargetStatus == Labeler.Disconnected && bl.Candidates[1].TargetStatus == Labeler.Disconnected
                 && double.IsNaN(bl.Candidates[0].TargetCostM) && !double.IsNaN(bl.Candidates[0].Cost) && bl.Flags.Contains("corridor_target_unavailable")
-                && box.Summary.Contains("\"disconnected\":2") && box.Lines[0].Contains("\"status\":\"disconnected\"") && box.Lines[0].Contains("\"cost_m\":null"),
+                && box.Summary.Contains("\"disconnected\":2") && box.Summary.Contains("\"search_limited\":0") && box.Lines[0].Contains("\"status\":\"disconnected\"") && box.Lines[0].Contains("\"cost_m\":null"),
                 "teacher path-v3: boxed-in robot: both entries proven disconnected, null target cost, legacy cost kept (" + F1(bl.Candidates[0].Cost) + " m)");
 
+            // Closed-cell convention, deterministic: travel exactly along a cell boundary with a blocked cell on one side,
+            // and an endpoint exactly on a corner shared with a blocked cell, are not free; the same legs inside free cells are.
+            int ex = -1, ey = -1, kx = -1, ky = -1;
+            for (int y = 1; y + 1 < g.H && ex < 0; y++) for (int x = 0; x + 3 < g.W && ex < 0; x++)
+            {
+                bool up = true, below = false; for (int i = 0; i < 4; i++) { up &= m.Free(x + i, y) && m.Free(x + i, y + 1); below |= !m.Free(x + i, y - 1); }
+                if (up && below) { ex = x; ey = y; }
+            }
+            for (int y = 1; y < g.H && kx < 0; y++) for (int x = 1; x < g.W && kx < 0; x++)
+                if (m.Free(x, y) && m.Free(x - 1, y) && m.Free(x, y - 1) && !m.Free(x - 1, y - 1)) { kx = x; ky = y; }
+            bool edgeOk = false, cornerOk = false; string edgeAt = "none", cornerAt = "none";
+            if (ex >= 0)
+            {
+                V2 p = new V2(g.X0 + (ex + .5) * cs, g.Y0 + ey * cs), q = new V2(g.X0 + (ex + 3.5) * cs, g.Y0 + ey * cs), up = new V2(0, cs / 2);
+                edgeOk = !teacher.SegmentFree(p, q) && !teacher.SegmentFree(q, p) && teacher.SegmentFree(p + up, q + up); edgeAt = p.ToString();
+            }
+            if (kx >= 0)
+            {
+                V2 corner = new V2(g.X0 + kx * cs, g.Y0 + ky * cs), centre = new V2(g.X0 + (kx + .5) * cs, g.Y0 + (ky + .5) * cs), inside = corner + new V2(cs * .01, cs * .01);
+                cornerOk = !teacher.SegmentFree(corner, centre) && !teacher.SegmentFree(centre, corner) && teacher.SegmentFree(inside, centre); cornerAt = corner.ToString();
+            }
+            c.Check(edgeOk, "teacher path-v3: a segment exactly along a cell boundary with a blocked cell below is not free; half a cell up it is (" + edgeAt + ")");
+            c.Check(cornerOk, "teacher path-v3: an endpoint exactly on a corner shared with a blocked diagonal cell is not free; just inside it is (" + cornerAt + ")");
+
             // Supercover: a free segment never touches a non-free point (dense sampling) and is at least as strict as half-cell sampling.
-            var rng = new Random(45); int crossed = 0, stricter = 0, free = 0; double cs = teacher.Cell;
+            var rng = new Random(45); int crossed = 0, stricter = 0, free = 0;
             for (int i = 0; i < 3000; i++)
             {
                 V2 p = new V2(-6 + 14 * rng.NextDouble(), -4 + 8 * rng.NextDouble()), q = new V2(-6 + 14 * rng.NextDouble(), -4 + 8 * rng.NextDouble());
@@ -164,7 +201,7 @@ namespace IGVC.Reference.Teacher
             }
             c.Check(crossed == 0 && free > 100, "teacher path-v3: " + free + " free segments never cross a blocked point; " + stricter + " half-cell-free segments rejected");
 
-            var again = new Labeler(new HindsightTeacher(WallCourse()), V3()).Label(CorridorRun(WallCourse(), "synthetic-wall", BehindWall, InView));
+            var again = new Labeler(new HindsightTeacher(WallCourse()), V3()).Label(CorridorRun(WallCourse(), "synthetic-wall", Start, wall));
             c.Check(again.Lines[0] == v3.Lines[0] && again.Summary == v3.Summary, "teacher path-v3: corridor labels identical across two runs");
         }
 

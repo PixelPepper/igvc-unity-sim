@@ -155,6 +155,9 @@ namespace IGVC.Reference.Teacher
         /// the straight line when every intersected cell is free, else the grid shortest path (one Dijkstra per snapshot,
         /// fixed <see cref="LabelOptions.CorridorSearchCapM"/>). The entry's cost-to-go must come from its own cell.
         /// Unavailable targets keep a status and NaN cost (written as null): no penalty is ever invented.
+        /// Approximation: a line-of-sight leg is Euclidean, a detour leg octile (up to ~8% longer than any-angle), so a
+        /// detour target is an upper bound on the true C-space distance. Corridor candidates with a logged path are
+        /// not given a target (no corridor_target is written); a path-v3 dataset build aborts on them (fail closed).
         /// </summary>
         private void CorridorTargets(SnapshotIn s, SnapshotLabel L, double[] f, RunLabels res)
         {

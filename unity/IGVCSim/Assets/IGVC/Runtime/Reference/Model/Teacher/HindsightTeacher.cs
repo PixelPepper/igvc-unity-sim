@@ -77,13 +77,21 @@ namespace IGVC.Reference.Teacher
         public double CostToGo(double[] f, V2 p) => CostToGo(f, p, out _, out _);
 
         /// <summary>
-        /// True when every grid cell the segment a-b intersects is free C-space (supercover traversal; an exact corner
-        /// crossing also tests both side cells, matching <see cref="GridMap.CanMove"/>'s no-corner-cutting rule). Both
-        /// endpoint cells must be free: nothing is skipped or snapped, so a blocked pose never gains a connection.
+        /// True when every grid cell whose CLOSED square the segment a-b touches is free C-space. Travel exactly along a
+        /// cell boundary therefore needs both side cells free, and an endpoint exactly on a corner needs all four cells
+        /// sharing it free. Implemented as the supercover traversal of the segment shifted by a tiny diagonal offset in
+        /// each of the four directions (any touched closed cell contains a shifted copy's interior point); an exact
+        /// corner crossing also tests both side cells, matching <see cref="GridMap.CanMove"/>'s no-corner-cutting rule.
+        /// Endpoint cells must be free: nothing is skipped or snapped, so a blocked pose never gains a connection.
         /// </summary>
         public bool SegmentFree(V2 a, V2 b)
         {
-            double cs = Grid.Cell, ax = (a.X - Grid.X0) / cs, ay = (a.Y - Grid.Y0) / cs, bx = (b.X - Grid.X0) / cs, by = (b.Y - Grid.Y0) / cs;
+            const double e = 1e-6; // grid cells
+            return Trace(a, b, e, e) && Trace(a, b, e, -e) && Trace(a, b, -e, e) && Trace(a, b, -e, -e);
+        }
+        private bool Trace(V2 a, V2 b, double ex, double ey)
+        {
+            double cs = Grid.Cell, ax = (a.X - Grid.X0) / cs + ex, ay = (a.Y - Grid.Y0) / cs + ey, bx = (b.X - Grid.X0) / cs + ex, by = (b.Y - Grid.Y0) / cs + ey;
             int x = (int)Math.Floor(ax), y = (int)Math.Floor(ay), x1 = (int)Math.Floor(bx), y1 = (int)Math.Floor(by);
             if (!Map.Free(x, y) || !Map.Free(x1, y1)) return false;
             double dx = bx - ax, dy = by - ay; int sx = Math.Sign(dx), sy = Math.Sign(dy);
@@ -109,13 +117,17 @@ namespace IGVC.Reference.Teacher
         /// Shortest C-space grid path length (m, 8-connected, same move model as <see cref="Field"/>) from
         /// <paramref name="from"/> to each target, NaN unless <see cref="Reach.Reached"/>. Endpoints attach only to their
         /// own free cell (straight in-cell offset to its centre; a cell is convex). A blocked or off-grid endpoint is
-        /// reported, never snapped. One Dijkstra on the reused search space, stopping once every target is settled:
-        /// targets unsettled when the next node exceeds <paramref name="maxM"/> are SearchLimited (unknown); targets
-        /// unsettled after the start's whole free component is exhausted are Disconnected (proven on this grid).
+        /// reported, never snapped. One Dijkstra on the reused search space, stopping once every target is settled.
+        /// <paramref name="maxM"/> bounds the WHOLE attached length (start offset + centre-to-centre grid path + end
+        /// offset): a target settled with a longer total, or still unsettled when the next node's centre distance
+        /// alone exceeds it, is SearchLimited (unknown, no value). Only targets unsettled after the start's whole free
+        /// component is exhausted are Disconnected (proven on this grid). Lengths are octile (8-connected grid), so
+        /// they are up to ~8% longer than a Euclidean any-angle path; callers comparing them to straight lines must
+        /// treat that as a stated approximation.
         /// </summary>
         public double[] PathFrom(V2 from, IList<V2> targets, double maxM, out Reach[] status, out int expanded)
         {
-            expanded = 0; int n = targets.Count; var res = new double[n]; status = new Reach[n];
+            expanded = 0; int n = targets.Count; var res = new double[n]; status = new Reach[n]; var over = new bool[n];
             for (int t = 0; t < n; t++) res[t] = double.NaN;
             var at = new Dictionary<int, List<int>>(); int open = 0;
             for (int t = 0; t < n; t++)
@@ -139,7 +151,11 @@ namespace IGVC.Reference.Teacher
                 if (du > maxCells) { capped = true; break; }
                 S.Close(u); expanded++;
                 if (at.TryGetValue(u, out var hits))
-                    foreach (int t in hits) { res[t] = startOff + du * cell + V2.Distance(Grid.CellCenter(u), targets[t]); status[t] = Reach.Reached; open--; }
+                    foreach (int t in hits)
+                    {
+                        double total = startOff + du * cell + V2.Distance(Grid.CellCenter(u), targets[t]); open--;
+                        if (total <= maxM) { res[t] = total; status[t] = Reach.Reached; } else over[t] = true; // settled beyond the cap: SearchLimited
+                    }
                 int ux = u % W, uy = u / W;
                 for (int d = 0; d < 8; d++)
                 {
@@ -148,7 +164,7 @@ namespace IGVC.Reference.Teacher
                     if (!S.Closed(v) && nd < S.GOf(v) - 1e-12) { S.Touch(v, nd, u); heap.Push(v, nd, -nd); }
                 }
             }
-            if (!capped) for (int t = 0; t < n; t++) if (status[t] == Reach.SearchLimited) status[t] = Reach.Disconnected;
+            if (!capped) for (int t = 0; t < n; t++) if (status[t] == Reach.SearchLimited && !over[t]) status[t] = Reach.Disconnected;
             return res;
         }
 
