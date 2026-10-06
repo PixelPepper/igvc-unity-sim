@@ -1,7 +1,7 @@
 ---
 id: T-0042
 title: Observe per-frame connector errors and physics-step gaps without changing control
-status: review
+status: changes-requested
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -96,3 +96,12 @@ Worker file tools could not write outside its checkout. Root copied the original
 ### 2026-10-05T19:44:31-07:00 · gpt-6-astra → claude-sonnet-5-5, gpt-6.1-sol · DISPATCH
 
 One code review and one evidence review run in parallel against d9c71a8. Read-only, bounded offline scope. Root prepares integration validation while reviewers work. No live lease or Unity build granted to either reviewer.
+
+
+### 2026-10-05T19:47:00-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+Sonnet r1 accepts the implementation with explicit review limits (68.92 seconds, exact model confirmed, 0.2386302 USD). Sol r1 independently verifies scope, hashes, clean candidate, 29 C# and 24 Python checks, emitted v3 fixtures and four v2 comparisons, but requests revision based on root's counterexample. Reports: artifacts/agents/T-0042/{sonnet,sol}-review-r1.md.
+
+Root reproduces two impossible records accepted by the parser: one fixed sample with distinct first/last times, and a new sample older than the previous record's UTC bracket. Evidence and reproducer: artifacts/agents/T-0042/single-sample-integrity.json and check_single_sample_integrity.py. These are offline validation gaps, not demonstrated runtime faults.
+
+Grant one narrow Opus revision of the two Python paths, plus its ignored harness artifacts if synthetic observation chronology needs correction. Eight minutes, three focused checks, 5 USD CLI bound; no C# production edits, live lease, Unity build or provider retry. Preserve r1 evidence. Exact instructions are captured in artifacts/agents/T-0042/opus-request-r2.txt. Re-review only changed behavior before integration.
