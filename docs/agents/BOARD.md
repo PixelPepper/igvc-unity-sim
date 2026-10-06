@@ -5,13 +5,12 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0042** `review`: Observe per-frame connector errors and physics-step gaps without changing control (HANDBACK by gpt-6-astra at 2026-10-05T19:49:13.7080390-07:00)
+- Nothing blocked or awaiting review.
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0042](tasks/T-0042-sampled-transport-capture.md): Observe per-frame connector errors and physics-step gaps without changing control | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 2ca413fbd8b8dacbf72bf9f5cc2af8f3a543eb81 | HANDBACK by gpt-6-astra at 2026-10-05T19:49:13.7080390-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
@@ -21,6 +20,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0022](tasks/T-0022-observed-recovery-diagnosis.md): Explain observed recovery refusal in failed connector repeat | `accepted` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | a0a3d49ae465ef2176ce4bdb910257fc76c6ccb7 | DECISION by gpt-6-astra at 2026-10-05T04:48:38.404428-07:00 |
 | [T-0041](tasks/T-0041-transport-next-experiment.md): Select a discriminating experiment for the unresolved transport interruption | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 8c3310016e4ea77348b9c7571f39a6e335d6a170 | DECISION by gpt-6-astra at 2026-10-05T19:36:04.895617-07:00 |
+| [T-0042](tasks/T-0042-sampled-transport-capture.md): Observe per-frame connector errors and physics-step gaps without changing control | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 2ca413fbd8b8dacbf72bf9f5cc2af8f3a543eb81 | DECISION by gpt-6-astra at 2026-10-05T19:50:35.2535555-07:00 |
 | [T-0000](tasks/T-0000-checkpoint-working-tree.md): Checkpoint the dirty integration tree into reviewed scoped commits | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 771cf63e7a0bdf6e3cf0b2c42a186e8a2eb7ad3a | DECISION by gpt-6-astra at 2026-10-05T00:49:18-07:00 |
 | [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | d4edb4a63ec1e3c6a1267249bbae0531eaced902 | NOTE by gpt-6-astra at 2026-10-04T23:44:23-07:00 |
 | [T-0005](tasks/T-0005-first-health-failure-capture.md): Preserve bounded first-failure sensor evidence for the next lap | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c9ccd8cf2ef6acb3723888977100ba96fcd5c4b9 | NOTE by gpt-6-astra at 2026-10-05T01:17:00-07:00 |
