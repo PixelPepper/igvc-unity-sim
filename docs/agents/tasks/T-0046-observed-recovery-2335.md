@@ -8,7 +8,7 @@ reviewers: claude-sonnet-5-5
 orchestrator: gpt-6-astra
 branch: codex/transport-probe
 base: 7cad33b
-candidate: none
+candidate: 7cad33b
 claim: none
 lease: none
 updated: 2026-10-06
@@ -55,3 +55,5 @@ relayed-from: artifacts/agents/T-0046/sol-recovery-review.md
 
 Root independently confirmed all five proposal rejections are trap_progress_below_0.5m (max0.366m), not rear obstruction. Sol verified bound observed capture with zero lanes and broad GPS guidance. No stale-sensor conclusion follows from the combined guard name. Existing trace cannot distinguish incomplete forward search from poor proposal selection. No replay was performed; next check must preserve effective per-candidate allocation or explicitly label a counterfactual. No runtime change or weakened threshold accepted.
 
+
+Candidate identifies the documented analysis/source baseline, not a runtime code change.

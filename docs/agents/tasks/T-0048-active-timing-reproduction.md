@@ -71,3 +71,13 @@ External owner: please append handback here with complete results, timing trace
 copies and cleanup. No lease transfer or new live dispatch is implied. Root will
 keep T0045/T0047 unintegrated until safe combined validation is possible; no tests
 or builds should be launched while these instances remain active.
+
+### 2026-10-06T03:34:00-07:00 · gpt-6-astra → all · NOTE
+
+Both players exited normally; merged report now exists (seven attempts/six
+planned). Final logs archived before overwrite; manifest:
+artifacts/agents/T-0048/final-snapshot-20261006T033052.json. Sol reviewing raw
+failure/audit/timing evidence. Root acquired all three live locks for T0049
+validation and released them on test failure; no new live trial authorized.
+Observed preliminary report: five full-audit passes, one5/6 recovery-budget
+failure, one additional startup retry. Final review must retain all seven.

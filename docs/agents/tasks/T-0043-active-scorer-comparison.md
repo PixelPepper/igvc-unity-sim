@@ -8,7 +8,7 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/transport-probe
 base: e65214b
-candidate: none
+candidate: 1097d2d
 claim: none
 lease: none
 updated: 2026-10-06
@@ -87,3 +87,5 @@ Root extracted pre-cleanup evidence to artifacts/agents/T-0043/initial-pair-comp
 
 Merged report complete: both wrappers exit0, 21 attempts/20 planned trials, 17 reached6/6,16 full audits. Root verified both players absent and TCP10000-10002 free; no session was interrupted. Weight0=7/10 audits (8/10 completed); weight8=9/10 planned or9/11 attempts including failed startup retry. All failure reasons retained in docs/evidence/navigation-2026-10-06.md. Sol independently verified all21 treatment settings/CLI weights, matching profiles, source/model spotchecks, and counts; launch-time player identity remains unbound. Report SHA256 0b64d29bfb480303b2fdefd577a446aa6a0c9b4e3c36b88b1badc173ad04b752. Relayed evidence: artifacts/agents/T-0043/sol-final-batch-review.md. Seven mutually audit-passing pairs: scorer slower on6; simulation time +6.56% aggregate (root), elapsed wall +6.67% (Sol). These are different clocks and conditional subsets. No default change, promotion, significance or causality claim. Freshness failures, unavailable backup on2335, and health-audit failure despite6/6 on2336 remain actionable. No new live batch granted.
 
+
+Candidate identifies the documented analysis/source baseline, not a runtime code change.
