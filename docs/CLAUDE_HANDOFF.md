@@ -4,6 +4,17 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
+**October 6 afternoon resume:** the user resumed interactive development and
+asked to send Opus the new findings. The expired overnight heartbeat remains
+paused. [T0053](agents/tasks/T-0053-latency-change-review.md) now explicitly assigns
+the latency correction to the interactive Opus session. An earlier collision
+between that session and a bounded CLI worker is recorded; both designs and the
+wiring diff are preserved under `artifacts/agents/T-0053/collision-preserved-20261006T1654/`.
+The CLI worker stopped with no commit or tests; the interactive owner must ACK
+the transfer and hand back an isolated candidate. Do not start a second writer.
+Instance2 remained live at resume, so tests and integration wait for its lease.
+T0051 has exact copies of all19 recorded source files, but no replay was executed.
+
 **October 6, 07:00 Pacific:** the larger `ab-route-3` comparison is closed.
 Baseline route0 passed28/30 full audits; route8 passed20/30 planned trials,
 20/32 recorded attempts. It reached6/6 once more but failed the ordered-loop
