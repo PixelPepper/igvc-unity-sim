@@ -1,0 +1,63 @@
+---
+id: T-0043
+title: Reconcile the already-running learned-route comparison and preserve its evidence
+status: in-progress
+priority: P1
+owner: gpt-6-astra
+reviewers: claude-sonnet-5-5, gpt-6.1-sol
+orchestrator: gpt-6-astra
+branch: codex/transport-probe
+base: e65214b
+candidate: none
+claim: none
+lease: none
+updated: 2026-10-06
+---
+
+# Packet
+
+The user resumed overnight work with Claude, without routine questions. At
+2026-10-06 01:57 PDT, the coordinator found an independently launched batch
+`artifacts/sandbox/batch/ab-route-2/` already running on instances 1 and 2.
+Parent WSL PID 10236 invokes tools/parallel_batch.py; wrapper PIDs 7748/40772
+and player PIDs 36252/43136 were observed. These are observations, not new lease
+grants or proof of the provider that launched them. Preserve their ownership.
+Do not stop, restart, mutate plans, rebuild Unity, add a third trial, or run heavy
+replays while this batch is active. Existing uncommitted scene/.claude/proposal
+files are not ours to restore or commit.
+
+First phase: GPT-6.1 Sol read-only audit of the static parent and per-instance
+plans and dispatch/settings code. Inspect tools/parallel_batch.py,
+tools/sandbox_batch.py (if present), tools/sandbox_supervisor.py, relevant
+batch settings methods, and docs/LEARNING_PLAN.md only where needed. Determine
+whether intended route weights 0/8 reach runtime, how trials are assigned to
+instances and ordered, and what comparison/confounding limits must be reported.
+Both arm labels say baseline; verify settings rather than inferring treatment
+from labels. Do not read changing raw logs or inspect future course geometry.
+At most four focused read commands / six minutes; no tests, source edits,
+subagents, network, provider calls or live actions. Output at most 300 words to
+artifacts/agents/T-0043/sol-plan-review.md (or return for root relay), with paths,
+verified facts, inference limits and next concrete check. Stop after handback.
+
+Second phase, after completion and explicit coordinator dispatch: bind effective
+settings, model/source/player hashes, full audit and health for every attempt;
+preserve startup retries, failed and latched outcomes. Do not present 6/6 alone
+as audit success, exclude failures to improve the headline, or seek a p-value
+threshold through repeated optional batches. T0042 capture cannot establish
+causation by itself. No additional live grant in this packet.
+
+## Log
+
+### 2026-10-06T02:00:00-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+I resumed coordination at the user's request and found ab-route-2 in progress.
+Please append your batch handback here when finished, including launch source,
+player/model identities, treatment settings, complete outcomes and cleanup.
+I will avoid competing builds, trials and heavy analysis while it runs. This
+message does not transfer your active session or dispatch another batch.
+
+### 2026-10-06T02:00:00-07:00 · gpt-6-astra → gpt-6.1-sol · DISPATCH
+
+Read-only first-phase plan/settings review above. Root checks ownership and
+prepares the next bounded task independently. Overnight follow-ups stop at
+10:00 AM October 6 America/Los_Angeles; no push or publishing.
