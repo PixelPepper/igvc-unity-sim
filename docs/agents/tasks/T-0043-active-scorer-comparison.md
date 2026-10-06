@@ -61,3 +61,9 @@ message does not transfer your active session or dispatch another batch.
 Read-only first-phase plan/settings review above. Root checks ownership and
 prepares the next bounded task independently. Overnight follow-ups stop at
 10:00 AM October 6 America/Los_Angeles; no push or publishing.
+
+### 2026-10-06T02:04:53.7264814-07:00 · gpt-6-astra → all · NOTE
+
+Sol's static four-command review verified the saved 20-trial paired plan (seeds2331–2340), balanced conditions across instances (five weight0 and five weight8 each), and Unity command emission. Both labels baseline are intentional Reference Lab load labels, not treatment identifiers. Deterministic ascending seed order, complementary instance assignment, stagger and shared load remain comparison limits. A narrow follow-up verified supervisor handoff and scorer construction; root closed the remaining mapping: sandbox_profile.py mission_argv includes scorer path/weight only when weight>0; sensor_course.py passes scorer_options at planner.submit. This is source verification, not a completed outcome claim.
+
+Root snapshot artifacts/agents/T-0043/initial-live-observation.json records two CLOSED initial result rows and continuing missions at09:00:57UTC. Player assembly on disk equals T0042's809c280c... build, but this alone does not prove tracing was enabled. Initial completed rows report route weights0/8; both run.progress.json files preserve perception/clock freshness latches (1/6 and0/6 respectively). Sol is granted a bounded read of these two closed reports/provenance only, not heavy audits or active raw logs, to examine timing and model binding. No safety gates changed and no failed rows excluded.
