@@ -137,8 +137,8 @@ def event_problem(event):
     if not _numbers(event.get('selection_pose'), 3):
         return 'selection_pose'
     selection = event.get('selection')
-    if (not isinstance(selection, dict) or 'guidance' not in selection
-            or not isinstance(selection.get('target'), (list, tuple)) or not _numbers(selection['target'][:2], 2)):
+    # Exactly (x, y): math.dist in exclude_trapped_guidance rejects any other length.
+    if not isinstance(selection, dict) or 'guidance' not in selection or not _numbers(selection.get('target'), 2):
         return 'selection'
     if not _number(event.get('odom_stamp_ns')):
         return 'odom_stamp_ns'
@@ -160,7 +160,7 @@ def snapshot_problem(snapshot):
         return 'size'
     costs = grid.get('costs')
     if (not isinstance(costs, list) or len(costs) != grid['width']*grid['height']
-            or not all(type(c) is int for c in costs)):
+            or not all(type(c) is int and -1 <= c <= 100 for c in costs)):
         return 'costs'
     if not _numbers(grid.get('destination'), 2):
         return 'destination'

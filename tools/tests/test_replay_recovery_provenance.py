@@ -202,7 +202,8 @@ class AdmissionTest(ReplayHarness):
     def test_unavailable_snapshots_stay_skipped_even_with_opt_in(self):
         valid = gzip.compress(json.dumps(snapshot()).encode())
         shapes = {'input_list': dict(snapshot(), input=[]), 'top_level_list': [snapshot()]}
-        broken = [('costs', 'costs', [0]*15), ('width', 'width', 0), ('height', 'height', True),
+        broken = [('costs', 'costs', [0]*15), ('costs_above', 'costs', [0]*15+[101]),
+                  ('costs_below', 'costs', [-2]+[0]*15), ('width', 'width', 0), ('height', 'height', True),
                   ('resolution', 'resolution', -.5), ('origin', 'origin', [1.]),
                   ('destination', 'destination', None)]
         for name, key, value in broken:
@@ -243,18 +244,28 @@ class AdmissionTest(ReplayHarness):
 
     def test_malformed_events_are_skipped_rows(self):
         self.write(4, snapshot())
-        edits = {'selection_pose': [3., 2.], 'selection': {'guidance': 'x'}, 'odom_stamp_ns': None,
-                 'sequence': True}
-        for key, value in edits.items():
+        edits = [('selection_pose', [3., 2.]), ('selection', {'guidance': 'x'}), ('odom_stamp_ns', None),
+                 ('odom_stamp_ns', float('nan')), ('sequence', True),
+                 ('selection', dict(SELECTION, target=[8., 6., 0.])), ('selection', dict(SELECTION, target=[8.]))]
+        for key, value in edits:
             for allow in (False, True):
-                with self.subTest(key=key, allow=allow):
+                with self.subTest(key=key, value=value, allow=allow):
                     payload = event(4)
                     payload[key] = value
                     self.assert_skipped(self.replay(payload, allow=allow), 'event_malformed')
         payload = event(4)
         del payload['destination_index']
         self.assert_skipped(self.replay(payload, allow=True), 'event_malformed')
+        self.assert_skipped(self.replay([event(4)], allow=True), 'event_malformed')
         self.assert_no_planner()
+
+    def test_cost_range_endpoints_are_valid(self):
+        payload = snapshot()
+        payload['input']['costs'] = [-1, 0]*7+[0, 100]
+        self.write(4, payload)
+        row = self.replay(event(4))
+        self.assertEqual((row['status'], row['reason']), ('executed', 'grid_stamp_match'))
+        self.assertEqual(self.backup[0][0][4], payload['input']['costs'])
 
     def test_planner_errors_stay_visible(self):
         self.write(4, snapshot())
