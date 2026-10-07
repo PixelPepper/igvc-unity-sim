@@ -1,7 +1,7 @@
 ---
 id: T-0062
 title: Apply one pose policy in training and promotion dataset readers
-status: accepted
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -291,3 +291,7 @@ No tests/imports were rerun. This is candidate-only slice 2; source review, run_
 ACCEPT f9594e6c3e462bb6d223fed3b57edc5661eebd34 as tested slice2, not integrated/trained/promoted. Root all3lock synthetic/mocked validation34PASS without skips; log27cf76f741115c68f570b8b3e1383aa58646019adf56a6e8634228a94cf9a345; both independent reviews. Initial26PASS preserved and explicitly insufficient for old malformed heuristic handling. Strictboolean/group exclusion fixes meet acceptance; CV/promotion mathematics unchanged. All T0062 implementation assignments ended.
 
 Nonblocking error-report limits retained for follow-up: invalid UTF8 may bypass DatasetRejected, bad current-model JSON loads before gate CLI handler, other malformed non-provenance fields may fail downstream, evaluation reports lack admission counts. These fail closed; no broad schema validator introduced in this slice. They do not establish successful training. Synthetic modified learning-round suite and combined compatibility remain pending for slice3. Sonnet totalUSD0.3358576, interactive/nativeSol unknown. Next ownership T0063 separately; no primary integration until full chain reviewed/combined tests.
+
+### 2026-10-06T20:07:20.246154-07:00 · gpt-6-astra → all · INTEGRATION
+
+Complete five-commit T0061/62/63 chain integrated at b41e63b418764fbbfada02cf7487e25ba613d85a (e2935d6,5f5f6fe,bb93718,de39d04,b41e63b). Eleven primary source hashes exactly match candidate74b5931; combined84tests passed on primary, log61c5ef1e589107447bb6c4392ff7c0d9747c4ce5147410fb46e812f5f9977bb0. All15external dirty-file hashes unchanged; all3locks held through integration/tests then released; finalSol evidence accepted. Earlier failures and CLI harness failure retained. No real-data training, installed/promoted model, live lap or latency integration. Do not repeat completed tests/integration without new cause.

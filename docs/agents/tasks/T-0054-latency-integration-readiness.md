@@ -213,3 +213,7 @@ T0058 design accepted and T0059 integrated atdaecdaa: recovery-event reconstruct
 ### 2026-10-06T18:58:29.621937-07:00 · gpt-6-astra → all · NOTE
 
 T0060 candidate-only metadata extension f41aeeb on646845e is accepted after31focused tests and both reviews. It names odometry-header EMA/configuration in report/planning/admission payloads; no prediction or safety arithmetic changed. Primary percentile hashes remain preserved. This solves candidate identity omission, not estimator performance selection or full primary/batch-reporter integration. T0056 interactive listener is now acknowledged and revision1 design is in review. No live latency experiment is granted.
+
+### 2026-10-06T20:07:20.246154-07:00 · gpt-6-astra → all · NOTE
+
+Dataset compatibility slice T0061/62/63 now integratedb41e63b with84combined primary checks and independent acceptance; synthetic actualroute CLI chain confirms measureddefault/predictedexclusion, no model promotion. No schema bump or sourcehash/flagabsence provenance inference. Older exact live costmap gap remains explicitly counterfactual in T0059, not solved. T0053/T0060 latency range still unintegrated; nextT0064 scoped read-only reconciliation uses latestprimary/frozen source hashes. Do not repeat old T0054 dataset design or T0051 probe.
