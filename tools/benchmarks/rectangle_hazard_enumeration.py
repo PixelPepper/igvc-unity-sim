@@ -3,17 +3,29 @@
 Usage:
   git show <base>:tools/sensor_route_policy.py > baseline_policy.py
   python tools/benchmarks/rectangle_hazard_enumeration.py \
-      --baseline baseline_policy.py [--candidate tools/sensor_route_policy.py]
+      --baseline baseline_policy.py [--candidate tools/sensor_route_policy.py] \
+      [--output new_report.json]
 
 Fixtures are generated synthetic observed grids only (fixed seed); no capture,
-course, WORLD or teacher data is read. Decisions of both modules (hazard-bit
+course, WORLD or teacher data is read. Free cells are random 0..98 with 5% set
+to 99 (inflated); 'empty' has only such free cells, the other strata add
+unknown (-1) and lethal (100) hazards. Decisions of both modules (hazard-bit
 path) and the baseline scalar path are compared first; timing is refused on any
 mismatch. Then one warmup and exactly five paired rounds run, alternating which
 module goes first. There are no adaptive repetitions or significance tests.
+The garbage collector is collected once and then disabled for the warmup and
+timed rounds; its prior state is recorded and restored.
+
+The report records SHA-256 of this script, both policy modules, the generated
+fixtures (FIXTURE_ENCODING) and the scalar/baseline/candidate decision vectors,
+plus every raw warmup and round timing.
 
 Predeclared gate (median candidate time / median baseline time per stratum):
 mixed <= 1.00, dense_early_rejection < 1.00, empty <= 1.10 and sparse <= 1.10.
-Passing is microbenchmark evidence only, not live navigation benefit.
+Passing is microbenchmark evidence only, not live navigation benefit. The JSON
+report is printed (and written) on every outcome; the exit status is 0 only
+when the gate was evaluated and accepted, otherwise 1. An existing --output
+file is refused before anything runs, and the final write is exclusive.
 """
 
 import argparse
@@ -37,6 +49,38 @@ TIME_CAP_SECONDS = 60.
 BODIES = ((-.80, .30, -.33, .37), (-.95, .45, -.38, .38), (-.60, .25, -.30, .30))
 STRATA = ('empty', 'sparse', 'dense_early_rejection', 'mixed')
 UNKNOWN, INFLATED, LETHAL = -1, 99, 100
+FIXTURE_ENCODING = (
+    'per stratum, UTF-8 of compact JSON [stratum, costs(int list), hazard_rows(lowercase '
+    'hex strings), poses([float.hex x, float.hex y, float.hex yaw, [float.hex bounds...]])]; '
+    'all-strata hash covers the per-stratum encodings concatenated in STRATA order')
+DECISION_ENCODING = 'UTF-8 of compact JSON list of the returned values (default=repr)'
+LIMITATIONS = (
+    'synthetic grids and uniformly random poses, not captured or live observations',
+    'times only the _rectangle_clear routine, not the whole planner or live navigation',
+    'dense_early_rejection uses a 60% hazard density chosen to favour early rejection',
+    'five alternating rounds necessarily give one module first-position 3 times and the '
+    'other 2 times (candidate first in rounds 1, 3, 5; warmup is baseline first)',
+    'the time cap is checked between batches, not inside a batch',
+    'whether rotated bodies exit the grid boundary is not measured or checked',
+)
+
+
+def sha256(data):
+    return hashlib.sha256(data).hexdigest()
+
+
+def compact(value, **kwargs):
+    return json.dumps(value, separators=(',', ':'), **kwargs).encode('utf-8')
+
+
+def fixture_bytes(stratum, costs, rows, poses):
+    return compact([stratum, costs, [format(r, 'x') for r in rows],
+                    [[x.hex(), y.hex(), yaw.hex(), [b.hex() for b in bounds]]
+                     for x, y, yaw, bounds in poses]])
+
+
+def decision_hash(decisions):
+    return sha256(compact(decisions, default=repr))
 
 
 def load(path, name):
@@ -126,13 +170,26 @@ def run(baseline_path, candidate_path):
         'grid': {'width': WIDTH, 'height': HEIGHT, 'resolution': RESOLUTION, 'origin': ORIGIN},
         'calls_per_stratum': CALLS_PER_STRATUM, 'warmup_rounds': 1, 'rounds': ROUNDS,
         'time_cap_seconds': TIME_CAP_SECONDS, 'python': sys.version,
+        'script': {'path': str(Path(__file__).resolve()),
+                   'sha256': sha256(Path(__file__).resolve().read_bytes())},
         'baseline': {'path': baseline_path, 'sha256': baseline_hash},
         'candidate': {'path': candidate_path, 'sha256': candidate_hash},
+        'fixture_description': (
+            'free cells random 0..98 with 5% set to 99 in every stratum; empty: free only; '
+            'sparse: 0.3% hazards; dense_early_rejection: 60% hazards; mixed: 25 hazard '
+            'blocks, 6 lethal strokes, 0.2% unknown scatter; hazards are -1 or 100'),
+        'limitations': list(LIMITATIONS),
+        'fixture_encoding': FIXTURE_ENCODING, 'decision_encoding': DECISION_ENCODING,
     }
     data = fixtures()
+    fixture_hashes, encoded = {}, []
+    for stratum, (costs, rows, poses) in data.items():
+        encoded.append(fixture_bytes(stratum, costs, rows, poses))
+        fixture_hashes[stratum] = sha256(encoded[-1])
+    report['fixture_sha256'] = {'strata': fixture_hashes, 'all': sha256(b''.join(encoded))}
     functions = {'baseline': baseline._rectangle_clear, 'candidate': candidate._rectangle_clear}
 
-    counts, mismatches = {}, {}
+    counts, mismatches, decision_hashes = {}, {}, {}
     for stratum, (costs, rows, poses) in data.items():
         costs_before, rows_before = list(costs), list(rows)
         scalar = decide(baseline._rectangle_clear, costs, None, poses)
@@ -143,9 +200,13 @@ def run(baseline_path, candidate_path):
             bad.append('inputs_mutated')
         counts[stratum] = {'calls': len(poses), 'clear': sum(cand), 'blocked': len(cand)-sum(cand),
                            'hazard_cells': sum(bin(r).count('1') for r in rows)}
+        decision_hashes[stratum] = {'baseline_scalar': decision_hash(scalar),
+                                    'baseline': decision_hash(base),
+                                    'candidate': decision_hash(cand)}
         if bad:
             mismatches[stratum] = bad[:20] + (['...'] if len(bad) > 20 else [])
     report['counts'] = counts
+    report['decision_sha256'] = decision_hashes
     if mismatches:
         report.update(status='decision_mismatch', mismatches=mismatches,
                       gate={'evaluated': False, 'accepted': False})
@@ -181,6 +242,9 @@ def run(baseline_path, candidate_path):
         if gc_was_enabled:
             gc.enable()
 
+    report['gc'] = {'enabled_before_timing': gc_was_enabled, 'collected_before_timing': True,
+                    'disabled_during_warmup_and_timed_rounds': True,
+                    'enabled_after_timing': gc.isenabled()}
     report.update(status=status, round_orders=orders, warmup_ns=warmup, timings_ns=timings,
                   elapsed_seconds=time.perf_counter()-started)
     if status != 'complete':
@@ -210,15 +274,18 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument('--baseline', required=True, help='immutable baseline sensor_route_policy.py')
     parser.add_argument('--candidate', default=str(TOOLS/'sensor_route_policy.py'))
-    parser.add_argument('--output', help='also write the JSON report here')
+    parser.add_argument('--output', help='also write the JSON report to this new file')
     args = parser.parse_args(argv)
+    if args.output and Path(args.output).exists():
+        parser.error(f'--output {args.output} already exists; refusing before running')
     sys.path.insert(0, str(TOOLS))   # both modules import swept_footprint
     report = run(args.baseline, args.candidate)
     text = json.dumps(report, indent=2)
-    print(text)
+    print(text, flush=True)
     if args.output:
-        Path(args.output).write_text(text+'\n')
-    return 0 if report['status'] == 'complete' else 1
+        with open(args.output, 'x', encoding='utf-8', newline='\n') as handle:
+            handle.write(text+'\n')
+    return 0 if report['gate']['accepted'] else 1
 
 
 if __name__ == '__main__':
