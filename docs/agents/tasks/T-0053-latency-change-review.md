@@ -8,8 +8,8 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0053-reconcile-1703-opus
 base: 26e42dab00df8c91997a31fab2047b0fcc799103
-candidate: 6bfdcaa39d2053defc418361a40545eaad247e99
-claim: implemented
+candidate: 646845e25af6c0b58cd20131addfdbfacdcc6562
+claim: tested
 lease: none
 updated: 2026-10-06
 ---
@@ -582,3 +582,74 @@ bounded work this resumed slice: Opus implementation/revision, Sonnet code revie
 Sol task/evidence triage; actual test-evidence review still awaits execution.
 The active15minute heartbeat will advance these exact states without duplicate
 workers/trials, provider-error retries, publishing or safety-gate changes.
+
+### 2026-10-06T17:24:51-07:00 · gpt-6-astra → all · DECISION
+
+Actual candidate6bfdcaa validation FAILED: 37 tests, one assertion failure and one import error. test_prediction_only_reaches_planner_inputs selected all three planner.submit calls, not the intended navigation call (3 != 1). test_sandbox_profile could not import yaml in bundled Windows Python. Preserve validation-6bfdcaa/result.json and tests.log; log SHA02fc8fd1fdfd49648d74a47a132726178f0c46fba3cf465cd017b95f6e72d7ad. This supersedes NOT RUN; no tested or accepted claim. Revision2 is needed for non-vacuous, callable-specific wiring assertions. Use existing WSL dependency environment for future checks, retaining this failed attempt. No implementation worker assigned yet. Root held all three simulator locks throughout; no source integration or live trial occurred.
+
+### 2026-10-06T17:25:27-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+
+Revision2 exclusive HEADLESS session opus-t0053-reconcile-20261006T1703-r2. Previous r1 is complete and its assignment expired; interactive and other sessions are read-only. Root holds implementation.lock. Only use worktree C:/Users/brand/.codex/worktrees/igvc-t0053-reconcile-1703/IGVC SIM, branch codex/t0053-reconcile-1703-opus starting clean6bfdcaa39d2053defc418361a40545eaad247e99. Read README introduction. Latest canonical dispatch is embedded here; do not read stale worktree task packet.
+Actual four-suite check ran37 tests: one failure test_prediction_only_reaches_planner_inputs (3 submit calls !=1) and independent missing PyYAML import in Windows runtime. Your scope ONLY tools/tests/test_sensor_course_latency.py. Inspect actual production calls: main planning submit, diagnose_backup_recovery submit and select_trap_escape submit. Fix test selection meaningfully/non-vacuously to check actual navigation submission/frozen pose/heading inputs while excluding recovery submissions explicitly. Keep all admission/gate assertions. Do not merely change count, take first match or weaken invariants. No production edits. No tests/imports, heavy work, providers/delegation, simulation/build; root will run four suites using existing WSL Python with dependencies after your commit. Commit this single-file correction and return SHA, rationale, NOT RUN test status <=300words. Bound6minutes/USD5 exactOpus5.5/high once, no provider-error retries. Preserve original failed validation. This is second revision; scope any further blockers anew rather than unlimited revisions.
+
+### 2026-10-06T17:26:31-07:00 · gpt-6-astra → all · HANDBACK
+
+Revision2 Opus completed37.69s/USD0.183408 exactmodel, candidate646845e25af6c0b58cd20131addfdbfacdcc6562. Only test_sensor_course_latency.py changed: classify explicit recovery callees, require exactly one navigation submission, assert evaluators/frozen inputs and no direct predicted inputs in recovery submissions. Tests NOT RUN by worker. Previous assignments expired; worktree frozen. Root now runs four suites under all3locks using existing WSL Python3.12/PyYAML6.0.1 (no dependency install). Original Windows failure remains. Focused Sonnet review requested; no runtime/integration/promotion.
+
+### 2026-10-06T17:29:32-07:00 · claude-sonnet-5-5 → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0053/review-646845e/sonnet-static-review.md
+
+**Verdict: no blockers.** The revised test fixes the failure and is not vacuous. I made no edits and ran nothing.
+
+**Why the fix works**
+- `tools/sensor_course.py` has exactly three `planner.submit` calls: navigation at `:549`, `diagnose_backup_recovery` at `:674`, and `select_trap_escape` at `:695`. The old test expected 1 and found 3.
+- The revised test requires the recovery callees to be exactly `{diagnose_backup_recovery, select_trap_escape}`. A missing, duplicated or renamed recovery submit fails it.
+- The tuple unpack `(navigation,) = …` requires exactly one remaining submit. A fourth submit fails it.
+- It checks that the navigation callable is a `Starred` expression naming both `evaluate_with_trap_memory` and `evaluate_observed_navigation`.
+- It checks that the navigation call receives `inputs['robot_xy']`, `inputs['robot_yaw']`, `inputs['costs']` and `heading_hint=inputs['heading_hint']`.
+
+**Measured-admission coverage is kept**
+- The `frozen_planner_inputs` argument assertions (planning pose, observed grid, planner hint) are unchanged.
+- The admission test is also unchanged. It still pins `admit_from_measured_pose`, the `latest['pose']` and `latest['grid'][1]` entry bindings, and the revalidator arguments.
+- The new recovery assertions add a check that recovery stays on the measured pose.
+
+**Limits**
+- These are AST name and shape checks only. They don't prove runtime data flow, correct admission behavior or safety.
+- The recovery "no leak" check only looks for direct names inside each submit call. It doesn't trace `recovery_args`. At `:637-639` that tuple is built from `rx, ry, ryaw = latest['pose']` (`:607`), and no test asserts that. A leak through `recovery_args` or `search_kwargs` would not be caught.
+- The navigation checks don't prove which branch runs. They also don't cover `frozen_guidance` or `planner_options`.
+- `self.calls('submit')` also matches bare `submit(...)` calls, and `c.func.value` would then raise `AttributeError`. No such call exists in `sensor_course.py` today, and this predates the diff.
+- The `PyYAML` failure in the earlier Windows run was an environment error, as you said. This review doesn't count as a test pass. The focused suites still need to run in WSL.
+
+### 2026-10-06T17:29:32-07:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0053/validation-646845e-fixtures/sol-evidence-review.md
+
+# T0053 final focused evidence review
+
+Accept the focused tested claim at candidate `646845e25af6c0b58cd20131addfdbfacdcc6562`; overall integration/runtime acceptance remains pending.
+
+Three preserved validation directories account for the documented attempts:
+- `validation-6bfdcaa`: Windows,37 tests, one wiring assertion failure plus independent missing-PyYAML import error.
+- `validation-646845e`: WSL,55 tests, corrected assertion passes; one missing tracked profile fixture error.
+- `validation-646845e-fixtures`: same candidate,55 tests passed, exit0, no timeout,1.14s parent elapsed. Only candidate-tracked fixture directories were materialized; no production change or dependency installation is reported.
+
+Independently verified all three log hashes, all eight final recorded source/fixture hashes, and all six source hashes of the preceding same-candidate attempt. Candidate HEAD matches and worktree is clean. Both fixture file hashes and Git blob IDs match candidate content. Production hashes remain unchanged across attempts; candidate revision changes only the wiring test. Sonnet finds that correction non-vacuous while retaining admission assertions.
+
+Latest two attempts record all-lock held/released windows:17:26:34.875–17:26:36.259 and17:27:09.491–17:27:10.802 PDT; wrappers acquire exclusive handles and release in finally. The first attempt's outer-lock ownership is recorded in the canonical decision, not a local lease artifact. Wrappers reject existing results; no additional validation directories were found. This is saved-history verification, not proof against unrecorded external executions.
+
+WSL Python3.12 is supported by the error traceback; exact PyYAML6.0.1 is coordinator-reported, not independently version-bound in these artifacts. AST checks remain structural and do not trace recovery_args/search_kwargs or establish runtime safety. No live, replay, dataset compatibility, primary-percentile reconciliation, source integration or promotion acceptance follows.
+
+Log SHA256:
+- First: `02fc8fd1fdfd49648d74a47a132726178f0c46fba3cf465cd017b95f6e72d7ad`
+- Missing fixture: `5b8bb7b0081e83a34c54b3f6fb080fcfa68ff717ec4ff42a6b17e10237313e2f`
+- Final pass: `42462cf01025fb6362227b232500d313315eb5e1c190de1570e5e98ea2846e8c`
+
+Fixture SHA256:
+- profile.yaml: `14245726680bb2f4e36aef73ae32de7fb3395d2e38b01dd6d7fbe7c869edbef4`
+- local_navigation.yaml: `4bd58c93858c8695b94a50440cd7d527838817c6e3de98dd838c1bed68286930`
+
+
+### 2026-10-06T17:29:32-07:00 · gpt-6-astra → all · DECISION
+
+Accept focused TESTED claim at646845e:55 tests pass after preserving assertion/import failure and later sparse-fixture failure. Sonnet25.95s/USD0.0749902 found no revision2 blocker; Sol verified all source/fixture/log hashes and candidate cleanliness. Final logSHA42462cf01025fb6362227b232500d313315eb5e1c190de1570e5e98ea2846e8c. All locks released, no source integration/live run. Overall status remains review pending T0054 compatibility/provenance analysis; avoid another revision cycle in T0053. All named T0053 implementation assignments ended. Primary percentile design remains separate. No performance or promotion claim.
