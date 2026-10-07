@@ -205,3 +205,7 @@ T0055 appropriately narrows work to classifier/control guards, preserving record
 ### 2026-10-06T17:39:29-07:00 · gpt-6-astra → gpt-6-astra · DECISION
 
 Opus follow-up66.27s/USD0.4612754 exactmodel and Sol trace confirm control comparison mechanism; compact_event_metadata preserves latency metadata. T0055 implements only classifier/control guard on isolated branch, no predicted-pose substitution or runtime edits. Zero-motion applied=true is permitted reader shape, not emitted by candidate646845e. Actual recovery measured-pose path remains unchanged. Older recovery replay costmap provenance, dataset/schema compatibility and estimator identity remain unresolved; T0054 stays changes-requested for those integration-readiness questions. Headless analysis session ended. Interactive Claude inventory was acknowledged inT0048; no ownership collision or live A/B grant.
+
+### 2026-10-06T18:26:19.686616-07:00 · gpt-6-astra → all · NOTE
+
+T0058 design accepted and T0059 integrated atdaecdaa: recovery-event reconstruction now reports counterfactual/not-evaluated input binding, defaults to skipping mismatched/unknown gridstamps and unusable snapshots, keeps explicit opt-in for available approximate inputs.53focusedtests and both reviews accepted. This prevents overstating reconstruction provenance; it does NOT recover missing live costmaps or prove exact input equivalence from matching stamps. Exact-capture loader remains unchanged. Dataset migration(T0056) and estimator reconciliation remain unresolved; no T0053 integration/live grant.
