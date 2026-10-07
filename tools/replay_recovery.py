@@ -8,6 +8,11 @@ saw them, then runs both policies. Teacher traps (artifacts/learning/labels/
 <run>/traps.json) are used ONLY to grade the result afterwards; they are never
 passed to a policy. No ROS, Unity or network access.
 
+Controls (--controls) pair a snapshot's planning pose with measured trajectory
+history, so they execute only snapshots whose metadata proves that pose is
+measured. Predicted, malformed and legacy snapshots without pose provenance are
+reported as skipped rows with counts; there is no legacy override.
+
     python3 tools/replay_recovery.py artifacts/sandbox/runs/<run> [...] [--controls 8]
 """
 import argparse
@@ -21,6 +26,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from observed_navigation import plan_observed_navigation  # noqa: E402
 from recovery_policy import select_backup_recovery, select_trap_escape  # noqa: E402
+from snapshot_pose_provenance import KINDS, MEASURED, classify_snapshot_pose  # noqa: E402
 from trap_memory import (TrapMemory, entry_heading, exclude_trapped_guidance,  # noqa: E402
                          point_in_regions, recent_path)
 
@@ -141,8 +147,18 @@ def replay_controls(run, data, count, budget_scale=1.):
         return []
     step = max(1, len(requests)//count)
     rows = []
+    # Selection is fixed before provenance is read: ineligible snapshots become
+    # skipped rows and are never replaced by searching further snapshots.
     for event in requests[::step][:count]:
-        grid = load_snapshot(run, event['sequence'])['input']
+        snapshot = load_snapshot(run, event['sequence'])
+        provenance = classify_snapshot_pose(snapshot)
+        if provenance['kind'] != MEASURED:
+            # The trajectory history below is measured; pairing it with a
+            # predicted or unverified planning pose would not be a like-for-like control.
+            rows.append({'sequence': event['sequence'], 'skipped': True,
+                         'pose_provenance': provenance['kind'], 'skip_reason': provenance['reason']})
+            continue
+        grid = snapshot['input']
         origin, resolution = tuple(grid['origin']), grid['resolution']
         footprint = tuple(grid['planner_options']['goal_footprint'])
         options = dict(FORWARD_OPTIONS, body_clearance_weight=grid['planner_options'].get('body_clearance_weight', 0.))
@@ -166,7 +182,7 @@ def replay_controls(run, data, count, budget_scale=1.):
         def goal(result):
             return None if result is None else [round(v, 3) for v in result['forward_plan']['local_goal'][:2]]
 
-        rows.append({'sequence': event['sequence'],
+        rows.append({'sequence': event['sequence'], 'skipped': False, 'pose_provenance': MEASURED,
                      'legacy': None if legacy is None else legacy['distance_m'],
                      'retrace_no_memory': None if new is None else [new['escape_type'], new['distance_m']],
                      'same_distance': (None if legacy is None else legacy['distance_m']) ==
@@ -177,12 +193,25 @@ def replay_controls(run, data, count, budget_scale=1.):
     return rows
 
 
+def control_counts(rows):
+    """Selected, executed and skipped control rows, with skips by pose provenance."""
+    skipped = {kind: 0 for kind in KINDS if kind != MEASURED}
+    for row in rows:
+        if row['skipped']:
+            skipped[row['pose_provenance']] += 1
+    return {'selected': len(rows), 'executed': sum(not row['skipped'] for row in rows),
+            'skipped': sum(skipped.values()), 'skipped_by_provenance': skipped}
+
+
 def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('runs', nargs='+', type=Path)
     parser.add_argument('--labels-root', type=Path,
                         default=Path(__file__).resolve().parents[1]/'artifacts/learning/labels')
-    parser.add_argument('--controls', type=int, default=0, help='Non-trap snapshots per run')
+    parser.add_argument('--controls', type=int, default=0,
+                        help='Non-trap snapshots per run. Only snapshots whose metadata proves a measured '
+                             'planning pose are executed; predicted, malformed and legacy snapshots '
+                             'without pose provenance are reported as skipped and not replaced.')
     parser.add_argument('--budget-scale', type=float, default=1.)
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
@@ -192,9 +221,10 @@ def main(argv=None):
         trap_file = args.labels_root/run.name/'traps.json'
         traps = json.loads(trap_file.read_text())['traps'] if trap_file.exists() else []
         events = [e for e in data.get('decisions', []) if e['phase'] == 'recovery_guidance_selected']
+        controls = replay_controls(run, data, args.controls, args.budget_scale)
         entry = {'run': run.name, 'reason': data.get('reason'),
                  'stalls': [replay_event(run, data, e, traps, args.budget_scale) for e in events],
-                 'controls': replay_controls(run, data, args.controls, args.budget_scale)}
+                 'controls': controls, 'control_counts': control_counts(controls)}
         report.append(entry)
         print(json.dumps(entry, indent=1), flush=True)
     if args.output:
