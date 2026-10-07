@@ -36,6 +36,7 @@ from mission_completion import MissionCompletionRecorder
 from replacement_path import (ActivePathRecord, SEND_REVALIDATED, replacement_outcome, running_action,
                               snapshot_revalidator)
 from session_paths import session_dir
+from latency_compensation import LatencyCompensator
 
 # Recovery lane-entry gate: station step when the selected far gate has no clear body position.
 RECOVERY_GATE_RETREAT_STEP_M = .5
@@ -192,6 +193,7 @@ def run(args):
     state['path_execution'] = args.path_execution
     state['body_clearance_weight'] = args.body_clearance_weight
     state['escape_mode'] = args.escape
+    latency_compensator = LatencyCompensator(enabled=args.latency_compensation)
     # Loaded once; passed to the planner process at submit time only, never into saved snapshots.
     scorer_options = {}
     for name, (scorer_key, weight_key) in (('route', ('learned_scorer', 'learned_weight')),
@@ -207,7 +209,7 @@ def run(args):
         for name in ('sensor_course.py', 'observed_navigation.py', 'lane_corridor_policy.py',
                      'lane_heading_memory.py', 'sensor_route_policy.py',
                      'entrance_memory.py', 'entrance_support.py', 'recovery_budget.py', 'recovery_policy.py',
-                     'execution_path.py', 'path_entry.py', 'swept_footprint.py', 'recovery_intent.py',
+                     'execution_path.py', 'path_entry.py', 'swept_footprint.py', 'recovery_intent.py', 'latency_compensation.py',
                      'action_cancellation.py', 'mission_health.py', 'sensor_telemetry.py',
                      'mission_completion.py', 'replacement_path.py', 'recovery_evidence.py')
                      + (('trap_memory.py',) if trap_memory is not None else ())}
@@ -288,6 +290,7 @@ def run(args):
         p, q = msg.pose.pose.position, msg.pose.pose.orientation
         yaw = math.atan2(2*(q.w*q.z+q.x*q.y), 1-2*(q.y*q.y+q.z*q.z))
         latest['pose'] = (p.x, p.y, yaw)
+        latest['twist'] = (msg.twist.twist.linear.x, msg.twist.twist.angular.z)
         heading_memory.propose((p.x, p.y), yaw, time.monotonic())
         state['trajectory'].append([msg.header.stamp.sec+msg.header.stamp.nanosec*1e-9, p.x, p.y, yaw])
 
@@ -497,11 +500,13 @@ def run(args):
                 entrance_tracking=entrance_tracking)
             heading_hint = heading_memory.propose((x,y), yaw, time.monotonic(), lookahead=7.)
             frozen_guidance = preserved_guidance((x,y,yaw), time.monotonic(), state['completed_destinations'])
+            # Opt-in: plan from the pose expected at admission (identity when disabled or still).
+            planning_pose = latency_compensator.predict((x, y, yaw), latest.get('twist'))
             # Freeze the same observations sent to the worker. The current action
             # can continue while it plans; completion pose/age are recorded too.
             inputs = dict(origin=[grid.info.origin.position.x, grid.info.origin.position.y],
                           resolution=grid.info.resolution, width=grid.info.width, height=grid.info.height,
-                          costs=list(grid.data), robot_xy=[x,y], robot_yaw=yaw,
+                          costs=list(grid.data), robot_xy=list(planning_pose[:2]), robot_yaw=planning_pose[2],
                           destination=[gx,gy], lane_points=list(latest.get('lane_xy', [])),
                           heading_hint=heading_hint, planner_options=planner_options,
                           frozen_guidance=frozen_guidance)
@@ -784,8 +789,11 @@ def run(args):
                     (entry_grid.info.origin.position.x, entry_grid.info.origin.position.y),
                     entry_grid.info.resolution, entry_grid.info.width, entry_grid.info.height,
                     entry_grid.data, goal_footprint)
+                latency_compensator.observe_latency(time.monotonic()-submitted_at)
                 decision_event('path_entry', admission=admission, checked_pose=entry_pose,
-                    grid_stamp_ns=stamps.get('grid'), input_age_wall_s=time.monotonic()-submitted_at)
+                    grid_stamp_ns=stamps.get('grid'), input_age_wall_s=time.monotonic()-submitted_at,
+                    planned_from=list(planning_pose))
+                state['latency_compensation'] = latency_compensator.report()
                 outcomes.update(decision_sequence, admitted=admitted is not None)
                 if admitted is None:
                     # Opt-in: re-admit the running action's own plan on this same pose/grid snapshot and,
@@ -964,6 +972,8 @@ if __name__ == '__main__':
                         help='Use hold only for controlled goal-preemption comparisons')
     parser.add_argument('--guidance-memory', choices=('heading', 'entrance'), default='heading',
                         help='Entrance is an experimental fixed observed-target memory')
+    parser.add_argument('--latency-compensation', action='store_true',
+                        help='Experimental: plan from the odometry-predicted pose at admission time')
     parser.add_argument('--escape', choices=('legacy', 'retrace'), default='legacy',
                         help='Experimental retrace adds bounded stall memory and a longer '
                              'corridor-contained straight BackUp when the short one fails')
