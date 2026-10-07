@@ -46,7 +46,9 @@ def synthetic_rows(runs=6, decisions=40, seed=3, noise=0.):
             for k, c in enumerate(cands):
                 rows.append(dict(run=run, index=d, group=f'{run}:{d}', source='grid' if k == heur else 'route_alt',
                                  heuristic_choice=k == heur, features=c, teacher_cost_m=cost[k],
-                                 regret_m=round(cost[k] - cost[best], 4), teacher_best=k == best))
+                                 regret_m=round(cost[k] - cost[best], 4), teacher_best=k == best,
+                                 # Synthetic measured-pose rows: readers admit only measured by default.
+                                 pose_source='measured', pose_reason='latency_compensation_not_applied'))
     return rows
 
 

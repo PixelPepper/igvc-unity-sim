@@ -32,6 +32,7 @@ sys.path.insert(0, str(HERE))
 from build_dataset import FEATURES  # noqa: E402  (also puts tools/ on sys.path)
 from learned_scorer import SCHEMA, LearnedScorer  # noqa: E402
 from lane_corridor_policy import CORRIDOR_FEATURES  # noqa: E402
+from dataset_policy import add_pose_policy_arguments, policy_from_args, read_dataset_rows  # noqa: E402
 
 KIND_FEATURES = dict(route=FEATURES, corridor=CORRIDOR_FEATURES)
 
@@ -39,14 +40,12 @@ FILL = -1.0  # Missing optional features (e.g. no lane corridor seen). All
              # real values are >= 0 except signed lateral/heading features.
 
 
-def load_rows(path):
-    rows = [json.loads(line) for line in Path(path).read_text(encoding='utf-8').splitlines() if line.strip()]
-    groups = {}
-    for row in rows:
-        groups.setdefault(row['group'], []).append(row)
-    usable = {g: members for g, members in groups.items()
-              if len(members) >= 2 and sum(m['heuristic_choice'] for m in members) == 1}
-    return [row for members in usable.values() for row in members]
+def load_rows(path, pose_policy=None):
+    """Usable rows (list) after pose admission (default measured only) and the ranking-group rule.
+
+    dataset_policy.read_dataset_rows returns the same rows plus admission statistics.
+    """
+    return read_dataset_rows(path, pose_policy)[0]
 
 
 def matrix(rows, features=FEATURES):
@@ -183,16 +182,33 @@ def main(argv=None):
     parser.add_argument('--seed', type=int, default=0)
     parser.add_argument('--group-by', choices=('run', 'course'), default='course',
                         help='Cross-validation unit; course keeps repeated runs of a layout in one fold')
+    add_pose_policy_arguments(parser)
     args = parser.parse_args(argv)
     features = KIND_FEATURES[args.kind]
     args.dataset = args.dataset or REPO/f'artifacts/learning/dataset/{args.kind}_candidates.jsonl'
     args.model_out = args.model_out or REPO/f'artifacts/learning/models/{args.kind}_scorer.json'
-    rows = load_rows(args.dataset)
+    policy = policy_from_args(args)
+
+    def write_report(report):
+        text = json.dumps(report, indent=2)
+        if args.report_out:  # also for rejected or empty datasets, so exclusions stay reviewable
+            args.report_out.parent.mkdir(parents=True, exist_ok=True)
+            args.report_out.write_text(text+'\n', encoding='utf-8')
+        print(text)
+
+    try:
+        rows, admission = read_dataset_rows(args.dataset, policy)
+    except ValueError as exc:  # malformed dataset: rejected whole, nothing fitted
+        write_report(dict(kind=args.kind, dataset=str(args.dataset), pose_policy=policy.to_dict(),
+                          error=f'rejected dataset: {exc}'))
+        return 2
+    # rows/decisions are the final usable counts; dataset_admission has pre-pose and pose-admitted counts.
     report = dict(kind=args.kind, dataset=str(args.dataset), rows=len(rows),
-                  decisions=len({r['group'] for r in rows}), runs=sorted({r['run'] for r in rows}))
+                  decisions=len({r['group'] for r in rows}), runs=sorted({r['run'] for r in rows}),
+                  pose_policy=policy.to_dict(), dataset_admission=admission)
     if not rows:
-        report['error'] = 'No decision has >= 2 labelled route candidates; nothing to learn.'
-        print(json.dumps(report, indent=2))
+        report['error'] = 'No pose-admitted decision has >= 2 labelled candidates; nothing to learn.'
+        write_report(report)
         return 1
     held_out = []
     weights = args.hook_weight[0] if len(args.hook_weight) == 1 else args.hook_weight
@@ -218,11 +234,7 @@ def main(argv=None):
     args.model_out.parent.mkdir(parents=True, exist_ok=True)
     args.model_out.write_text(json.dumps(exported, separators=(',', ':'))+'\n', encoding='utf-8')
     report['model_out'] = str(args.model_out)
-    text = json.dumps(report, indent=2)
-    if args.report_out:
-        args.report_out.parent.mkdir(parents=True, exist_ok=True)
-        args.report_out.write_text(text+'\n', encoding='utf-8')
-    print(text)
+    write_report(report)
     return 0
 
 

@@ -25,6 +25,14 @@ API for builders and later readers:
   admit_group(provenances, policy) -> (True, None) or (False, reason)
   filter_rows(rows, policy)      -> (kept rows, counts)
   PoseCounts, merge_counts       -> group/member/provenance counts with their semantics
+
+API for training and promotion readers (train_scorer, round_gate):
+  read_dataset_rows(path, policy=None) -> (usable rows, admission stats)
+      pose admission (filter_rows) FIRST, then the ranking-group rule
+      (>= 2 members, exactly one heuristic_choice). ValueError, with the line
+      number, on a malformed JSON line or a non-object row: nothing partial.
+  add_pose_policy_arguments(parser) / policy_from_args(args)
+      the shared --allow-predicted / --allow-unknown-legacy CLI flags.
 """
 from dataclasses import dataclass
 import gzip
@@ -201,3 +209,68 @@ def filter_rows(rows, policy):
             kept.add(key)
     return ([r for r in rows if isinstance(r, dict) and isinstance(r.get('group'), str) and r['group'] in kept],
             counts.as_dict(ROW_SEMANTICS))
+
+
+READER_SEMANTICS = dict(
+    pre_pose='every parsed dataset row; groups = distinct string group values',
+    pose='filter_rows counts (ROW_SEMANTICS): whole groups admitted or excluded by pose provenance',
+    pose_admitted='rows and groups that passed pose admission, before the ranking-group rule',
+    ranking_excluded='pose-admitted groups dropped by the ranking-group rule (< 2 members or not exactly one '
+                     'heuristic_choice); no replenishment',
+    usable='rows and groups returned for training or promotion')
+
+
+def read_dataset_rows(path, policy=None):
+    """(usable rows, stats) of a build_dataset JSONL for training and promotion readers.
+
+    Pose admission (``policy``, default PosePolicy(): measured only) runs on
+    the whole file before the ranking-group rule: a group with any excluded,
+    mixed or invalid member is dropped whole even if the remaining members
+    would form a valid ranking group. Row values and the group-major order of
+    the previous readers (groups in first-appearance order, each group's rows
+    in file order) are unchanged. ``heuristic_choice`` is counted by truth
+    value; a missing one counts as false. Provenance comes only from each
+    row's pose_source/pose_reason (unlabelled rows: unknown_legacy), never
+    from flags, hashes or summary sidecars.
+    """
+    policy = policy if policy is not None else PosePolicy()
+    parsed = []
+    with Path(path).open(encoding='utf-8') as stream:
+        for number, line in enumerate(stream, 1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except ValueError as error:
+                raise ValueError(f'{path}:{number}: malformed dataset JSON ({error})') from None
+            if not isinstance(row, dict):
+                raise ValueError(f'{path}:{number}: dataset row is not an object')
+            parsed.append(row)
+    admitted, pose = filter_rows(parsed, policy)
+    groups = {}
+    for row in admitted:
+        groups.setdefault(row['group'], []).append(row)
+    usable = {group: members for group, members in groups.items()
+              if len(members) >= 2 and sum(bool(m.get('heuristic_choice')) for m in members) == 1}
+    rows = [row for members in usable.values() for row in members]
+    stats = dict(semantics=dict(READER_SEMANTICS), pose_policy=policy.to_dict(),
+                 pre_pose=dict(rows=len(parsed),
+                               groups=len({r['group'] for r in parsed if isinstance(r.get('group'), str)})),
+                 pose=pose, pose_admitted=dict(rows=len(admitted), groups=len(groups)),
+                 ranking_excluded=dict(rows=len(admitted)-len(rows), groups=len(groups)-len(usable)),
+                 usable=dict(rows=len(rows), groups=len(usable)))
+    return rows, stats
+
+
+def add_pose_policy_arguments(parser):
+    """The shared, combinable opt-in flags; neither given = measured only."""
+    parser.add_argument('--allow-predicted', action='store_true',
+                        help='also admit rows planned from a latency-predicted pose (default: measured only)')
+    parser.add_argument('--allow-unknown-legacy', action='store_true',
+                        help='also admit rows of unknown pose provenance, including rows built before '
+                             'pose_source existed (default: measured only)')
+    return parser
+
+
+def policy_from_args(args):
+    return PosePolicy(allow_predicted=bool(args.allow_predicted), allow_unknown_legacy=bool(args.allow_unknown_legacy))

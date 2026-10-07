@@ -33,6 +33,7 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 from learned_scorer import LearnedScorer  # noqa: E402
+from dataset_policy import PosePolicy, add_pose_policy_arguments, policy_from_args, read_dataset_rows  # noqa: E402
 
 WEIGHTS = (.5, 1., 2., 4., 8.)
 MIN_UNSEEN = 100
@@ -49,15 +50,10 @@ def sha256(path):
     return digest.hexdigest()
 
 
-def load_rows(path):
-    """Decision groups with >= 2 candidates and exactly one heuristic choice (as train_scorer)."""
-    groups = {}
-    for line in Path(path).read_text(encoding='utf-8').splitlines():
-        if line.strip():
-            row = json.loads(line)
-            groups.setdefault(row['group'], []).append(row)
-    return [r for members in groups.values()
-            if len(members) >= 2 and sum(bool(m['heuristic_choice']) for m in members) == 1 for r in members]
+def load_rows(path, pose_policy=None):
+    """Pose-admitted decision groups (default measured only) with >= 2 candidates and exactly one
+    heuristic choice: the same shared reader as train_scorer (dataset_policy.read_dataset_rows)."""
+    return read_dataset_rows(path, pose_policy)[0]
 
 
 def course_of(run, repo=REPO):
@@ -253,11 +249,19 @@ def decide(report):
                 versus=versus, reasons=reasons)
 
 
-def gate(dataset, new_model_path, current=None, repo=REPO, model_factory=make_model, seed=0):
-    """``current``: None, or the promoted model's manifest entry (path, recipe, data_runs)."""
-    rows = load_rows(dataset)
+def gate(dataset, new_model_path, current=None, repo=REPO, model_factory=make_model, seed=0, pose_policy=None):
+    """``current``: None, or the promoted model's manifest entry (path, recipe, data_runs).
+
+    ``pose_policy`` (dataset_policy.PosePolicy, default measured only) is applied by the shared
+    reader before the ranking-group rule, for direct callers (run_round) and the CLI alike. The
+    report records the policy and pre-pose / pose-admitted / usable counts, also when no usable
+    rows remain (never promotable). A malformed dataset raises ValueError.
+    """
+    policy = pose_policy if pose_policy is not None else PosePolicy()
+    rows, admission = read_dataset_rows(dataset, policy)
     if not rows:
-        return dict(dataset=str(dataset), error='no usable decision groups',
+        return dict(dataset=str(dataset), error='no usable decision groups', rows=0,
+                    pose_policy=policy.to_dict(), dataset_admission=admission,
                     decision=dict(promote=False, weight=None, reasons=['empty dataset']))
     new_model = json.loads(Path(new_model_path).read_text(encoding='utf-8'))
     new_recipe = default_recipe(new_model['features'], seed)
@@ -290,7 +294,8 @@ def gate(dataset, new_model_path, current=None, repo=REPO, model_factory=make_mo
                   new_sha256=sha256(new_model_path), new_recipe=new_recipe,
                   current_model=str(current_path) if current_path else None,
                   current_sha256=sha256(current_path) if current_path and current_path.exists() else None,
-                  current_seen_fraction=round(1 - unseen / max(groups, 1), 4) if current else None)
+                  current_seen_fraction=round(1 - unseen / max(groups, 1), 4) if current else None,
+                  pose_policy=policy.to_dict(), dataset_admission=admission)
     report['decision'] = decide(report)
     return report
 
@@ -301,14 +306,22 @@ def main(argv=None):
     parser.add_argument('--new', type=Path, required=True)
     parser.add_argument('--current', type=Path, help='JSON file holding the promoted model\'s manifest entry')
     parser.add_argument('--out', type=Path)
+    add_pose_policy_arguments(parser)
     args = parser.parse_args(argv)
     current = json.loads(args.current.read_text(encoding='utf-8')) if args.current else None
-    report = gate(args.dataset, args.new, current)
+    policy = policy_from_args(args)
+    status = 0
+    try:
+        report = gate(args.dataset, args.new, current, pose_policy=policy)
+    except ValueError as exc:  # malformed dataset: rejected whole, never promotable
+        report, status = dict(dataset=str(args.dataset), error=f'rejected dataset: {exc}',
+                              pose_policy=policy.to_dict(),
+                              decision=dict(promote=False, weight=None, reasons=['rejected dataset'])), 2
     text = json.dumps(report, indent=2)
-    if args.out:
+    if args.out:  # also for empty or rejected datasets, so exclusions stay reviewable
         args.out.write_text(text + '\n', encoding='utf-8')
     print(json.dumps(report['decision'], indent=2))
-    return 0
+    return status
 
 
 if __name__ == '__main__':
