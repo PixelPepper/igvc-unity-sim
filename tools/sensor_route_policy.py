@@ -40,6 +40,14 @@ def _circle_clear(x, y, radius, costs, width, height, resolution, origin):
     return True
 
 
+def _set_bit_columns(bits, left):
+    """Lazily yield the column of each set bit, in ascending order."""
+    while bits:
+        bit = bits & -bits
+        yield left+bit.bit_length()-1
+        bits ^= bit
+
+
 def _rectangle_clear(x, y, yaw, bounds, costs, width, height, resolution, origin,
                      hazard_rows=None):
     """Separating-axis test of the oriented footprint and hazard cell squares."""
@@ -56,16 +64,16 @@ def _rectangle_clear(x, y, yaw, bounds, costs, width, height, resolution, origin
         return False
     half = resolution/2
     projected_half = half*(abs(cosine)+abs(sine))
+    span = (1 << (right-left+1))-1
     for iy in range(bottom, top+1):
         if hazard_rows is None:
             columns = range(left, right+1)
         else:
-            bits = (hazard_rows[iy] >> left) & ((1 << (right-left+1))-1)
-            columns = []
-            while bits:
-                bit = bits & -bits
-                columns.append(left+bit.bit_length()-1)
-                bits ^= bit
+            bits = (hazard_rows[iy] >> left) & span
+            if not bits:
+                continue
+            # Lazy, so an early collision skips enumerating the rest of the row.
+            columns = _set_bit_columns(bits, left)
         for ix in columns:
             value = costs[iy*width+ix]
             if 0 <= value < 100:
