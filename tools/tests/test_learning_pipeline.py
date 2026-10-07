@@ -1,5 +1,6 @@
 """Offline learning pipeline: join, grouped training, JSON export, numpy inference."""
 
+import gzip
 import json
 from pathlib import Path
 import random
@@ -24,6 +25,17 @@ except ImportError:
 
 def write_jsonl(path, records):
     Path(path).write_text(''.join(json.dumps(r)+'\n' for r in records))
+
+
+def write_measured_snapshots(directory, indices):
+    """Schema-1 snapshots whose pose provenance classifies as measured (builders admit only these by default)."""
+    pose = [1., 2., .5]
+    for index in indices:
+        snapshot = dict(schema_version=1, input=dict(robot_xy=pose[:2], robot_yaw=pose[2]),
+                        metadata=dict(latency_compensation=dict(enabled=False, applied=False,
+                                                                measured_pose=pose, planning_pose=pose)))
+        with gzip.open(Path(directory)/f'{index:05d}.json.gz', 'wt', encoding='utf-8') as stream:
+            json.dump(snapshot, stream)
 
 
 def synthetic_rows(runs=4, decisions=40, seed=1):
@@ -74,6 +86,7 @@ class LearningPipelineTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             write_jsonl(Path(directory)/'o.jsonl', outcomes)
             write_jsonl(Path(directory)/'l.jsonl', labels)
+            write_measured_snapshots(directory, (1, 2, 3))
             rows, stats = build_rows(Path(directory)/'o.jsonl', Path(directory)/'l.jsonl', 'runA')
         self.assertEqual(stats['mismatched'], 1)
         self.assertEqual(stats['groups'], 1)
@@ -85,6 +98,8 @@ class LearningPipelineTests(unittest.TestCase):
         self.assertTrue(alt['teacher_best'] and grid['heuristic_choice'])
         self.assertNotIn('teacher_cost_m', grid['features'])
         self.assertEqual(alt['features'], dict(score=1.5, min_lethal_clearance_m=1.2))
+        self.assertEqual({(r['pose_source'], r['pose_reason']) for r in rows},
+                         {('measured', 'latency_compensation_not_applied')})
 
     def test_scorer_rejects_malformed_models_and_fills_missing(self):
         good = dict(schema=SCHEMA, features=['a', 'b'], fill_value=-1., base=.5, learning_rate=.1,

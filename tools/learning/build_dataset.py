@@ -35,6 +35,16 @@ Two steps:
             search-limited, disconnected): no cost is guessed. All omissions
             are counted by reason in the stats.
 
+Pose provenance (tools/learning/dataset_policy.py): each joined decision's
+snapshot ``decisions/NNNNN.json.gz`` (NNNNN = outcome index) is classified with
+tools/snapshot_pose_provenance before any group cardinality or heuristic filter.
+Only measured poses are admitted by default; ``--allow-predicted`` and
+``--allow-unknown-legacy`` (combinable) widen that. Malformed and unavailable
+(missing, unreadable, not schema 1) snapshots are never admitted. Excluded
+decision groups are dropped whole and counted; every row carries
+``pose_source`` and ``pose_reason``; summary.json records ``pose_policy`` and
+the counts.
+
 Teacher/world-derived values appear ONLY as targets (``teacher_cost_m``,
 ``regret_m``, ``teacher_best``); features come from what the robot logged.
 """
@@ -50,6 +60,7 @@ import sys
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
+from dataset_policy import PoseCounts, PosePolicy, admit_group, load_snapshot_provenance, merge_counts  # noqa: E402
 
 ROUTE_SOURCES = ('grid', 'route_alt')
 # Observed-only features consumed by the scorer (route policy + lane proximity).
@@ -183,12 +194,32 @@ def _joined(outcomes_path, labels_path, stats):
         yield index, outcome, label, candidates, labelled
 
 
-def build_rows(outcomes_path, labels_path, run_name, include_single=False):
-    """Yield one row per route candidate of every decision with labels."""
+def _pose_admission(decisions_dir, index, members, policy, counts):
+    """(snapshot, provenance) when the decision passes pose admission, else None (counted)."""
+    snapshot, provenance = load_snapshot_provenance(Path(decisions_dir)/f'{index:05d}.json.gz')
+    admitted, reason = admit_group([provenance], policy)
+    counts.record([provenance], admitted, reason, members)
+    return (snapshot, provenance) if admitted else None
+
+
+def build_rows(outcomes_path, labels_path, run_name, include_single=False, decisions_dir=None, pose_policy=None):
+    """Yield one row per route candidate of every pose-admitted decision with labels.
+
+    ``pose_policy`` defaults to PosePolicy() (measured only); snapshots are read
+    from ``decisions_dir`` (default: the outcomes file's folder).
+    """
+    policy = pose_policy if pose_policy is not None else PosePolicy()
+    decisions_dir = Path(decisions_dir) if decisions_dir is not None else Path(outcomes_path).parent
     stats = dict(decisions=0, joined=0, mismatched=0, groups=0, rows=0)
+    counts = PoseCounts()
     rows = []
     for index, outcome, _, candidates, labelled in _joined(outcomes_path, labels_path, stats):
-        group = [(c, l) for c, l in zip(candidates, labelled)
+        members = sum(1 for c in candidates if c.get('source') in ROUTE_SOURCES)
+        admission = _pose_admission(decisions_dir, index, members, policy, counts)
+        if admission is None:
+            continue
+        provenance = admission[1]
+        group =[(c, l) for c, l in zip(candidates, labelled)
                  if c.get('source') in ROUTE_SOURCES and _finite(l.get('teacher_cost_m'))]
         if not any(c['source'] == 'grid' for c, _ in group) or (len(group) < 2 and not include_single):
             continue
@@ -204,15 +235,11 @@ def build_rows(outcomes_path, labels_path, run_name, include_single=False):
                 distinct_by=candidate.get('distinct_by'), endpoint=candidate['endpoint'][:2],
                 teacher_cost_m=label_row['teacher_cost_m'],
                 regret_m=round(label_row['teacher_cost_m']-best, 4), teacher_best=k == best_index,
-                replayed=bool(outcome.get('replayed'))))
+                replayed=bool(outcome.get('replayed')),
+                pose_source=provenance['kind'], pose_reason=provenance['reason']))
             stats['rows'] += 1
+    stats['pose'] = counts.as_dict()
     return rows, stats
-
-
-def _load_snapshot_input(path):
-    import gzip
-    with gzip.open(path, 'rt', encoding='utf-8') as stream:
-        return json.load(stream)['input']
 
 
 def label_mode(labels_path):
@@ -270,7 +297,7 @@ def _corridor_target(label_row, mode, labels_path, index):
 
 
 def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None,
-                        corridor_label=LEGACY_CORRIDOR_LABEL):
+                        corridor_label=LEGACY_CORRIDOR_LABEL, pose_policy=None):
     """One row per accepted corridor proposal of decisions with >= 2 of them.
 
     Only decisions whose executed guidance was the observed corridor count
@@ -279,6 +306,7 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
     is the selected ``corridor_label`` mode's cost; labels in any other mode
     raise ValueError. Under path-v3 a group with any unavailable target is
     omitted whole (``omitted_target`` counts reasons per candidate status).
+    Pose admission (``pose_policy``, default measured only) runs first.
     """
     from lane_corridor_policy import corridor_feature_rows
     if corridor_label not in CORRIDOR_LABELS:
@@ -289,9 +317,16 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
     stats = dict(decisions=0, joined=0, mismatched=0, unlabelled=0, groups=0, rows=0, fewer_than_two=0,
                  not_corridor_guidance=0, missing_snapshot=0, dropped_candidates={}, omitted_target_groups=0,
                  omitted_target={})
+    policy = pose_policy if pose_policy is not None else PosePolicy()
+    counts = PoseCounts()
     rows = []
     decisions_dir = Path(decisions_dir) if decisions_dir is not None else Path(outcomes_path).parent
     for index, outcome, label, candidates, labelled in _joined(outcomes_path, labels_path, stats):
+        members = sum(1 for c in candidates if c.get('source') == CORRIDOR_SOURCE)
+        admission = _pose_admission(decisions_dir, index, members, policy, counts)
+        if admission is None:
+            continue
+        snapshot, provenance = admission
         group, unavailable = [], []
         for c, l in zip(candidates, labelled):
             if c.get('source') != CORRIDOR_SOURCE:
@@ -319,11 +354,11 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
                 stats['omitted_target'][reason] = stats['omitted_target'].get(reason, 0)+1
             continue
         try:
-            inputs = _load_snapshot_input(decisions_dir/f'{index:05d}.json.gz')
+            inputs = snapshot['input']
             robot, yaw, destination = inputs['robot_xy'], inputs['robot_yaw'], inputs['destination']
             costmap = (inputs['origin'], inputs['resolution'], inputs['width'], inputs['height'],
                        inputs['costs'])
-        except (OSError, ValueError, KeyError, EOFError):
+        except KeyError:  # loadable schema-1 snapshot without the costmap inputs
             stats['missing_snapshot'] += 1
             continue
         proposals = [dict(c.get('features') or {}, score=c['score'], entry=c['endpoint'][:2],
@@ -342,18 +377,20 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
                 features={name: value for name, value in row_features.items() if _finite(value)},
                 endpoint=candidate['endpoint'][:2], endpoint_cell=label_row.get('endpoint_cell'),
                 teacher_cost_m=cost, regret_m=round(cost-best, 4), teacher_best=k == best_index,
-                replayed=bool(outcome.get('replayed')))
+                replayed=bool(outcome.get('replayed')),
+                pose_source=provenance['kind'], pose_reason=provenance['reason'])
             if corridor_label != LEGACY_CORRIDOR_LABEL:  # legacy rows keep their exact previous shape
                 row.update(corridor_label=corridor_label, corridor_status=label_row['corridor_target']['status'])
             rows.append(row)
             stats['rows'] += 1
+    stats['pose'] = counts.as_dict()
     return rows, stats
 
 
-def _build_one(kind, outcomes, labels, name, corridor_label=None):
+def _build_one(kind, outcomes, labels, name, corridor_label=None, pose_policy=None):
     if kind == 'corridor':
-        return build_corridor_rows(outcomes, labels, name, corridor_label=corridor_label)
-    return build_rows(outcomes, labels, name)
+        return build_corridor_rows(outcomes, labels, name, corridor_label=corridor_label, pose_policy=pose_policy)
+    return build_rows(outcomes, labels, name, pose_policy=pose_policy)
 
 
 def main(argv=None):
@@ -377,6 +414,10 @@ def main(argv=None):
     build.add_argument('--corridor-label', choices=CORRIDOR_LABELS,
                        help='required with --kind corridor: straight-v1 (legacy teacher_cost_m) or path-v3 '
                             '(corridor_target.cost_m, unavailable groups omitted); labels must match')
+    build.add_argument('--allow-predicted', action='store_true',
+                       help='also admit decisions planned from a latency-predicted pose (default: measured only)')
+    build.add_argument('--allow-unknown-legacy', action='store_true',
+                       help='also admit snapshots without pose-provenance metadata (default: measured only)')
     args = parser.parse_args(argv)
     if args.command == 'build' and (args.kind == 'corridor') != (args.corridor_label is not None):
         parser.error('--corridor-label is required with --kind corridor and only valid with it')
@@ -393,6 +434,7 @@ def main(argv=None):
         return 0
     if args.out is None:
         args.out = REPO/f'artifacts/learning/dataset/{args.kind}_candidates.jsonl'
+    policy = PosePolicy(allow_predicted=args.allow_predicted, allow_unknown_legacy=args.allow_unknown_legacy)
     all_rows, report, work = [], {}, []
     for value in args.runs:
         name = Path(value).name
@@ -405,10 +447,10 @@ def main(argv=None):
     try:  # a label-mode mismatch in any run aborts the whole dataset (no partial or mixed output)
         if args.jobs > 1 and work:
             with ProcessPoolExecutor(max_workers=args.jobs) as pool:
-                results = list(pool.map(_build_one, *zip(*[(args.kind, o, l, n, args.corridor_label)
+                results = list(pool.map(_build_one, *zip(*[(args.kind, o, l, n, args.corridor_label, policy)
                                                            for n, o, l in work])))
         else:
-            results = [_build_one(args.kind, o, l, n, args.corridor_label) for n, o, l in work]
+            results = [_build_one(args.kind, o, l, n, args.corridor_label, policy) for n, o, l in work]
     except ValueError as error:
         print(f'REJECTED: {error}', file=sys.stderr)
         return 2
@@ -421,7 +463,8 @@ def main(argv=None):
             stream.write(json.dumps(row, separators=(',', ':'))+'\n')
     summary = dict(out=str(args.out), kind=args.kind, corridor_label=args.corridor_label, runs=report, rows=len(all_rows),
                    groups=len({r['group'] for r in all_rows}),
-                   runs_with_groups=len({r['run'] for r in all_rows}))
+                   runs_with_groups=len({r['run'] for r in all_rows}), pose_policy=policy.to_dict(),
+                   pose=merge_counts([stats['pose'] for stats in report.values() if 'pose' in stats]))
     args.out.with_suffix('.summary.json').write_text(json.dumps(summary, indent=2)+'\n', encoding='utf-8')
     print(json.dumps(summary, indent=2))
     return 0
