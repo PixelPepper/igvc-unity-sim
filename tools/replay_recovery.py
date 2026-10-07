@@ -2,11 +2,41 @@
 """Offline replay of stall recovery: legacy straight backup vs trap-memory retrace.
 
 Reads only a finished run directory (run.json + decisions/NNNNN.json.gz). For
-every recorded recovery selection it rebuilds the observed grid, stall pose,
-selected guidance and the robot's own recent trajectory exactly as the mission
-saw them, then runs both policies. Teacher traps (artifacts/learning/labels/
-<run>/traps.json) are used ONLY to grade the result afterwards; they are never
-passed to a policy. No ROS, Unity or network access.
+every recorded recovery_guidance_selected event it reconstructs a recovery
+comparison from the event's selection pose and guidance, the grid of the
+decision snapshot with the same sequence, the robot's own recorded trajectory,
+fixed replay options (FORWARD_OPTIONS plus the snapshot's body clearance weight
+and entrance tracking flag), the recorded continuation guidance and a fresh,
+empty TrapMemory, then runs both policies. Teacher traps (artifacts/learning/
+labels/<run>/traps.json) are used ONLY to grade the result afterwards; they are
+never passed to a policy. No ROS, Unity or network access.
+
+Stall rows are counterfactual reconstructions, never live-exact replays. Every
+executed row carries replay_kind=counterfactual_reconstructed and
+input_binding=not_evaluated: the snapshot grid is the latest planning request,
+not a capture of the recovery call, and the live options, guidance, continuation
+state and trap memory are not recorded. Equal grid stamps show only that the
+event and snapshot name the same grid message; they prove neither full inputs
+nor equivalent live state.
+
+Stall rows (one per selected event, in run.json order, never replaced):
+  event_index      position of the event in run.json decisions (sequences repeat)
+  status/skipped   executed or skipped; reason explains admission or the skip
+  grid_stamp       raw event and snapshot.metadata grid_stamp_ns, each with any
+                   problem, and status match/mismatch/unknown/not_evaluated
+  budget_scale, allow_grid_mismatch, replay_kind, input_binding
+Executed rows add the legacy/retrace comparison fields unchanged. Admission:
+  grid_stamp_match     both stamps are positive ints (not bool) and equal
+  grid_stamp_mismatch  both valid but different; skipped unless opted in
+  grid_stamp_unknown   either stamp missing or malformed (bool, float, zero,
+                       negative, other types); skipped unless opted in
+--allow-grid-mismatch executes mismatch/unknown rows as labelled counterfactuals.
+These remain skipped even with the opt-in: event_malformed (fields the
+reconstruction needs are missing or invalid), snapshot_missing,
+snapshot_unreadable (gzip/decoding failure), snapshot_invalid_json and
+snapshot_malformed (the grid/options the planners need are missing or invalid).
+Planner errors are not caught. stall_counts reports selected = executed +
+skipped, skipped_by_reason and by_status (status -> reason -> count).
 
 Controls (--controls) pair a snapshot's planning pose with measured trajectory
 history, so they execute only snapshots whose metadata proves that pose is
@@ -14,12 +44,14 @@ measured. Predicted, malformed and legacy snapshots without pose provenance are
 reported as skipped rows with counts; there is no legacy override.
 
     python3 tools/replay_recovery.py artifacts/sandbox/runs/<run> [...] [--controls 8]
+        [--allow-grid-mismatch]
 """
 import argparse
 import gzip
 import json
 import math
 import sys
+import zlib
 from functools import partial
 from pathlib import Path
 
@@ -77,8 +109,149 @@ def match_trap(traps, pose, stamp_s):
     return best[1] if best else None
 
 
-def replay_event(run, data, event, traps, budget_scale=1.):
-    snapshot = load_snapshot(run, event['sequence'])
+REPLAY_KIND = 'counterfactual_reconstructed'
+INPUT_BINDING = 'not_evaluated'
+EXECUTED_REASONS = ('grid_stamp_match', 'grid_stamp_mismatch', 'grid_stamp_unknown')
+SKIP_REASONS = ('grid_stamp_mismatch', 'grid_stamp_unknown', 'event_malformed', 'snapshot_missing',
+                'snapshot_unreadable', 'snapshot_invalid_json', 'snapshot_malformed')
+
+
+def _number(value):
+    return type(value) is int or (type(value) is float and math.isfinite(value))
+
+
+def _numbers(value, length):
+    return isinstance(value, (list, tuple)) and len(value) == length and all(_number(v) for v in value)
+
+
+def _count(value):
+    return type(value) is int and value > 0
+
+
+def event_problem(event):
+    """Why a selected event lacks a field its reconstruction needs, or None."""
+    if not isinstance(event, dict):
+        return 'event_not_object'
+    if type(event.get('sequence')) is not int or event['sequence'] < 0:
+        return 'sequence'
+    if not _numbers(event.get('selection_pose'), 3):
+        return 'selection_pose'
+    selection = event.get('selection')
+    if (not isinstance(selection, dict) or 'guidance' not in selection
+            or not isinstance(selection.get('target'), (list, tuple)) or not _numbers(selection['target'][:2], 2)):
+        return 'selection'
+    if not _number(event.get('odom_stamp_ns')):
+        return 'odom_stamp_ns'
+    if 'destination_index' not in event:
+        return 'destination_index'
+    return None
+
+
+def snapshot_problem(snapshot):
+    """Why a snapshot lacks grid/options the planners need, or None."""
+    grid = snapshot.get('input') if isinstance(snapshot, dict) else None
+    if not isinstance(grid, dict):
+        return 'input'
+    if not _numbers(grid.get('origin'), 2):
+        return 'origin'
+    if not _number(grid.get('resolution')) or grid['resolution'] <= 0:
+        return 'resolution'
+    if not _count(grid.get('width')) or not _count(grid.get('height')):
+        return 'size'
+    costs = grid.get('costs')
+    if (not isinstance(costs, list) or len(costs) != grid['width']*grid['height']
+            or not all(type(c) is int for c in costs)):
+        return 'costs'
+    if not _numbers(grid.get('destination'), 2):
+        return 'destination'
+    options = grid.get('planner_options')
+    if not isinstance(options, dict) or not _numbers(options.get('goal_footprint'), 2):
+        return 'goal_footprint'
+    if 'body_clearance_weight' in options and not _number(options['body_clearance_weight']):
+        return 'body_clearance_weight'
+    return None
+
+
+def acquire_snapshot(run, sequence):
+    """(snapshot, None) or (None, (skip reason, detail)); only acquisition errors are caught."""
+    try:
+        snapshot = load_snapshot(run, sequence)
+    except FileNotFoundError as error:
+        return None, ('snapshot_missing', type(error).__name__)
+    except json.JSONDecodeError as error:
+        return None, ('snapshot_invalid_json', type(error).__name__)
+    except (OSError, EOFError, zlib.error, UnicodeDecodeError) as error:
+        return None, ('snapshot_unreadable', type(error).__name__)
+    problem = snapshot_problem(snapshot)
+    return (None, ('snapshot_malformed', problem)) if problem else (snapshot, None)
+
+
+def stamp_field(container, key):
+    """The raw stamp and why it cannot be compared; the value is never coerced."""
+    if not isinstance(container, dict):
+        return {'value': None, 'type': None, 'problem': 'container_not_object'}
+    if key not in container:
+        return {'value': None, 'type': None, 'problem': 'absent'}
+    value = container[key]
+    kind = type(value).__name__
+    if _count(value):
+        return {'value': value, 'type': kind, 'problem': None}
+    # Keep JSON-safe scalars verbatim; containers and non-finite floats keep only their type.
+    safe = value is None or isinstance(value, (bool, int, str)) or _number(value)
+    problem = 'bool' if isinstance(value, bool) else 'not_positive' if type(value) is int else 'not_int'
+    return {'value': value if safe else None, 'type': kind, 'problem': problem}
+
+
+def grid_stamp(event, snapshot):
+    """Compare event.grid_stamp_ns with snapshot.metadata.grid_stamp_ns."""
+    stamps = {'event': stamp_field(event, 'grid_stamp_ns'), 'snapshot': None}
+    if snapshot is None:
+        return dict(stamps, status='not_evaluated')
+    metadata = snapshot.get('metadata')
+    stamps['snapshot'] = (stamp_field(metadata, 'grid_stamp_ns') if 'metadata' in snapshot
+                          else {'value': None, 'type': None, 'problem': 'metadata_absent'})
+    if stamps['event']['problem'] or stamps['snapshot']['problem']:
+        return dict(stamps, status='unknown')
+    same = stamps['event']['value'] == stamps['snapshot']['value']
+    return dict(stamps, status='match' if same else 'mismatch')
+
+
+def replay_event(run, data, event, traps, budget_scale=1., *, event_index=None, allow_grid_mismatch=False):
+    """One fixed stall row: an executed counterfactual reconstruction or a skip with its reason."""
+    row = {'run': run.name, 'event_index': event_index,
+           'sequence': event.get('sequence') if isinstance(event, dict) else None,
+           'replay_kind': None, 'input_binding': INPUT_BINDING, 'budget_scale': budget_scale,
+           'allow_grid_mismatch': allow_grid_mismatch}
+    problem = event_problem(event)
+    if problem:
+        return dict(row, status='skipped', skipped=True, reason='event_malformed', detail=problem,
+                    grid_stamp=grid_stamp(event, None))
+    snapshot, failure = acquire_snapshot(run, event['sequence'])
+    stamps = grid_stamp(event, snapshot)
+    if failure:
+        return dict(row, status='skipped', skipped=True, reason=failure[0], detail=failure[1], grid_stamp=stamps)
+    reason = 'grid_stamp_'+stamps['status']
+    if stamps['status'] != 'match' and not allow_grid_mismatch:
+        return dict(row, status='skipped', skipped=True, reason=reason, detail=None, grid_stamp=stamps)
+    row.update(replay_kind=REPLAY_KIND, status='executed', skipped=False, reason=reason, detail=None,
+               grid_stamp=stamps)
+    row.update(reconstruct_event(run, data, event, snapshot, traps, budget_scale))
+    return row
+
+
+def stall_counts(rows):
+    """Selected, executed and skipped stall rows; skips and statuses by reason."""
+    by_status = {'executed': {reason: 0 for reason in EXECUTED_REASONS},
+                 'skipped': {reason: 0 for reason in SKIP_REASONS}}
+    for row in rows:
+        by_status[row['status']][row['reason']] += 1
+    executed, skipped = (sum(by_status[status].values()) for status in ('executed', 'skipped'))
+    return {'selected': len(rows), 'executed': executed, 'skipped': skipped,
+            'skipped_by_reason': dict(by_status['skipped']), 'by_status': by_status}
+
+
+def reconstruct_event(run, data, event, snapshot, traps, budget_scale=1.):
+    """Both policies on one admitted event, with a fresh TrapMemory rather than the live one."""
     grid = snapshot['input']
     origin, resolution = tuple(grid['origin']), grid['resolution']
     width, height, costs = grid['width'], grid['height'], grid['costs']
@@ -213,6 +386,10 @@ def main(argv=None):
                              'planning pose are executed; predicted, malformed and legacy snapshots '
                              'without pose provenance are reported as skipped and not replaced.')
     parser.add_argument('--budget-scale', type=float, default=1.)
+    parser.add_argument('--allow-grid-mismatch', action='store_true',
+                        help='Also execute stall rows whose event and snapshot grid stamps differ or are '
+                             'missing/malformed, labelled grid_stamp_mismatch/grid_stamp_unknown. Missing, '
+                             'unreadable or malformed snapshots stay skipped.')
     parser.add_argument('--output', type=Path)
     args = parser.parse_args(argv)
     report = []
@@ -220,10 +397,14 @@ def main(argv=None):
         data = json.loads((run/'run.json').read_text())
         trap_file = args.labels_root/run.name/'traps.json'
         traps = json.loads(trap_file.read_text())['traps'] if trap_file.exists() else []
-        events = [e for e in data.get('decisions', []) if e['phase'] == 'recovery_guidance_selected']
+        # Selection is fixed before any snapshot is read; skipped events are never replaced.
+        events = [(index, e) for index, e in enumerate(data.get('decisions', []))
+                  if e['phase'] == 'recovery_guidance_selected']
         controls = replay_controls(run, data, args.controls, args.budget_scale)
+        stalls = [replay_event(run, data, e, traps, args.budget_scale, event_index=index,
+                               allow_grid_mismatch=args.allow_grid_mismatch) for index, e in events]
         entry = {'run': run.name, 'reason': data.get('reason'),
-                 'stalls': [replay_event(run, data, e, traps, args.budget_scale) for e in events],
+                 'stalls': stalls, 'stall_counts': stall_counts(stalls),
                  'controls': controls, 'control_counts': control_counts(controls)}
         report.append(entry)
         print(json.dumps(entry, indent=1), flush=True)
