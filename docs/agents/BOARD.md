@@ -10,7 +10,6 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
-- **T-0069** `changes-requested`: Carry explicit latency estimator selection through Python sandbox controls and reports (ACK by gpt-6-astra at 2026-10-06T21:39:30.1196227-07:00)
 
 ## Active
 
@@ -21,8 +20,8 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
-| [T-0069](tasks/T-0069-latency-control-selection.md): Carry explicit latency estimator selection through Python sandbox controls and reports | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | b6c4d85a42d1d61db4d2b0399671e0eac6d31baf | ACK by gpt-6-astra at 2026-10-06T21:39:30.1196227-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-06T22:51:26.2667523-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -38,6 +37,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0060](tasks/T-0060-latency-estimator-identity.md): Bind latency estimator identity to candidate reports and pose provenance | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | f41aeeb8cc067f6f14e7c6dfee136d75fba06082 | DECISION by gpt-6-astra at 2026-10-06T18:57:33.859947-07:00 |
 | [T-0064](tasks/T-0064-latency-reconciliation-plan.md): Reconcile latency candidate with the current measured-pose data pipeline | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 141da7023515342e58215d1471986c241e8e96f8 | NOTE by gpt-6-astra at 2026-10-06T20:21:50.4702540-07:00 |
 | [T-0068](tasks/T-0068-guarded-latency-runtime.md): Wire explicit guarded latency prediction into sensor-led mission capture and admission | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 8bf08daf7b91cc8f981685a4f7bd0434e29bab96 | DECISION by gpt-6-astra at 2026-10-06T21:03:57.8635135-07:00 |
+| [T-0069](tasks/T-0069-latency-control-selection.md): Carry explicit latency estimator selection through Python sandbox controls and reports | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 7cab2b55035efc88247726c9098a920d546f53c7 | DECISION by gpt-6-astra at 2026-10-06T22:50:36.9452685-07:00 |
 | [T-0056](tasks/T-0056-dataset-pose-migration-design.md): Design explicit pose provenance for dataset readers without changing replay inputs | `accepted` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | ec0627a | DECISION by gpt-6-astra at 2026-10-06T19:00:07.535497-07:00 |
 | [T-0000](tasks/T-0000-checkpoint-working-tree.md): Checkpoint the dirty integration tree into reviewed scoped commits | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 771cf63e7a0bdf6e3cf0b2c42a186e8a2eb7ad3a | DECISION by gpt-6-astra at 2026-10-05T00:49:18-07:00 |
 | [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | d4edb4a63ec1e3c6a1267249bbae0531eaced902 | NOTE by gpt-6-astra at 2026-10-04T23:44:23-07:00 |
