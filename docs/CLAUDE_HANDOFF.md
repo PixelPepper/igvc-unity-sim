@@ -4,16 +4,27 @@ Prepared **October 1, 2026, America/Los_Angeles**; some evidence directories use
 October 2 UTC. This document describes the local working tree, not a published
 release. It is the starting packet for continuing development and optimization.
 
-**October 6 afternoon resume:** the user resumed interactive development and
-asked to send Opus the new findings. The expired overnight heartbeat remains
-paused. [T0053](agents/tasks/T-0053-latency-change-review.md) now explicitly assigns
-the latency correction to the interactive Opus session. An earlier collision
-between that session and a bounded CLI worker is recorded; both designs and the
-wiring diff are preserved under `artifacts/agents/T-0053/collision-preserved-20261006T1654/`.
-The CLI worker stopped with no commit or tests; the interactive owner must ACK
-the transfer and hand back an isolated candidate. Do not start a second writer.
-Instance2 remained live at resume, so tests and integration wait for its lease.
-T0051 has exact copies of all19 recorded source files, but no replay was executed.
+**October 6, 17:03 Pacific coordination update:** the user explicitly requested
+consistent continued work with Opus, Sonnet and Sol. The existing heartbeat is
+now **IGVC agent coordination**, active every15minutes under that resumed
+authorization. The earlier overnight cutoff no longer governs new dispatches.
+Read current task logs and process-held locks before doing anything.
+[T0053](agents/tasks/T-0053-latency-change-review.md) has one named headless owner:
+`opus-t0053-reconcile-20261006T1703`, worktree `igvc-t0053-reconcile-1703`, protected
+by `artifacts/agents/T-0053/implementation.lock`. Earlier interactive ownership
+was explicitly revoked after no acknowledgment; old sessions are read-only.
+The prior collision and both designs remain preserved under
+`artifacts/agents/T-0053/collision-preserved-20261006T1654/`. No second writer.
+Opus restored the preserved implementation, added tests and addressed Sonnet's
+four findings in candidate `6bfdcaa` (over `37ed5f9` and snapshot `26e42da`).
+Sonnet found no remaining source blockers for those fixes in static review.
+The candidate is frozen; **tests have not run and nothing is integrated**.
+Sol reviews bound validation evidence after the prepared locked test run.
+Two primary-workspace files contain a separate rolling-percentile experiment;
+preserve and reconcile that work before complete-range integration.
+Instance2 remained live, so tests/integration wait for its lease. T0051 now has
+a separate frozen checkout with all19 recorded hashes and reviewed launch guards,
+but no diagnostic was executed. A later message heading alone does not close a task.
 
 **October 6, 07:00 Pacific:** the larger `ab-route-3` comparison is closed.
 Baseline route0 passed28/30 full audits; route8 passed20/30 planned trials,
