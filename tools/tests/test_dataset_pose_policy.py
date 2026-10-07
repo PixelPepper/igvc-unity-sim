@@ -12,8 +12,8 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / 'learning'))
 from build_dataset import build_corridor_rows, build_rows, main  # noqa: E402
-from dataset_policy import (DATASET_ROW_UNLABELLED, PosePolicy, admit_group, filter_rows,  # noqa: E402
-                            load_snapshot_provenance, row_provenance)
+from dataset_policy import (BUILDER_SEMANTICS, DATASET_ROW_UNLABELLED, PosePolicy, admit_group,  # noqa: E402
+                            filter_rows, load_snapshot_provenance, row_provenance)
 
 POSE = [.5, .2, .5]
 AHEAD = [.7, .3, .55]
@@ -148,13 +148,13 @@ class RouteBuilderTests(unittest.TestCase):
                     self.assertEqual(sorted({r['pose_source'] for r in rows}), sorted(expected))
                     self.assertEqual(stats['groups'], len(expected))
                     pose = stats['pose']
-                    self.assertEqual(pose['members_by_kind'], {k: 1 for k in KINDS})
+                    self.assertEqual(pose['provenance_by_kind'], {k: 1 for k in KINDS})
                     self.assertEqual(pose['admitted_groups'], len(expected))
                     self.assertEqual(pose['excluded_groups'],
                                      {f'kind_not_allowed:{k}': 1 for k in KINDS if k not in expected})
-                    self.assertEqual(pose['excluded_rows'],
+                    self.assertEqual(pose['excluded_members'],
                                      {f'kind_not_allowed:{k}': 2 for k in KINDS if k not in expected})
-                    self.assertEqual(pose['members_by_reason']['unavailable/snapshot_missing'], 1)
+                    self.assertEqual(pose['provenance_by_reason']['unavailable/snapshot_missing'], 1)
 
     def test_default_is_measured_only_and_values_are_unchanged(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -179,8 +179,18 @@ class RouteBuilderTests(unittest.TestCase):
             rows, stats = build_rows(*paths, 'run')
             self.assertEqual((rows, stats['groups']), ([], 0))
             self.assertEqual(stats['pose']['excluded_groups'], {'kind_not_allowed:predicted': 1})
-            self.assertEqual(stats['pose']['excluded_rows'], {'kind_not_allowed:predicted': 1})
+            self.assertEqual(stats['pose']['excluded_members'], {'kind_not_allowed:predicted': 1})
             self.assertEqual(stats['pose']['admitted_groups'], 1)  # then dropped as a single option
+            self.assertEqual(stats['pose']['admitted_members'], 1)  # a pre-filter candidate, not an emitted row
+            self.assertEqual(stats['pose']['semantics'], BUILDER_SEMANTICS)
+            self.assertEqual(stats['pose']['join'], dict(decisions=2, joined=2, mismatched=0, unlabelled=0))
+
+    def test_zero_member_decisions_are_counted_groups(self):
+        with tempfile.TemporaryDirectory() as directory:  # corridor-only decisions: no route candidates
+            rows, stats = build_rows(*corridor_fixture(directory, ('measured', 'predicted')), 'run')
+        self.assertEqual((rows, stats['groups']), ([], 0))
+        self.assertEqual((stats['pose']['admitted_groups'], stats['pose']['admitted_members']), (1, 0))
+        self.assertEqual(stats['pose']['excluded_members'], {'kind_not_allowed:predicted': 0})
 
 
 class CorridorBuilderTests(unittest.TestCase):
@@ -201,6 +211,27 @@ class CorridorBuilderTests(unittest.TestCase):
         self.assertEqual((stats['missing_snapshot'], wide_stats['missing_snapshot']), (0, 0))
         self.assertEqual([r['regret_m'] for r in default], [0., 1.])
 
+    def test_invalid_targets_still_raise_when_pose_excluded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            outcomes, labels = corridor_fixture(directory, ('unavailable', 'unknown_legacy'))
+            records = [json.loads(line) for line in labels.read_text().splitlines()]
+            for record in records:  # path-v3 records without the required corridor_target
+                record['corridor_label'] = 'path-v3'
+            write_jsonl(labels, records)
+            for policy in POLICIES:
+                with self.subTest(policy=policy), self.assertRaises(ValueError):
+                    build_corridor_rows(outcomes, labels, 'run', corridor_label='path-v3', pose_policy=policy)
+            for record in records:  # valid path-v3 targets: pose-excluded decisions are skipped, not rejected
+                for k, candidate in enumerate(record['candidates']):
+                    candidate['corridor_target'] = dict(status='line_of_sight', entry_straight_m=3.,
+                                                        entry_path_m=10.+k, cost_m=10.+k)
+            write_jsonl(labels, records)
+            rows, stats = build_corridor_rows(outcomes, labels, 'run', corridor_label='path-v3')
+        self.assertEqual(rows, [])
+        self.assertEqual(stats['pose']['excluded_groups'],
+                         {'kind_not_allowed:unavailable': 1, 'kind_not_allowed:unknown_legacy': 1})
+        self.assertEqual((stats['dropped_candidates'], stats['fewer_than_two']), ({}, 0))
+
 
 class RowReaderTests(unittest.TestCase):
     def rows(self, group, *kinds):
@@ -219,7 +250,7 @@ class RowReaderTests(unittest.TestCase):
         self.assertEqual((kept, counts['excluded_groups']), ([], {'kind_not_allowed:unknown_legacy': 1}))
         kept, counts = filter_rows(old, PosePolicy(allow_unknown_legacy=True))
         self.assertEqual(kept, old)
-        self.assertEqual(counts['members_by_reason'], {f'unknown_legacy/{DATASET_ROW_UNLABELLED}': 2})
+        self.assertEqual(counts['provenance_by_reason'], {f'unknown_legacy/{DATASET_ROW_UNLABELLED}': 2})
 
     def test_whole_group_exclusion_mixed_kinds_and_no_replenishment(self):
         wide = PosePolicy(True, True)
@@ -231,10 +262,24 @@ class RowReaderTests(unittest.TestCase):
         self.assertEqual(sorted({r['group'] for r in kept}), ['g:1', 'g:5'])
         self.assertEqual(len(kept), 4)
         self.assertEqual(counts['excluded_groups'], {'mixed_provenance': 2, 'kind_not_allowed:malformed': 2,
-                                                     'group_absent': 1})
+                                                     'group_invalid': 1})
         kept, counts = filter_rows(rows, PosePolicy())
         self.assertEqual([r['group'] for r in kept], ['g:1', 'g:1'])
-        self.assertEqual(counts['admitted_rows'], 2)
+        self.assertEqual(counts['admitted_members'], 2)
+
+    def test_non_string_groups_are_excluded_without_crashing(self):
+        valid = self.rows('v:1', 'measured', 'measured')
+        bad = [dict(group=[1, 2], pose_source='measured', pose_reason='r'),
+               dict(group={'a': 1}, pose_source='measured', pose_reason='r'),
+               dict(group=None, pose_source='measured', pose_reason='r'),
+               dict(group=7, pose_source='measured', pose_reason='r'),
+               dict(pose_source='measured', pose_reason='r'), ['not', 'a', 'row']]
+        rows = valid[:1]+bad+valid[1:]+self.rows('v:2', 'measured')
+        kept, counts = filter_rows(rows, PosePolicy(True, True))
+        self.assertEqual(kept, valid+self.rows('v:2', 'measured'))
+        self.assertEqual(counts['excluded_groups'], {'group_invalid': 6})
+        self.assertEqual(counts['excluded_members'], {'group_invalid': 6})
+        self.assertEqual((counts['admitted_groups'], counts['admitted_members']), (2, 3))
 
 
 class SummaryTests(unittest.TestCase):
@@ -257,6 +302,34 @@ class SummaryTests(unittest.TestCase):
             'kind_not_allowed:unavailable': 1, 'kind_not_allowed:unknown_legacy': 1})
         self.assertEqual(summary['runs']['runA']['pose'], summary['pose'])
         self.assertEqual({r['pose_source'] for r in rows}, {'measured', 'predicted'})
+        self.assertEqual(summary['pose']['semantics'], BUILDER_SEMANTICS)
+        self.assertEqual(summary['pose']['join'], dict(decisions=5, joined=5, mismatched=0, unlabelled=0))
+
+    def test_corridor_cli_summary_records_policy_and_counts(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            decisions = root/'runs'/'runC'/'decisions'
+            decisions.mkdir(parents=True)
+            _, labels = corridor_fixture(decisions, ('measured', 'unknown_legacy', 'unavailable'))
+            (root/'labels'/'runC').mkdir(parents=True)
+            labels.replace(root/'labels'/'runC'/'labels.jsonl')
+            out = root/'corridor.jsonl'
+            self.assertEqual(main(['build', '--runs', 'runC', '--runs-root', str(root/'runs'), '--labels-root',
+                                   str(root/'labels'), '--out', str(out), '--kind', 'corridor',
+                                   '--corridor-label', 'straight-v1']), 0)
+            summary = json.loads(out.with_suffix('.summary.json').read_text())
+            rows = [json.loads(line) for line in out.read_text().splitlines()]
+        self.assertEqual((summary['kind'], summary['corridor_label']), ('corridor', 'straight-v1'))
+        self.assertEqual(summary['pose_policy'], PosePolicy().to_dict())
+        pose = summary['pose']
+        self.assertEqual(pose['semantics'], BUILDER_SEMANTICS)
+        self.assertEqual(pose['join'], dict(decisions=3, joined=3, mismatched=0, unlabelled=0))
+        self.assertEqual((pose['admitted_groups'], pose['admitted_members']), (1, 2))
+        self.assertEqual(pose['excluded_members'], {'kind_not_allowed:unavailable': 2,
+                                                    'kind_not_allowed:unknown_legacy': 2})
+        self.assertEqual(summary['runs']['runC']['pose'], pose)
+        self.assertEqual(summary['runs']['runC']['missing_snapshot'], 0)
+        self.assertEqual([(r['index'], r['pose_source']) for r in rows], [(1, 'measured')]*2)
 
 
 if __name__ == '__main__':

@@ -27,6 +27,9 @@ def stripe(y, start=2., end=12., step=.2):
 # Three parallel lines: two accepted corridors (below and above the middle line).
 POINTS = np.vstack((stripe(-3), stripe(0), stripe(3)))
 ROBOT, YAW, GOAL = [0., -1.2], 0., [20., -1.]
+# Explicit measured pose provenance: dataset builders admit only measured snapshots by default.
+MEASURED = dict(latency_compensation=dict(enabled=False, applied=False, measured_pose=[*ROBOT, YAW],
+                                          planning_pose=[*ROBOT, YAW]))
 ORIGIN, RES, W, H = [-5., -10.], .1, 300, 200
 
 
@@ -151,7 +154,7 @@ class CorridorRerankTests(unittest.TestCase):
             (tmp/'outcomes.jsonl').write_text(json.dumps(outcome)+'\n')
             (tmp/'labels.jsonl').write_text(json.dumps(label)+'\n')
             snapshot = dict(schema_version=1, input=dict(origin=cmap[0], resolution=RES, width=W, height=H,
-                            costs=cmap[4], robot_xy=ROBOT, robot_yaw=YAW, destination=GOAL), metadata={})
+                            costs=cmap[4], robot_xy=ROBOT, robot_yaw=YAW, destination=GOAL), metadata=MEASURED)
             with gzip.open(tmp/'00003.json.gz', 'wt') as stream:
                 json.dump(snapshot, stream)
             rows, stats = build_corridor_rows(tmp/'outcomes.jsonl', tmp/'labels.jsonl', 'run')
@@ -180,7 +183,7 @@ class CorridorLabelModeTests(unittest.TestCase):
                                                      guidance_diagnostics=diagnostics)
         candidates = outcome_candidates(diagnostics, None)
         snapshot = dict(schema_version=1, input=dict(origin=cmap[0], resolution=RES, width=W, height=H,
-                        costs=cmap[4], robot_xy=ROBOT, robot_yaw=YAW, destination=GOAL), metadata={})
+                        costs=cmap[4], robot_xy=ROBOT, robot_yaw=YAW, destination=GOAL), metadata=MEASURED)
         outcomes, labels = [], []
         for index, (mode, per_candidate) in labels_by_index.items():
             outcomes.append(dict(schema_version=2, index=index, destination_index=0, candidates=candidates,

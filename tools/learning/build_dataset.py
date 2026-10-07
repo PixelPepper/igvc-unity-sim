@@ -60,7 +60,8 @@ import sys
 TOOLS = Path(__file__).resolve().parents[1]
 REPO = TOOLS.parent
 sys.path.insert(0, str(TOOLS))
-from dataset_policy import PoseCounts, PosePolicy, admit_group, load_snapshot_provenance, merge_counts  # noqa: E402
+from dataset_policy import (BUILDER_SEMANTICS, PoseCounts, PosePolicy, admit_group,  # noqa: E402
+                            load_snapshot_provenance, merge_counts)
 
 ROUTE_SOURCES = ('grid', 'route_alt')
 # Observed-only features consumed by the scorer (route policy + lane proximity).
@@ -202,6 +203,12 @@ def _pose_admission(decisions_dir, index, members, policy, counts):
     return (snapshot, provenance) if admitted else None
 
 
+def _pose_stats(counts, stats):
+    """Pose counts with their semantics and the original join counts they are relative to."""
+    return counts.as_dict(BUILDER_SEMANTICS, join={k: stats.get(k, 0)
+                                                   for k in ('decisions', 'joined', 'mismatched', 'unlabelled')})
+
+
 def build_rows(outcomes_path, labels_path, run_name, include_single=False, decisions_dir=None, pose_policy=None):
     """Yield one row per route candidate of every pose-admitted decision with labels.
 
@@ -210,7 +217,7 @@ def build_rows(outcomes_path, labels_path, run_name, include_single=False, decis
     """
     policy = pose_policy if pose_policy is not None else PosePolicy()
     decisions_dir = Path(decisions_dir) if decisions_dir is not None else Path(outcomes_path).parent
-    stats = dict(decisions=0, joined=0, mismatched=0, groups=0, rows=0)
+    stats = dict(decisions=0, joined=0, mismatched=0, unlabelled=0, groups=0, rows=0)
     counts = PoseCounts()
     rows = []
     for index, outcome, _, candidates, labelled in _joined(outcomes_path, labels_path, stats):
@@ -219,7 +226,7 @@ def build_rows(outcomes_path, labels_path, run_name, include_single=False, decis
         if admission is None:
             continue
         provenance = admission[1]
-        group =[(c, l) for c, l in zip(candidates, labelled)
+        group = [(c, l) for c, l in zip(candidates, labelled)
                  if c.get('source') in ROUTE_SOURCES and _finite(l.get('teacher_cost_m'))]
         if not any(c['source'] == 'grid' for c, _ in group) or (len(group) < 2 and not include_single):
             continue
@@ -238,7 +245,7 @@ def build_rows(outcomes_path, labels_path, run_name, include_single=False, decis
                 replayed=bool(outcome.get('replayed')),
                 pose_source=provenance['kind'], pose_reason=provenance['reason']))
             stats['rows'] += 1
-    stats['pose'] = counts.as_dict()
+    stats['pose'] = _pose_stats(counts, stats)
     return rows, stats
 
 
@@ -306,7 +313,9 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
     is the selected ``corridor_label`` mode's cost; labels in any other mode
     raise ValueError. Under path-v3 a group with any unavailable target is
     omitted whole (``omitted_target`` counts reasons per candidate status).
-    Pose admission (``pose_policy``, default measured only) runs first.
+    Label records are validated first (incompatible targets raise even for
+    pose-excluded decisions); pose admission (``pose_policy``, default
+    measured only) then precedes every count and filter.
     """
     from lane_corridor_policy import corridor_feature_rows
     if corridor_label not in CORRIDOR_LABELS:
@@ -322,21 +331,23 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
     rows = []
     decisions_dir = Path(decisions_dir) if decisions_dir is not None else Path(outcomes_path).parent
     for index, outcome, label, candidates, labelled in _joined(outcomes_path, labels_path, stats):
-        members = sum(1 for c in candidates if c.get('source') == CORRIDOR_SOURCE)
-        admission = _pose_admission(decisions_dir, index, members, policy, counts)
-        if admission is None:
-            continue
-        snapshot, provenance = admission
-        group, unavailable = [], []
+        # Teacher-record validation first: incompatible corridor targets raise even in pose-excluded groups.
+        assessed = []
         for c, l in zip(candidates, labelled):
             if c.get('source') != CORRIDOR_SOURCE:
                 continue
             if len(c['endpoint']) < 3 or not _finite(c.get('score')):
-                stats['dropped_candidates']['no_entry_direction_or_score'] = \
-                    stats['dropped_candidates'].get('no_entry_direction_or_score', 0)+1
+                assessed.append((c, l, None, 'no_entry_direction_or_score'))
                 continue
-            cost, reason = _corridor_target(l, corridor_label, labels_path, index)
-            if reason == 'nonfinite_legacy_cost':  # legacy behaviour: drop the candidate, now counted
+            assessed.append((c, l, *_corridor_target(l, corridor_label, labels_path, index)))
+        # Pose admission, then every count, cardinality, guidance and target-availability filter.
+        admission = _pose_admission(decisions_dir, index, len(assessed), policy, counts)
+        if admission is None:
+            continue
+        snapshot, provenance = admission
+        group, unavailable = [], []
+        for c, l, cost, reason in assessed:
+            if reason in ('no_entry_direction_or_score', 'nonfinite_legacy_cost'):  # legacy: drop, counted
                 stats['dropped_candidates'][reason] = stats['dropped_candidates'].get(reason, 0)+1
             elif reason is not None:
                 unavailable.append(reason)
@@ -358,7 +369,9 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
             robot, yaw, destination = inputs['robot_xy'], inputs['robot_yaw'], inputs['destination']
             costmap = (inputs['origin'], inputs['resolution'], inputs['width'], inputs['height'],
                        inputs['costs'])
-        except KeyError:  # loadable schema-1 snapshot without the costmap inputs
+        except KeyError:
+            # Legacy counter, narrowed: a pose-ADMITTED snapshot without costmap inputs. Missing, unreadable
+            # or non-schema-1 files are pose `unavailable` (stats['pose']) and never reach this point.
             stats['missing_snapshot'] += 1
             continue
         proposals = [dict(c.get('features') or {}, score=c['score'], entry=c['endpoint'][:2],
@@ -383,7 +396,7 @@ def build_corridor_rows(outcomes_path, labels_path, run_name, decisions_dir=None
                 row.update(corridor_label=corridor_label, corridor_status=label_row['corridor_target']['status'])
             rows.append(row)
             stats['rows'] += 1
-    stats['pose'] = counts.as_dict()
+    stats['pose'] = _pose_stats(counts, stats)
     return rows, stats
 
 
