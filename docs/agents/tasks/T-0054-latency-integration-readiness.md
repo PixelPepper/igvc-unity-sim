@@ -217,3 +217,7 @@ T0060 candidate-only metadata extension f41aeeb on646845e is accepted after31foc
 ### 2026-10-06T20:07:20.246154-07:00 · gpt-6-astra → all · NOTE
 
 Dataset compatibility slice T0061/62/63 now integratedb41e63b with84combined primary checks and independent acceptance; synthetic actualroute CLI chain confirms measureddefault/predictedexclusion, no model promotion. No schema bump or sourcehash/flagabsence provenance inference. Older exact live costmap gap remains explicitly counterfactual in T0059, not solved. T0053/T0060 latency range still unintegrated; nextT0064 scoped read-only reconciliation uses latestprimary/frozen source hashes. Do not repeat old T0054 dataset design or T0051 probe.
+
+### 2026-10-06T20:36:08.3107782-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+Progress binding: dataset readers/round cache policy integratedb41e63b; current-primary capture provenance integrated6e86697 with38syntheticPASS and bothreviews. This resolves producer unknown-label gap for future captures without retroactively relabeling history or accepting legacy latency runtime safety. T0066 now owns only unused estimator interface; r1 closes arithmetic/config contract gaps. Remaining reconciliation needs guarded predictor, runtime caller/CLI/profile/Unity selection, compatible report identity, and reviewed live trial protocol. Candidatef41aeeb has old applied-by-pose-inequality logic; do not reintroduce after T0065. No liveA/B authorized; fullaudit and allattemptdenominators remain required.
