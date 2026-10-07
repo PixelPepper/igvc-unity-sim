@@ -15,7 +15,9 @@ receipt time) over a bounded horizon; every check that matters stays on actual o
     clocks supplied by the caller; this module never converts one clock into the other and never
     substitutes a receipt time or stamp interval for the wall submit time.
   * admit_from_measured_pose runs the caller's unchanged admission exactly once on the ACTUAL entry
-    pose, latest grid and footprint, returns its result untouched, then samples the latency.
+    pose, latest grid and footprint, returns its result untouched, then samples the latency. A sample
+    is taken only when the plan's context is bound to (sample_bound) and names exactly the planning
+    odometry message, and the entry pose is exactly its message's pose; otherwise a counted no-sample.
 
 Course, WORLD and grid geometry never enter prediction. Defaults (1 m, 0.6 rad, 0.25 s) are the
 provisional simulation bounds of reviewed candidate f41aeeb, not measured limits.
@@ -23,7 +25,6 @@ provisional simulation bounds of reviewed candidate f41aeeb, not measured limits
 import copy
 from dataclasses import dataclass
 import math
-from typing import Optional
 
 from latency_estimators import AdmissionSample, make_estimator
 
@@ -34,8 +35,13 @@ STRAIGHT_TURN = 1e-9    # |w*t| below this uses the straight-line formula (stabl
 # No-action reasons of planning_context ('disabled' is reported but not counted as a skip).
 SKIP_REASONS = ('no_odometry_sample', 'malformed_odometry_sample', 'pose_not_from_sample', 'invalid_now',
                 'future_odometry_sample', 'stale_odometry_sample', 'stationary_twist')
-# Why an admission attempt produced no estimator sample (estimator rejections are counted by the estimator).
-NOT_SAMPLED_REASONS = ('missing_odometry_sample', 'malformed_odometry_sample', 'entry_pose_not_from_sample')
+# Why an admission attempt produced no estimator sample, in check order (estimator rejections of a
+# forwarded sample are counted by the estimator itself).
+NOT_SAMPLED_REASONS = ('missing_odometry_sample', 'malformed_odometry_sample', 'malformed_entry_pose',
+                       'entry_pose_not_from_sample', 'malformed_planning_context', 'context_not_sample_bound',
+                       'context_sample_mismatch')
+# Planning-context fields the admission timing binding relies on.
+CONTEXT_FIELDS = ('enabled', 'applied', 'sample_bound', 'measured_pose', 'planning_pose', 'odom_stamp_ns')
 
 
 def _real(value):
@@ -58,16 +64,51 @@ def _pose(value, size=3):
 @dataclass(frozen=True)
 class OdometrySample:
     """One whole odometry message. pose (x, y, yaw) m/rad, twist (v, w) m/s and rad/s, stamp_ns the header
-    stamp in integer nanoseconds, received_s its local monotonic receipt time in seconds (never refreshed)."""
+    stamp in integer nanoseconds, received_s its local monotonic receipt time in seconds (never refreshed).
+
+    A list or tuple pose/twist is captured as a detached tuple, so later changes to the caller's list
+    cannot rewrite the message. Values are kept exactly as given (never repaired): malformed fields are
+    found by _well_formed and become counted no-actions where the sample is used.
+    """
     pose: tuple
     twist: tuple
     stamp_ns: int
     received_s: float
 
+    def __post_init__(self):
+        for name in ('pose', 'twist'):
+            value = getattr(self, name)
+            if isinstance(value, (list, tuple)):
+                object.__setattr__(self, name, tuple(value))
+
 
 def _well_formed(sample):
     return (isinstance(sample, OdometrySample) and _pose(sample.pose) is not None
             and _pose(sample.twist, 2) is not None and type(sample.stamp_ns) is int and _real(sample.received_s))
+
+
+def context_shape_error(context):
+    """None for a planning context with the binding fields of planning_context(), else the problem.
+
+    Checked strictly: bool flags, three-finite-number poses, an int or None stamp, a consistent
+    applied/enabled/sample_bound combination, and no prediction recorded when nothing was applied.
+    """
+    if not isinstance(context, dict) or any(key not in context for key in CONTEXT_FIELDS):
+        return 'context is not a planning_context dict'
+    if any(type(context[key]) is not bool for key in ('enabled', 'applied', 'sample_bound')):
+        return 'enabled/applied/sample_bound must be bools'
+    if _pose(context['measured_pose']) is None or _pose(context['planning_pose']) is None:
+        return 'measured_pose/planning_pose must be three finite numbers'
+    stamp = context['odom_stamp_ns']
+    if stamp is not None and type(stamp) is not int:
+        return 'odom_stamp_ns must be an int or None'
+    if context['applied'] and not (context['enabled'] and context['sample_bound'] and type(stamp) is int):
+        return 'applied requires enabled, a bound sample and its stamp'
+    if context['sample_bound'] and type(stamp) is not int:
+        return 'a bound sample needs its stamp'
+    if not context['applied'] and tuple(context['planning_pose']) != tuple(context['measured_pose']):
+        return 'planning_pose differs from measured_pose without an applied prediction'
+    return None
 
 
 @dataclass(frozen=True)
@@ -165,64 +206,84 @@ class GuardedLatencyCompensator:
         ``now`` is the local monotonic time in seconds. When nothing is applied the returned pose IS
         ``measured_pose``. The context's enabled/applied/measured_pose/planning_pose fields are the
         snapshot_pose_provenance contract.
+
+        ``sample_bound`` is True exactly when the sample is well-formed, its pose IS the measured pose
+        and its receipt age is within bounds; only then may an admission later be timed from its stamp
+        (``sample_reason`` names the failed check otherwise). This holds whether or not prediction is
+        enabled, so a disabled or stationary plan can still be bound to the message it started from.
         """
         if _pose(measured_pose) is None:
             raise ValueError(f'measured_pose must be three finite numbers, got {measured_pose!r}')
-        context = dict(enabled=self.enabled, applied=False, reason=None,
+        context = dict(enabled=self.enabled, applied=False, reason=None, sample_bound=False, sample_reason=None,
                        measured_pose=list(measured_pose), planning_pose=list(measured_pose),
                        latency_s=self.latency, horizon_s=0., odom_stamp_ns=None, odom_receipt_age_s=None,
                        twist=None, identity=self.identity())
-        planning_pose, reason = measured_pose, None
-        if not self.enabled:
-            reason = 'disabled'
-        elif sample is None:
-            reason = 'no_odometry_sample'
+        planning_pose = measured_pose
+        sample_reason = None
+        if sample is None:
+            sample_reason = 'no_odometry_sample'
         elif not _well_formed(sample):
-            reason = 'malformed_odometry_sample'
+            sample_reason = 'malformed_odometry_sample'
         else:
             context.update(odom_stamp_ns=sample.stamp_ns, twist=list(sample.twist))
             age = now-sample.received_s if _real(now) else None
             if not _real(age):
-                reason = 'invalid_now'
+                sample_reason = 'invalid_now'
             else:
                 context['odom_receipt_age_s'] = age
                 if tuple(sample.pose) != tuple(measured_pose):
-                    reason = 'pose_not_from_sample'
+                    sample_reason = 'pose_not_from_sample'
                 elif age < 0:
-                    reason = 'future_odometry_sample'
+                    sample_reason = 'future_odometry_sample'
                 elif age > self._config.max_sample_age_s:
-                    reason = 'stale_odometry_sample'
-                elif abs(sample.twist[0]) < STATIONARY_SPEED and abs(sample.twist[1]) < STATIONARY_SPEED:
-                    reason = 'stationary_twist'
-                else:
-                    planning_pose, horizon = self._predict(tuple(measured_pose), tuple(sample.twist))
-                    context.update(applied=True, reason='predicted', planning_pose=list(planning_pose),
-                                   horizon_s=horizon)
-        if reason is not None:
-            context['reason'] = reason
-            if reason != 'disabled':
-                self.skipped[reason] = self.skipped.get(reason, 0)+1
+                    sample_reason = 'stale_odometry_sample'
+        context.update(sample_bound=sample_reason is None, sample_reason=sample_reason)
+        if not self.enabled:
+            reason = 'disabled'
+        elif sample_reason is not None:
+            reason = sample_reason
+        elif abs(sample.twist[0]) < STATIONARY_SPEED and abs(sample.twist[1]) < STATIONARY_SPEED:
+            reason = 'stationary_twist'
+        else:
+            reason = 'predicted'
+            planning_pose, horizon = self._predict(tuple(measured_pose), tuple(sample.twist))
+            context.update(applied=True, planning_pose=list(planning_pose), horizon_s=horizon)
+        context['reason'] = reason
+        if reason not in ('disabled', 'predicted'):
+            self.skipped[reason] = self.skipped.get(reason, 0)+1
         return planning_pose, copy.deepcopy(context)
 
     def _not_sampled(self, reason):
         self.not_sampled[reason] = self.not_sampled.get(reason, 0)+1
         return dict(sampled=False, reason=reason, accepted=False, interval_s=None, clamped=False)
 
-    def observe_admission(self, planning_sample, entry_sample, entry_pose, now, submitted_at):
+    def observe_admission(self, planning_context, planning_sample, entry_sample, entry_pose, now, submitted_at):
         """Sample the estimator for one admission attempt (accepted or rejected); returns a fresh outcome.
 
-        Clocks are forwarded as given: planning/entry header stamps, the entry receipt time, ``now``
-        (admission) and ``submitted_at`` (planner submit), both local monotonic seconds. A missing
-        ``submitted_at`` is passed on as None: the wall estimator rejects it, the EMA ignores it. No
-        sample is taken when either odometry sample is missing or malformed, or when ``entry_pose`` is
-        not exactly the entry sample's pose (its stamp would not time this admission).
+        The timing must belong to the plan: ``planning_context`` (from planning_context()) must be
+        well-formed, bound to a sample (sample_bound) and name exactly ``planning_sample``'s stamp and
+        pose. Both odometry samples must be well-formed and ``entry_pose`` must be exactly the entry
+        sample's pose. Any failure is a counted no-sample (NOT_SAMPLED_REASONS) and the estimator is
+        untouched; nothing is fabricated or retimed. Clocks are then forwarded as given: planning/entry
+        header stamps, the entry receipt time, ``now`` (admission) and ``submitted_at`` (planner submit),
+        local monotonic seconds; a None ``submitted_at`` reaches the estimator as None (the wall
+        estimator rejects it, the EMA ignores it). Estimator rejections are reported as they are.
         """
         if planning_sample is None or entry_sample is None:
             return self._not_sampled('missing_odometry_sample')
-        if not isinstance(planning_sample, OdometrySample) or not isinstance(entry_sample, OdometrySample):
+        if not (_well_formed(planning_sample) and _well_formed(entry_sample)):
             return self._not_sampled('malformed_odometry_sample')
-        if not isinstance(entry_pose, (list, tuple)) or tuple(entry_sample.pose) != tuple(entry_pose):
+        if _pose(entry_pose) is None:
+            return self._not_sampled('malformed_entry_pose')
+        if tuple(entry_sample.pose) != tuple(entry_pose):
             return self._not_sampled('entry_pose_not_from_sample')
+        if context_shape_error(planning_context) is not None:
+            return self._not_sampled('malformed_planning_context')
+        if not planning_context['sample_bound']:
+            return self._not_sampled('context_not_sample_bound')
+        if (planning_context['odom_stamp_ns'] != planning_sample.stamp_ns
+                or tuple(planning_context['measured_pose']) != tuple(planning_sample.pose)):
+            return self._not_sampled('context_sample_mismatch')
         observation = self._estimator.observe_admission(AdmissionSample(
             planning_stamp_ns=planning_sample.stamp_ns, admission_stamp_ns=entry_sample.stamp_ns,
             submit_wall_s=submitted_at, admission_wall_s=now, admission_receipt_wall_s=entry_sample.received_s))
@@ -286,12 +347,25 @@ def admit_from_measured_pose(compensator, admit, plan, entry_pose, entry_grid, f
 
     ``entry_grid`` is (origin, resolution, width, height, costs) of the latest observed grid. ``admit``
     receives exactly (plan, entry_pose, *entry_grid, footprint); its two results are returned as the
-    same objects. The planning pose appears in the provenance only. Sampling happens for every attempt,
-    accepted or rejected; the provenance copies the actual arguments.
+    same objects. The planning pose appears in the provenance only.
+
+    A malformed ``entry_pose`` or ``planning_context`` raises ValueError BEFORE ``admit`` runs, so no
+    issued admission result can be lost afterwards. Once admission has run, a timing refusal (unbound
+    or mismatched context, malformed or mismatched samples) is only a counted no-sample recorded in
+    ``latency_sample``; it never changes or hides the admission result. Sampling is attempted for every
+    admission, accepted or rejected. The provenance holds the poses, stamps and clocks actually used;
+    it does not copy the grid or footprint (the admission call itself receives them unchanged).
     """
+    if _pose(entry_pose) is None:
+        raise ValueError(f'entry_pose must be three finite numbers, got {entry_pose!r}')
+    shape_error = context_shape_error(planning_context)
+    if shape_error is not None:
+        raise ValueError(f'malformed planning_context: {shape_error}')
     admitted, admission = admit(plan, entry_pose, *entry_grid, footprint)
-    sample = compensator.observe_admission(planning_sample, entry_sample, entry_pose, now, submitted_at)
+    sample = compensator.observe_admission(planning_context, planning_sample, entry_sample, entry_pose, now,
+                                           submitted_at)
     provenance = dict(enabled=planning_context['enabled'], applied=planning_context['applied'],
+                      sample_bound=planning_context['sample_bound'],
                       measured_pose=list(planning_context['measured_pose']),
                       planning_pose=list(planning_context['planning_pose']),
                       admission_pose=list(entry_pose),

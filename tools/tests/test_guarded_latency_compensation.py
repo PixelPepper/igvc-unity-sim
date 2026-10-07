@@ -20,11 +20,17 @@ def odom(pose=ORIGIN, twist=(.5, 0.), stamp_s=10., received=100.65):
     return OdometrySample(tuple(pose), tuple(twist), round(stamp_s*NS), received)
 
 
+def bound(compensator, planning):
+    """The planning context of ``planning`` taken at its receipt time (bound to that sample)."""
+    return compensator.planning_context(planning, planning.pose, planning.received_s)[1]
+
+
 def trained(kind, **options):
     """A compensator whose estimator holds exactly one admission: header interval 0.4 s, wall interval 0.7 s."""
     compensator = GuardedLatencyCompensator(kind, enabled=True, **options)
-    planning, entry = odom(stamp_s=10.), odom(pose=(.2, 0., 0.), stamp_s=10.4, received=100.68)
-    outcome = compensator.observe_admission(planning, entry, (.2, 0., 0.), now=100.7, submitted_at=100.)
+    planning, entry = odom(stamp_s=10., received=99.95), odom(pose=(.2, 0., 0.), stamp_s=10.4, received=100.68)
+    context = bound(compensator, planning)
+    outcome = compensator.observe_admission(context, planning, entry, (.2, 0., 0.), now=100.7, submitted_at=100.)
     assert outcome['accepted'], outcome
     return compensator
 
@@ -87,6 +93,7 @@ class NoActionTests(unittest.TestCase):
 
     def test_every_skip_returns_measured_and_is_counted(self):
         compensator = trained(EMA)
+        predictions = compensator.predictions
         measured = ORIGIN
         cases = [(None, 200., 'no_odometry_sample'),
                  (dict(pose=ORIGIN), 200., 'malformed_odometry_sample'),
@@ -104,7 +111,7 @@ class NoActionTests(unittest.TestCase):
                 self.assertIs(pose, measured)
                 self.assertEqual((ctx['applied'], ctx['reason'], ctx['planning_pose']), (False, reason, [0., 0., 0.]))
                 self.assertEqual(classify_snapshot_pose(snapshot(ctx, inputs_for(pose)))['kind'], 'measured')
-        self.assertEqual(compensator.predictions, 0)
+        self.assertEqual(compensator.predictions, predictions)
         self.assertEqual(compensator.skipped, {'no_odometry_sample': 1, 'malformed_odometry_sample': 4,
                                                'pose_not_from_sample': 1, 'invalid_now': 1,
                                                'future_odometry_sample': 1, 'stale_odometry_sample': 1,
@@ -174,17 +181,18 @@ class AdmissionTests(unittest.TestCase):
     def test_submit_clock_forwarding_and_entry_mismatch(self):
         planning, entry = odom(stamp_s=10., received=100.), odom(pose=(.2, 0., 0.), stamp_s=10.3, received=100.55)
         ema, quartile = (GuardedLatencyCompensator(k, enabled=True) for k in (EMA, LOWER_QUARTILE))
-        ema_out = ema.observe_admission(planning, entry, (.2, 0., 0.), now=100.6, submitted_at=None)
-        quartile_out = quartile.observe_admission(planning, entry, (.2, 0., 0.), now=100.6, submitted_at=None)
+        ctx_e, ctx_q = bound(ema, planning), bound(quartile, planning)
+        ema_out = ema.observe_admission(ctx_e, planning, entry, (.2, 0., 0.), now=100.6, submitted_at=None)
+        quartile_out = quartile.observe_admission(ctx_q, planning, entry, (.2, 0., 0.), now=100.6, submitted_at=None)
         self.assertTrue(ema_out['accepted'])  # the EMA never reads the submit clock
         self.assertEqual((quartile_out['sampled'], quartile_out['accepted'], quartile_out['reason']),
                          (True, False, 'missing_submit_clock'))
         self.assertEqual((quartile.latency, quartile.estimator.rejected), (.3, {'missing_submit_clock': 1}))
-        stale = quartile.observe_admission(planning, odom(pose=(.2, 0., 0.), stamp_s=10.3, received=100.2),
+        stale = quartile.observe_admission(ctx_q, planning, odom(pose=(.2, 0., 0.), stamp_s=10.3, received=100.2),
                                            (.2, 0., 0.), now=100.6, submitted_at=100.1)
         self.assertEqual(stale['reason'], 'stale_admission_sample')
-        mismatch = quartile.observe_admission(planning, entry, (.21, 0., 0.), now=100.6, submitted_at=100.1)
-        missing = quartile.observe_admission(None, entry, (.2, 0., 0.), now=100.6, submitted_at=100.1)
+        mismatch = quartile.observe_admission(ctx_q, planning, entry, (.21, 0., 0.), now=100.6, submitted_at=100.1)
+        missing = quartile.observe_admission(ctx_q, None, entry, (.2, 0., 0.), now=100.6, submitted_at=100.1)
         self.assertEqual((mismatch['sampled'], mismatch['reason']), (False, 'entry_pose_not_from_sample'))
         self.assertEqual(missing['reason'], 'missing_odometry_sample')
         self.assertEqual(quartile.not_sampled, {'entry_pose_not_from_sample': 1, 'missing_odometry_sample': 1})
@@ -244,6 +252,118 @@ class InputAndConfigTests(unittest.TestCase):
         self.assertEqual(identity['prediction']['applied'], 'extrapolation_branch_executed')
         self.assertEqual(identity['estimator']['config']['window'], 7)
         self.assertEqual(json.loads(json.dumps(compensator.report())), compensator.report())
+
+
+class SampleIntegrityTests(unittest.TestCase):
+    def test_list_fields_are_captured_as_detached_tuples(self):
+        pose, twist = [1., 2., .3], [.5, .1]
+        sample = OdometrySample(pose, twist, 10*NS, 100.)
+        pose[0], twist[0] = 99., 9.
+        self.assertEqual((sample.pose, sample.twist), ((1., 2., .3), (.5, .1)))
+        self.assertIsInstance(sample.pose, tuple)
+        broken = OdometrySample(None, [float('nan'), 0.], 10*NS, 100.)  # kept as given, never repaired
+        self.assertIsNone(broken.pose)
+        self.assertTrue(math.isnan(broken.twist[0]))
+
+    def test_malformed_samples_and_entry_pose_never_raise_or_learn(self):
+        good = odom(stamp_s=10., received=100.)
+        entry = odom(pose=(.2, 0., 0.), stamp_s=10.3, received=100.55)
+        bad_samples = [OdometrySample(None, (.5, 0.), 10*NS, 100.), OdometrySample((0., 0.), (.5, 0.), 10*NS, 100.),
+                       OdometrySample(ORIGIN, (float('nan'), 0.), 10*NS, 100.),
+                       OdometrySample(ORIGIN, (.5, 0.), True, 100.), OdometrySample(ORIGIN, (.5, 0.), 10*NS, None),
+                       OdometrySample(ORIGIN, (.5, 0.), 10*NS, float('inf'))]
+        for kind in (EMA, LOWER_QUARTILE):
+            compensator = GuardedLatencyCompensator(kind, enabled=True)
+            context = bound(compensator, good)
+            for bad in bad_samples:
+                for planning, admission, pose in ((bad, entry, (.2, 0., 0.)), (good, bad, (.2, 0., 0.))):
+                    with self.subTest(kind=kind, bad=bad, side='planning' if planning is bad else 'entry'):
+                        out = compensator.observe_admission(context, planning, admission, pose, 100.6, 100.1)
+                        self.assertEqual((out['sampled'], out['reason']), (False, 'malformed_odometry_sample'))
+            for pose in (None, (.2, 0.), (float('nan'), 0., 0.), '.2'):
+                out = compensator.observe_admission(context, good, entry, pose, 100.6, 100.1)
+                self.assertEqual(out['reason'], 'malformed_entry_pose')
+            self.assertEqual((compensator.estimator.samples, compensator.estimator.rejected_samples), (0, 0))
+            self.assertEqual(compensator.not_sampled, {'malformed_odometry_sample': 12, 'malformed_entry_pose': 4})
+
+
+class ContextBindingTests(unittest.TestCase):
+    def setUp(self):
+        self.planning = odom(stamp_s=10., received=100.)
+        self.entry = odom(pose=(.2, 0., 0.), stamp_s=10.3, received=100.55)
+
+    def observe(self, compensator, context, planning=None):
+        return compensator.observe_admission(context, planning or self.planning, self.entry, (.2, 0., 0.),
+                                             100.6, 100.1)
+
+    def test_skipped_or_mismatched_contexts_are_never_learned(self):
+        compensator = GuardedLatencyCompensator(EMA, enabled=True)
+        _, mismatched = compensator.planning_context(self.planning, (.1, 0., 0.), 100.)  # pose_not_from_sample
+        _, stale = compensator.planning_context(self.planning, ORIGIN, 100.5)
+        good = bound(compensator, self.planning)
+        other_stamp = odom(stamp_s=9.9, received=100.)
+        other_pose = odom(pose=(.05, 0., 0.), stamp_s=10., received=100.)
+        cases = [(mismatched, None, 'context_not_sample_bound'), (stale, None, 'context_not_sample_bound'),
+                 (good, other_stamp, 'context_sample_mismatch'), (good, other_pose, 'context_sample_mismatch'),
+                 ({}, None, 'malformed_planning_context'), (dict(good, applied='yes'), None, 'malformed_planning_context'),
+                 (dict(good, planning_pose=[9., 9., 9.], applied=False), None, 'malformed_planning_context'),
+                 (dict(good, sample_bound=True, odom_stamp_ns=None), None, 'malformed_planning_context'),
+                 (None, None, 'malformed_planning_context')]
+        for context, planning, reason in cases:
+            with self.subTest(reason=reason, context=context):
+                self.assertEqual(self.observe(compensator, context, planning)['reason'], reason)
+        self.assertEqual((mismatched['sample_reason'], stale['sample_reason']),
+                         ('pose_not_from_sample', 'stale_odometry_sample'))
+        self.assertEqual((compensator.estimator.samples, compensator.estimator.rejected_samples, compensator.latency),
+                         (0, 0, .6))
+        self.assertTrue(self.observe(compensator, good)['accepted'])
+
+    def test_disabled_and_stationary_contexts_bind_their_actual_sample(self):
+        disabled = GuardedLatencyCompensator(LOWER_QUARTILE, enabled=False)
+        pose, context = disabled.planning_context(self.planning, ORIGIN, 100.)
+        self.assertIs(pose, ORIGIN)
+        self.assertEqual((context['applied'], context['sample_bound'], context['reason'], context['odom_stamp_ns']),
+                         (False, True, 'disabled', 10*NS))
+        self.assertTrue(self.observe(disabled, context)['accepted'])
+        self.assertAlmostEqual(disabled.latency, .5, places=9)
+        _, unbound = disabled.planning_context(None, ORIGIN, 100.)
+        self.assertEqual((unbound['sample_bound'], unbound['sample_reason']), (False, 'no_odometry_sample'))
+        self.assertEqual(self.observe(disabled, unbound)['reason'], 'context_not_sample_bound')
+        stationary = GuardedLatencyCompensator(EMA, enabled=True)
+        still = odom(twist=(.01, 0.), stamp_s=10., received=100.)
+        _, context = stationary.planning_context(still, ORIGIN, 100.)
+        self.assertEqual((context['applied'], context['sample_bound'], context['reason']),
+                         (False, True, 'stationary_twist'))
+        self.assertTrue(stationary.observe_admission(context, still, self.entry, (.2, 0., 0.), 100.6, None)['accepted'])
+        self.assertAlmostEqual(stationary.latency, .3, places=9)
+
+    def test_wrapper_validates_before_admission_and_keeps_results_on_timing_refusal(self):
+        calls = []
+
+        def admit(*args):
+            calls.append(args)
+            return None, dict(reason='start_pose_departed_checked_path')
+        grid = ((0., -1.), .1, 2, 2, (0, 0, 100, -1))
+        compensator = GuardedLatencyCompensator(EMA, enabled=True)
+        context = bound(compensator, self.planning)
+        for bad_pose, bad_context in (((.2, 0.), context), (None, context), ((.2, 0., 0.), {}),
+                                      ((.2, 0., 0.), dict(context, enabled=1)), ((.2, 0., 0.), None)):
+            with self.subTest(pose=bad_pose, context=bad_context), self.assertRaises(ValueError):
+                admit_from_measured_pose(compensator, admit, {}, bad_pose, grid, [], self.planning, self.entry,
+                                         bad_context, 100.6, 100.1)
+        self.assertEqual(calls, [])
+        other = odom(stamp_s=9.9, received=100.)
+        admitted, admission, provenance = admit_from_measured_pose(
+            compensator, admit, {}, (.2, 0., 0.), grid, [], other, self.entry, context, 100.6, 100.1)
+        self.assertEqual(len(calls), 1)
+        self.assertIsNone(admitted)
+        self.assertEqual(admission, dict(reason='start_pose_departed_checked_path'))
+        self.assertEqual(provenance['latency_sample']['reason'], 'context_sample_mismatch')
+        self.assertEqual(compensator.estimator.samples, 0)
+        _, _, provenance = admit_from_measured_pose(
+            compensator, admit, {}, (.2, 0., 0.), grid, [], self.planning, self.entry, context, 100.6, 100.1)
+        self.assertTrue(provenance['latency_sample']['accepted'])  # rejected admission, bound context: sampled
+        self.assertEqual(len(calls), 2)
 
 
 if __name__ == '__main__':
