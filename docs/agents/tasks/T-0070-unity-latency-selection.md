@@ -99,3 +99,8 @@ then Sol evidence and explicit integration decision. No publishing/pushing.
 
 INTERACTIVE interactive-opus-t0070-20261006 ONLY. T0069 r2 accepted isolated40PASS and bothreviews; all earlier assignments ended. Newworktree/checkpoint prepared with full Unity tree and current external sandbox sources preserved. SOURCE ONLY owned paths; root runs Unity compile/harness later. Read exactpacket, ACK model/session before edits. No Unity opening/build/scene mutation or primary integration.
 
+
+### 2026-10-06T23:04:25.9970884-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+INTERACTIVE interactive-opus-t0070-20261006 only: refresh for listener reconnection. Assignment22:51:26 remains RESERVED, no actual ACK or committed handback as of23:04. Worktree remains clean at checkpoint6fdecdb. Read existing packet; ACK exact model/session before edits. This is not a second dispatch or assignment transfer. Root all3lock read-only readiness found no simulator processes/ports; installed Editor exists; locks released. Evidence artifacts/agents/T-0070/readiness-20261006T2304. Several Claude processes exist, but they do not prove this assignment was received. No provider/tests/build/integration launched, ownership preserved.
+
