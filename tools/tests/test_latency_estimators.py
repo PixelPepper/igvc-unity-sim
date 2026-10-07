@@ -6,8 +6,9 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from latency_estimators import (EMA, KINDS, LOWER_QUARTILE, REASONS, SAMPLE_POLICY, AdmissionSample,  # noqa: E402
-                                OdometryIntervalEMA, WallSubmitAdmissionLowerQuartile, make_estimator)
+from latency_estimators import (COMMON_REJECTS, EMA, EMA_REJECTS, KINDS, LOWER_QUARTILE,  # noqa: E402
+                                LOWER_QUARTILE_REJECTS, SAMPLE_POLICY, AdmissionSample, OdometryIntervalEMA,
+                                WallSubmitAdmissionLowerQuartile, make_estimator)
 
 NS = 1_000_000_000
 
@@ -157,7 +158,7 @@ class IdentityAndConfigTests(unittest.TestCase):
         for identity in (ema, quartile):
             self.assertEqual((identity['sample_policy']['id'], identity['sample_policy']['version']),
                              (SAMPLE_POLICY, 1))
-            self.assertEqual(identity['sample_policy']['rejects'], list(REASONS))
+            self.assertEqual(identity['sample_policy']['rejects'], list(COMMON_REJECTS))
             self.assertEqual(json.loads(json.dumps(identity)), identity)
             self.assertFalse({'max_shift_m', 'max_yaw_shift_rad', 'horizon'} & set(identity['config']))
 
@@ -191,6 +192,9 @@ class IdentityAndConfigTests(unittest.TestCase):
         estimator = make_estimator(LOWER_QUARTILE)
         with self.assertRaises(dataclasses.FrozenInstanceError):
             estimator.config.window = 3
+        with self.assertRaises(AttributeError):  # the public config cannot be replaced either
+            estimator.config = dataclasses.replace(estimator.config, window=3)
+        self.assertEqual(estimator.config.window, 20)
         estimator.observe_admission(wall(.5))
         estimator.observe_admission(AdmissionSample(None, 1, 0., 1., 1.))
         report = estimator.report()
@@ -203,6 +207,77 @@ class IdentityAndConfigTests(unittest.TestCase):
         self.assertEqual(again['identity']['config']['window'], 20)
         self.assertEqual((again['samples'], again['rejected_samples'], again['latency_s']), (1, 1, .5))
         self.assertEqual(json.loads(json.dumps(again)), again)
+
+
+class RepresentabilityTests(unittest.TestCase):
+    """Finite inputs whose arithmetic leaves the float range are rejected before clamping, never raised."""
+
+    def test_overflowing_wall_interval_is_rejected_not_clamped(self):
+        attempt = AdmissionSample(5*NS, 6*NS, -1e308, 1e308, 1e308)  # 1e308 - -1e308 = inf
+        quartile = WallSubmitAdmissionLowerQuartile()
+        result = quartile.observe_admission(attempt)
+        self.assertEqual((result.accepted, result.reason), (False, 'invalid_wall_interval'))
+        self.assertEqual((quartile.latency, quartile.samples, quartile.clamped_samples), (.3, 0, 0))
+        self.assertEqual(quartile.rejected, {'invalid_wall_interval': 1})
+        ema = OdometryIntervalEMA()  # never reads the submit clock
+        self.assertAlmostEqual(ema.observe_admission(attempt).interval_s, 1., places=12)
+
+    def test_overflowing_receipt_age_is_rejected(self):
+        for admission, receipt in ((1e308, -1e308), (10**308, -10**308)):
+            for make in (OdometryIntervalEMA, WallSubmitAdmissionLowerQuartile):
+                with self.subTest(admission=admission, estimator=make.__name__):
+                    estimator = make()
+                    result = estimator.observe_admission(AdmissionSample(5*NS, 6*NS, 0., admission, receipt))
+                    self.assertEqual(result.reason, 'invalid_receipt_age')
+                    self.assertEqual((estimator.samples, estimator.rejected), (0, {'invalid_receipt_age': 1}))
+
+    def test_huge_integer_clocks_and_stamps(self):
+        huge = 10**400
+        for make in (OdometryIntervalEMA, WallSubmitAdmissionLowerQuartile):
+            with self.subTest(estimator=make.__name__):
+                self.assertEqual(make().observe_admission(AdmissionSample(5*NS, 6*NS, 0., huge, 1.)).reason,
+                                 'invalid_receipt_clock')
+                self.assertEqual(make().observe_admission(AdmissionSample(5*NS, 6*NS, 0., 1., -huge)).reason,
+                                 'invalid_receipt_clock')
+        ema = OdometryIntervalEMA()
+        result = ema.observe_admission(AdmissionSample(0, huge, None, 1., 1.))  # exact int delta, no float
+        self.assertEqual((result.reason, ema.latency, ema.clamped_samples), ('invalid_odometry_interval', .6, 0))
+        quartile = WallSubmitAdmissionLowerQuartile()
+        self.assertEqual(quartile.observe_admission(AdmissionSample(5*NS, 6*NS, huge, 1., 1.)).reason,
+                         'invalid_submit_clock')
+        # The quartile reads only the wall clock, so a huge but ordered stamp pair is not its concern.
+        accepted = quartile.observe_admission(AdmissionSample(0, huge, 0., .5, .5))
+        self.assertEqual((accepted.accepted, quartile.latency), (True, .5))
+
+    def test_huge_integer_config_is_a_value_error(self):
+        huge = 10**400
+        for kind, config in ((EMA, dict(initial_latency_s=huge)), (EMA, dict(max_latency_s=huge)),
+                             (EMA, dict(max_sample_age_s=huge)), (EMA, dict(alpha=huge)),
+                             (LOWER_QUARTILE, dict(window=huge)), (LOWER_QUARTILE, dict(max_latency_s=-huge))):
+            with self.subTest(kind=kind, config=list(config)), self.assertRaises(ValueError):
+                make_estimator(kind, **config)
+
+    def test_per_kind_identity_rejects(self):
+        ema, quartile = OdometryIntervalEMA().identity(), WallSubmitAdmissionLowerQuartile().identity()
+        self.assertEqual(ema['rejects'], list(EMA_REJECTS))
+        self.assertEqual(quartile['rejects'], list(LOWER_QUARTILE_REJECTS))
+        self.assertFalse([r for r in ema['rejects'] + ema['sample_policy']['rejects'] if 'submit' in r or 'wall' in r])
+        self.assertEqual(ema['sample_policy'], quartile['sample_policy'])
+        self.assertFalse(set(EMA_REJECTS) & set(COMMON_REJECTS) or set(LOWER_QUARTILE_REJECTS) & set(COMMON_REJECTS))
+
+    def test_accepted_after_overflow_rejections_is_unchanged(self):
+        quartile = WallSubmitAdmissionLowerQuartile()
+        quartile.observe_admission(AdmissionSample(5*NS, 6*NS, -1e308, 1e308, 1e308))
+        quartile.observe_admission(AdmissionSample(5*NS, 6*NS, 0., 1e308, -1e308))
+        quartile.observe_admission(wall(.4))
+        quartile.observe_admission(wall(2.))  # finite and above max: still clamped and counted
+        self.assertEqual(quartile.report()['window_samples'], [.4, 1.2])
+        self.assertEqual((quartile.latency, quartile.samples, quartile.clamped_samples, quartile.rejected_samples),
+                         (.4, 2, 1, 2))
+        ema = OdometryIntervalEMA()
+        ema.observe_admission(AdmissionSample(0, 10**400, None, 1., 1.))
+        ema.observe_admission(sample(stamp_s=.25))
+        self.assertAlmostEqual(ema.latency, .25, places=12)  # first ACCEPTED sample still replaces the initial
 
 
 if __name__ == '__main__':

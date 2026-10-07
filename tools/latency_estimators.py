@@ -12,12 +12,16 @@ estimator reads only its own clock and never converts or retimes one into the ot
                                      the lower order statistic sorted(window)[(n-1)//4] of the last
                                      ``window`` accepted samples. Defaults: initial 0.3 s, window 20.
 
-Both share one gated sample policy (SAMPLE_POLICY, version SAMPLE_POLICY_VERSION), applied before
-any estimator value changes: missing, non-integer (bool excluded), equal or backward odometry
-stamps, non-finite admission/receipt clocks, and an admission sample whose receipt age is negative
-or above max_sample_age_s are rejected with a counted reason. The wall estimator additionally
-rejects a missing, non-finite or negative submit-to-admission duration (zero is accepted). Accepted
-intervals above max_latency_s are clamped to it and counted. Rejections never change the estimate.
+Both share one gated sample policy (SAMPLE_POLICY, version SAMPLE_POLICY_VERSION; COMMON_REJECTS),
+applied before any estimator value changes: missing, non-integer (bool excluded), equal or backward
+odometry stamps, non-finite admission/receipt clocks, a receipt age that is not representable as a
+finite float, negative, or above max_sample_age_s. Each estimator then rejects problems of its OWN
+interval only (its ``rejects``): the EMA an odometry interval not representable as a finite float;
+the wall estimator a missing or non-finite submit clock, a non-finite (e.g. overflowing) or negative
+wall duration (zero is accepted); the EMA never reads the submit clock. Every rejection is counted
+by reason and happens before clamping. Finite accepted intervals above max_latency_s are clamped to
+it and counted. Rejections never change the estimate. "Finite" always includes Python ints too large
+for a float: they are rejected (or raise ValueError in constructors), never an OverflowError.
 
 The lower-quartile ARITHMETIC matches the legacy latency_compensation estimator, but this is not the
 legacy end-to-end experiment: the legacy code admitted any finite wall interval without this gate
@@ -37,10 +41,14 @@ SAMPLE_POLICY = 'gated_admission_sample'
 SAMPLE_POLICY_VERSION = 1
 MAX_WINDOW = 1000
 
-# Rejection reasons of the shared gate, then the wall estimator's own.
-REASONS = ('missing_odometry_stamp', 'invalid_odometry_stamp', 'no_new_odometry', 'odometry_clock_reset',
-           'invalid_receipt_clock', 'future_admission_receipt', 'stale_admission_sample',
-           'missing_submit_clock', 'invalid_submit_clock', 'negative_wall_interval')
+# Rejection reasons of the shared gate (every estimator), in check order.
+COMMON_REJECTS = ('missing_odometry_stamp', 'invalid_odometry_stamp', 'no_new_odometry', 'odometry_clock_reset',
+                  'invalid_receipt_clock', 'invalid_receipt_age', 'future_admission_receipt',
+                  'stale_admission_sample')
+# Each estimator's own interval checks (after the shared gate).
+EMA_REJECTS = ('invalid_odometry_interval',)
+LOWER_QUARTILE_REJECTS = ('missing_submit_clock', 'invalid_submit_clock', 'invalid_wall_interval',
+                          'negative_wall_interval')
 
 
 @dataclass(frozen=True)
@@ -81,8 +89,13 @@ class EstimatorConfig:
 
 
 def _real(value):
-    """A finite int or float, never a bool."""
-    return type(value) in (int, float) and math.isfinite(value)
+    """A finite int or float representable as a float, never a bool; never raises OverflowError."""
+    if type(value) not in (int, float):
+        return False
+    try:
+        return math.isfinite(value)
+    except OverflowError:  # an int too large for a float
+        return False
 
 
 def _validate(initial_latency_s, max_latency_s, max_sample_age_s):
@@ -101,14 +114,20 @@ def _validate(initial_latency_s, max_latency_s, max_sample_age_s):
 class _GatedEstimator:
     kind = None
     timebase = None
+    rejects = ()  # this estimator's own interval rejection reasons
 
     def __init__(self, config):
-        self.config = config
+        self._config = config
         self._latency = float(config.initial_latency_s)
         self.samples = 0          # accepted samples (clamped ones included)
         self.clamped_samples = 0  # accepted samples clamped to max_latency_s
         self.rejected_samples = 0
         self.rejected = {}        # reason -> count
+
+    @property
+    def config(self):
+        """The frozen EstimatorConfig; read-only (assigning ``config`` raises AttributeError)."""
+        return self._config
 
     @property
     def latency(self):
@@ -134,6 +153,8 @@ class _GatedEstimator:
         if not (_real(sample.admission_wall_s) and _real(sample.admission_receipt_wall_s)):
             return 'invalid_receipt_clock'
         age = sample.admission_wall_s-sample.admission_receipt_wall_s
+        if not _real(age):  # finite clocks whose difference overflows a float
+            return 'invalid_receipt_age'
         if age < 0:
             return 'future_admission_receipt'
         if age > self.config.max_sample_age_s:
@@ -172,9 +193,10 @@ class _GatedEstimator:
         config = {k: v for k, v in vars(self.config).items() if v is not None}
         return dict(kind=self.kind, version=ESTIMATOR_VERSION, timebase=self.timebase, **self._rules(),
                     above_max_latency='clamp_and_count',
-                    sample_policy=dict(id=SAMPLE_POLICY, version=SAMPLE_POLICY_VERSION, rejects=list(REASONS),
+                    sample_policy=dict(id=SAMPLE_POLICY, version=SAMPLE_POLICY_VERSION, rejects=list(COMMON_REJECTS),
                                        receipt_age='admission_wall_s - admission_receipt_wall_s in '
                                                    '[0, max_sample_age_s]'),
+                    rejects=list(self.rejects),
                     config=config)
 
     def report(self):
@@ -187,6 +209,7 @@ class _GatedEstimator:
 class OdometryIntervalEMA(_GatedEstimator):
     kind = EMA
     timebase = 'odometry_header_stamp_ns'
+    rejects = EMA_REJECTS
 
     def __init__(self, initial_latency_s=.6, alpha=.3, max_latency_s=1.2, max_sample_age_s=.25):
         _validate(initial_latency_s, max_latency_s, max_sample_age_s)
@@ -196,7 +219,12 @@ class OdometryIntervalEMA(_GatedEstimator):
                                          alpha=float(alpha)))
 
     def _interval(self, sample):
-        return (sample.admission_stamp_ns-sample.planning_stamp_ns)*1e-9, None  # submit_wall_s is unused
+        # submit_wall_s is never read. The int delta is exact; its float conversion can overflow.
+        try:
+            seconds = (sample.admission_stamp_ns-sample.planning_stamp_ns)*1e-9
+        except OverflowError:
+            return None, 'invalid_odometry_interval'
+        return (seconds, None) if math.isfinite(seconds) else (None, 'invalid_odometry_interval')
 
     def _update(self, seconds):
         a = self.config.alpha
@@ -210,6 +238,7 @@ class OdometryIntervalEMA(_GatedEstimator):
 class WallSubmitAdmissionLowerQuartile(_GatedEstimator):
     kind = LOWER_QUARTILE
     timebase = 'local_monotonic_s'
+    rejects = LOWER_QUARTILE_REJECTS
 
     def __init__(self, initial_latency_s=.3, window=20, max_latency_s=1.2, max_sample_age_s=.25):
         _validate(initial_latency_s, max_latency_s, max_sample_age_s)
@@ -225,6 +254,8 @@ class WallSubmitAdmissionLowerQuartile(_GatedEstimator):
         if not _real(sample.submit_wall_s):
             return None, 'invalid_submit_clock'
         seconds = sample.admission_wall_s-sample.submit_wall_s
+        if not _real(seconds):  # e.g. 1e308 - -1e308 overflows to inf: rejected, never clamped
+            return None, 'invalid_wall_interval'
         if seconds < 0:
             return None, 'negative_wall_interval'
         return float(seconds), None
