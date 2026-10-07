@@ -236,7 +236,8 @@ class FakeTools:
             import re
             for run in re.findall(r'--run artifacts/learning/replayed/(\S+) ', argv[-1]):
                 self.labelled.append(run)
-                write_jsonl(self.root / f'artifacts/learning/labels-replayed/{run}/labels.jsonl', [{}])
+                # A minimal valid legacy (straight-v1) teacher record: run_round now validates label mode.
+                write_jsonl(self.root / f'artifacts/learning/labels-replayed/{run}/labels.jsonl', [dict(index=1)])
         elif 'build' in argv:
             runs = argv[argv.index('--runs') + 1:argv.index('--out')]
             out = Path(argv[argv.index('--out') + 1])

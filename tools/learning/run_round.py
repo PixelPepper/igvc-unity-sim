@@ -20,6 +20,18 @@ skipped when its outputs exist and its input hash is unchanged; ``--force STEP``
   report   round-N/report.md + report.json
 
 Corridor build/train runs only when both tools accept ``--kind`` (detected from --help).
+
+Pose policy (tools/learning/dataset_policy.py): measured-only by default; ``--allow-predicted``
+and ``--allow-unknown-legacy`` (combinable, never implied) are passed to build and train for
+every kind and to round_gate.gate(pose_policy=...). The canonical policy and POLICY_CACHE are
+part of the build/train/gate cache identity and of every step record and the round report, so a
+changed policy always re-evaluates. Build identity also covers the content (sha256) of each run's
+outcomes, labels and compressed decision snapshots; dataset, model and gate outputs are reused
+only while their bytes still match the recorded sha256.
+
+Corridor labels stay in the current legacy mode, explicitly: the teacher and the corridor
+builder get ``--corridor-label straight-v1`` (CORRIDOR_LABEL). Existing labels in another mode or
+malformed are rejected (build_dataset.label_mode), never overwritten; label a fresh output root.
 ``--from-existing round0`` imports data round 0 (artifacts/learning/data-round-0 and the
 labelled runs in artifacts/learning/replayed) in place of steps plan..label.
 ``--dry-run`` prints every command and writes nothing.
@@ -43,6 +55,7 @@ sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parent))
 
 from round_gate import WEIGHTS  # noqa: E402
+from dataset_policy import PosePolicy, add_pose_policy_arguments  # noqa: E402
 
 STEPS = ('plan', 'collect', 'replay', 'label', 'build', 'train', 'gate', 'report')
 KINDS = ('route', 'corridor')
@@ -51,6 +64,10 @@ WEIGHT_KEYS = {'route': 'route_weight', 'corridor': 'corridor_weight'}
 RUN_NAME = re.compile(r'[A-Za-z0-9_.-]+')
 LATCH_PREFIX = 'Autonomy gate stopped'
 MANIFEST_SCHEMA = 'igvc-learning-models/1'
+# Version of the build/train/gate cache identity (pose policy + content digests); older records never match.
+POLICY_CACHE = 'pose-policy-cache/1'
+# The teacher's current legacy corridor target, now passed explicitly (no path-v3 default here).
+CORRIDOR_LABEL = 'straight-v1'
 # Seeds used before the round tool existed (data round 0 and earlier live tests).
 KNOWN_SEEDS = {**{s: dict(round=0, source='data round 0') for s in range(2101, 2121)},
                **{s: dict(round=None, source='earlier live tests') for s in (2027, 2031, 2032, 2033, 2034, 2035)}}
@@ -67,6 +84,35 @@ def digest(value):
 def file_sha(path):
     from round_gate import sha256
     return sha256(path)
+
+
+def content_sha(path):
+    """sha256 of a file's bytes, or None when it is missing (timestamps are never trusted)."""
+    try:
+        return file_sha(path)
+    except OSError:
+        return None
+
+
+def snapshots_identity(decisions):
+    """Deterministic identity of a run's compressed decision snapshots: names and sha256 of their
+    gzip bytes (nothing is decompressed). Detects additions, removals and same-size edits."""
+    digest_ = hashlib.sha256()
+    count = 0
+    for path in sorted(Path(decisions).glob('*.json.gz')):
+        digest_.update(f'{path.name}\0{file_sha(path)}\n'.encode())
+        count += 1
+    return dict(count=count, sha256=digest_.hexdigest())
+
+
+def labels_mode_error(path):
+    """None when ``path`` holds valid CORRIDOR_LABEL labels; otherwise why it is unusable (read-only check)."""
+    from build_dataset import label_mode
+    try:
+        mode = label_mode(path)
+    except (OSError, ValueError) as exc:
+        return f'invalid labels ({exc})'
+    return None if mode == CORRIDOR_LABEL else f'labels are {mode}, this round requires {CORRIDOR_LABEL}'
 
 
 def write_json(path, value):
@@ -200,6 +246,18 @@ class Round:
         self._kind_support = kind_support
         self.state = read_json(self.dir / 'state.json') or dict(round=args.round, steps={})
         self.python = sys.executable or 'python3'
+        # Explicit opt-ins only (PosePolicy rejects non-bools); absent attributes mean measured only.
+        self.pose_policy = PosePolicy(allow_predicted=getattr(args, 'allow_predicted', False) is True,
+                                      allow_unknown_legacy=getattr(args, 'allow_unknown_legacy', False) is True)
+
+    def policy_flags(self):
+        """The exact build/train CLI flags of the selected policy (none = measured only)."""
+        return ((['--allow-predicted'] if self.pose_policy.allow_predicted else [])
+                + (['--allow-unknown-legacy'] if self.pose_policy.allow_unknown_legacy else []))
+
+    def policy_identity(self):
+        """Canonical policy and cache version: part of every build/train/gate input hash and record."""
+        return dict(pose_policy=self.pose_policy.to_dict(), policy_cache=POLICY_CACHE)
 
     # -- infrastructure
     def log(self, text):
@@ -234,17 +292,34 @@ class Round:
         if not self.args.dry_run:
             write_json(self.dir / 'state.json', self.state)
 
-    def step(self, name, inputs, outputs_ok, action):
+    def step(self, name, inputs, outputs_ok, action, strict=False, extra=None):
+        """Run ``action`` unless a finished record with the same input hash still has valid outputs.
+
+        ``strict`` steps (build/train/gate) never accept an 'imported' record in place of their input
+        identity. ``extra`` (e.g. the pose policy) is stored on the record, also when the action fails:
+        a failed step is recorded as 'failed' (never reused) and the error is re-raised.
+        """
         record = self.state['steps'].get(name)
         key = digest(inputs)
         forced = name in self.args.force or name.split('_')[0] in self.args.force
-        if (not forced and record and record.get('status') in ('done', 'imported')
-                and (record.get('status') == 'imported' or record.get('input_hash') == key) and outputs_ok(record)):
+        identity_ok = record and (record.get('input_hash') == key
+                                  or (not strict and record.get('status') == 'imported'))
+        if (not forced and record and record.get('status') in ('done', 'imported') and identity_ok
+                and outputs_ok(record)):
             self.log(f'[{name}] up to date ({record["status"]}); skipped')
             return record
         self.log(f'[{name}] running' + (' (dry run)' if self.args.dry_run else ''))
-        result = action() or {}
-        record = dict(status='dry-run' if self.args.dry_run else 'done', input_hash=key, finished=now(), **result)
+        try:
+            result = action() or {}
+        except BaseException as exc:
+            if not self.args.dry_run:
+                self.state['steps'][name] = {**(extra or {}), 'status': 'failed', 'input_hash': key,
+                                             'finished': now(), 'error': f'{type(exc).__name__}: {exc}'}
+                self.save()
+            raise
+        # The action's result wins over ``extra`` for a shared key (e.g. train's report path).
+        record = {'status': 'dry-run' if self.args.dry_run else 'done', 'input_hash': key, 'finished': now(),
+                  **(extra or {}), **result}
         if not self.args.dry_run:
             self.state['steps'][name] = record
             self.save()
@@ -384,23 +459,47 @@ class Round:
         lines = [f"Set-Location -LiteralPath '{win}'", '$failed = 0',
                  f'dotnet build -c Release {project} --nologo -v q; if ($LASTEXITCODE) {{ exit $LASTEXITCODE }}']
         lines += [f'dotnet run -c Release --no-build --project {project} -- label --run artifacts/learning/replayed/{r} '
-                  f'--out artifacts/learning/labels-replayed/{r}; if ($LASTEXITCODE) {{ $failed++ }}' for r in runs]
+                  f'--out artifacts/learning/labels-replayed/{r} --corridor-label {CORRIDOR_LABEL}; '
+                  'if ($LASTEXITCODE) { $failed++ }' for r in runs]
         lines.append('exit $failed')
         return ['powershell.exe' if os.name != 'nt' else 'powershell', '-NoProfile', '-Command', '; '.join(lines)]
+
+    def check_labels(self, runs):
+        """Fail closed when any EXISTING labels.jsonl of ``runs`` is malformed or not CORRIDOR_LABEL.
+
+        Read-only: teacher outputs are immutable here, so an unusable one is never replaced; the fix
+        is labelling into a fresh output root.
+        """
+        bad = {}
+        for name in runs:
+            path = self.labels / name / 'labels.jsonl'
+            if path.exists():
+                error = labels_mode_error(path)
+                if error:
+                    bad[name] = error
+        if bad:
+            raise SystemExit(f'Unusable existing teacher labels (not overwritten): {bad}. This round labels with '
+                             f'--corridor-label {CORRIDOR_LABEL}; label these runs into a fresh output root instead.')
 
     def label(self):
         replayed = (self.state['steps'].get('replay') or {}).get('replayed_runs', [])
         done = lambda name: (self.labels / name / 'labels.jsonl').exists()
 
         def action():
+            self.check_labels(replayed)
             pending = [n for n in replayed if not done(n)]
             if pending or self.args.dry_run:
                 self.log(f'  labelling {len(pending)} of {len(replayed)} replayed runs (the rest already have labels)')
                 self.command(self.label_command(pending or ['RUN']), 'label.log')
+            if not self.args.dry_run:
+                self.check_labels(replayed)  # new teacher output must be valid CORRIDOR_LABEL too
             labelled = [n for n in replayed if done(n)]
             self.state['data_runs'] = labelled
             return dict(labelled_runs=labelled, missing=[n for n in replayed if not done(n)])
-        return self.step('label', dict(runs=replayed), lambda r: all(map(done, r.get('labelled_runs', []))), action)
+        valid = lambda name: done(name) and labels_mode_error(self.labels / name / 'labels.jsonl') is None
+        return self.step('label', dict(runs=replayed, corridor_label=CORRIDOR_LABEL),
+                         lambda r: all(map(valid, r.get('labelled_runs', []))), action,
+                         extra=dict(corridor_label=CORRIDOR_LABEL))
 
     # -- step 5
     def all_runs(self):
@@ -413,33 +512,42 @@ class Round:
             self.log('  WARNING: round-0 state missing; import it with --round 0 --from-existing round0')
         return sorted(runs)
 
-    def file_stamp(self, path):
-        try:
-            stat = Path(path).stat()
-            return [stat.st_size, stat.st_mtime_ns]
-        except OSError:
-            return None
+    def run_identity(self, name):
+        """Content identity of one run's builder inputs: outcomes, labels and compressed snapshots."""
+        decisions = self.replayed / name / 'decisions'
+        return dict(outcomes=content_sha(decisions / 'outcomes.jsonl'),
+                    labels=content_sha(self.labels / name / 'labels.jsonl'), snapshots=snapshots_identity(decisions))
+
+    @staticmethod
+    def output_matches(path, record, key='sha256'):
+        """A cached output is reused only while its bytes still match the recorded sha256."""
+        return bool(record.get(key)) and content_sha(path) == record.get(key)
 
     def build(self):
         runs = self.all_runs()
         support = self.kind_support()
+        self.check_labels(runs)  # imported or cached labels must also be valid CORRIDOR_LABEL
+        identities = {n: self.run_identity(n) for n in runs}
         records = {}
         for kind in self.kinds():
             out = self.dir / f'dataset/{kind}_candidates.jsonl'
+            corridor = kind == 'corridor' and support.get('build')
 
-            def action(kind=kind, out=out):
-                argv = [self.python, HERE / 'build_dataset.py', 'build', '--runs', *(runs or ['<all rounds\' runs>']),
-                        '--out', out] + (['--kind', kind] if support.get('build') else [])
+            def action(kind=kind, out=out, corridor=corridor):
+                argv = ([self.python, HERE / 'build_dataset.py', 'build', '--runs', *(runs or ['<all rounds\' runs>']),
+                         '--out', out] + (['--kind', kind] if support.get('build') else [])
+                        + (['--corridor-label', CORRIDOR_LABEL] if corridor else []) + self.policy_flags())
                 self.command(argv, f'build_{kind}.log')
                 if self.args.dry_run:
                     return {}
                 summary = read_json(out.with_suffix('.summary.json')) or {}
                 return dict(dataset=self.rel(out), sha256=file_sha(out), runs=len(runs),
                             rows=summary.get('rows'), groups=summary.get('groups'),
-                            runs_with_groups=summary.get('runs_with_groups'))
-            inputs = dict(kind=kind, runs={n: [self.file_stamp(self.replayed / n / 'decisions/outcomes.jsonl'),
-                                               self.file_stamp(self.labels / n / 'labels.jsonl')] for n in runs})
-            records[kind] = self.step(f'build_{kind}', inputs, lambda r, out=out: out.exists(), action)
+                            runs_with_groups=summary.get('runs_with_groups'), pose=summary.get('pose'))
+            identity = dict(self.policy_identity(), corridor_label=CORRIDOR_LABEL if corridor else None)
+            inputs = dict(identity, kind=kind, runs=identities)
+            records[kind] = self.step(f'build_{kind}', inputs, lambda r, out=out: self.output_matches(out, r),
+                                      action, strict=True, extra=identity)
         return records
 
     # -- step 5b
@@ -455,12 +563,19 @@ class Round:
                 self.command([self.python, HERE / 'train_scorer.py', '--dataset', dataset, '--model-out', model,
                               '--report-out', report, '--group-by', 'course',
                               '--hook-weight', *[f'{w:g}' for w in WEIGHTS]]
-                             + (['--kind', kind] if support.get('train') else []), f'train_{kind}.log')
+                             + (['--kind', kind] if support.get('train') else []) + self.policy_flags(),
+                             f'train_{kind}.log')
                 if self.args.dry_run:
                     return {}
-                return dict(model=self.rel(model), sha256=file_sha(model), report=self.rel(report))
-            inputs = dict(kind=kind, dataset=(built.get(kind) or {}).get('sha256'), hook=WEIGHTS, group_by='course')
-            records[kind] = self.step(f'train_{kind}', inputs, lambda r, model=model: model.exists(), action)
+                return dict(model=self.rel(model), sha256=file_sha(model), report=self.rel(report),
+                            report_sha256=content_sha(report))
+            inputs = dict(self.policy_identity(), kind=kind, dataset=(built.get(kind) or {}).get('sha256'),
+                          hook=WEIGHTS, group_by='course')
+            # The report path is on the record even when training fails (e.g. no usable rows).
+            extra = dict(self.policy_identity(), report=self.rel(report))
+            records[kind] = self.step(f'train_{kind}', inputs,
+                                      lambda r, model=model: self.output_matches(model, r), action,
+                                      strict=True, extra=extra)
         return records
 
     # -- step 6
@@ -479,8 +594,14 @@ class Round:
             current = (manifest.get('models') or {}).get(kind)
             new_sha = (trained.get(kind) or {}).get('sha256')
             previous = self.state['steps'].get(f'gate_{kind}')
-            if current and current.get('sha256') == new_sha and previous and 'gate' not in self.args.force:
-                self.log(f'[gate_{kind}] this model is already the promoted one; skipped')
+            # Everything the gate result depends on except the promoted model, which a pass replaces.
+            identity = dict(self.policy_identity(), model=new_sha, dataset=content_sha(dataset),
+                            no_promote=self.args.no_promote)
+            forced = 'gate' in self.args.force or f'gate_{kind}' in self.args.force
+            if (current and current.get('sha256') == new_sha and previous and not forced
+                    and previous.get('status') == 'done' and previous.get('gate_identity') == digest(identity)
+                    and self.output_matches(out, previous, 'report_sha256')):
+                self.log(f'[gate_{kind}] this model is already the promoted one under the same policy and data; skipped')
                 records[kind] = previous
                 continue
             current_path = self.root / current['path'] if current else None
@@ -488,7 +609,7 @@ class Round:
                 raise SystemExit(f'Promoted {kind} model missing: {current_path}')
 
             def action(kind=kind, model=model, dataset=dataset, out=out, current=current, current_path=current_path):
-                report = round_gate.gate(dataset, model, current, repo=self.root)
+                report = round_gate.gate(dataset, model, current, repo=self.root, pose_policy=self.pose_policy)
                 write_json(out, report)
                 decision = report['decision']
                 self.log(f'  {kind} ({report.get("mode")}): promote={decision["promote"]} weight={decision.get("weight")}; '
@@ -500,10 +621,12 @@ class Round:
                 return dict(report=self.rel(out), decision=decision, promoted=promoted,
                             overall=report.get('overall'), mode=report.get('mode'), notes=report.get('notes'),
                             new_sha256=report.get('new_sha256'),
-                            current_sha256=report.get('current_sha256'))
-            inputs = dict(model=new_sha, dataset=file_sha(dataset), current=(current or {}).get('sha256'),
-                          no_promote=self.args.no_promote)
-            records[kind] = self.step(f'gate_{kind}', inputs, lambda r, out=out: out.exists(), action)
+                            current_sha256=report.get('current_sha256'), report_sha256=file_sha(out),
+                            dataset_admission=report.get('dataset_admission'))
+            inputs = dict(identity, current=(current or {}).get('sha256'))
+            records[kind] = self.step(f'gate_{kind}', inputs,
+                                      lambda r, out=out: self.output_matches(out, r, 'report_sha256'), action,
+                                      strict=True, extra=dict(self.policy_identity(), gate_identity=digest(identity)))
         return records
 
     def promote(self, kind, model, report):
@@ -536,11 +659,16 @@ class Round:
                        seeds=plan_record.get('seeds'), settings=plan_record.get('settings'), runs=stats,
                        data_runs_this_round=len(self.state.get('data_runs') or []), data_runs_all_rounds=len(self.all_runs()),
                        label_missing=(self.state['steps'].get('label') or {}).get('missing'),
-                       datasets={k: {f: v.get(f) for f in ('dataset', 'rows', 'groups', 'runs_with_groups', 'sha256')}
+                       pose_policy=self.pose_policy.to_dict(), policy_cache=POLICY_CACHE,
+                       corridor_label=CORRIDOR_LABEL,
+                       datasets={k: {f: v.get(f) for f in ('dataset', 'rows', 'groups', 'runs_with_groups', 'sha256',
+                                                            'pose_policy', 'pose')}
                                  for k, v in built.items()},
-                       train_cv=cv, gate={k: {f: v.get(f) for f in ('report', 'decision', 'promoted', 'overall', 'mode', 'notes',
-                                                                     'new_sha256', 'current_sha256')}
-                                          for k, v in gated.items()},
+                       train_cv=cv, train_policy={k: v.get('pose_policy') for k, v in trained.items()},
+                       gate={k: {f: v.get(f) for f in ('report', 'decision', 'promoted', 'overall', 'mode', 'notes',
+                                                       'new_sha256', 'current_sha256', 'pose_policy',
+                                                       'dataset_admission')}
+                             for k, v in gated.items()},
                        skipped_kinds=[k for k in KINDS if k not in self.kinds()],
                        manifest=current_manifest(self.models_dir))
         if self.args.dry_run:
@@ -573,7 +701,9 @@ def _pct(part, whole):
 
 def render_markdown(s, root, folder):
     lines = [f"# Learning round {s['round']}", '', f"Generated {s['generated']}. Plan: `{s['plan']}`; "
-             f"seeds {s['seeds']}; settings `{json.dumps(s['settings'])}`.", '', '## Runs', '']
+             f"seeds {s['seeds']}; settings `{json.dumps(s['settings'])}`.", '',
+             f"Dataset pose policy: admitted kinds {s['pose_policy']['allowed']} ({s['policy_cache']}); "
+             f"corridor labels `{s['corridor_label']}`.", '', '## Runs', '']
     r = s['runs']
     lines += [f"- Trials (excluding infrastructure retries): {r['trials']} (retries: {r['infrastructure_retries']})",
               f"- 6/6: {_pct(r['six_of_six'], r['trials'])}; audit passed: {_pct(r['audit_passed'], r['trials'])}",
@@ -644,6 +774,7 @@ def parse_args(argv=None):
     parser.add_argument('--force', action='append', default=[], help='rerun a step (plan, collect, replay, label, '
                         'build_route, build_corridor, train_route, train_corridor, gate_route, gate_corridor, gate)')
     parser.add_argument('--dry-run', action='store_true', help='print the commands; execute and write nothing')
+    add_pose_policy_arguments(parser)  # --allow-predicted / --allow-unknown-legacy for build, train and gate
     args = parser.parse_args(argv)
     if args.round < 0 or args.seeds < 1 or args.repeats < 1 or not 1 <= args.instances <= 8:
         parser.error('invalid --round/--seeds/--repeats/--instances')
