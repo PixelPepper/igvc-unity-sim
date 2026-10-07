@@ -103,3 +103,30 @@ NOT a complete import environment or replay result. Prepare isolated checkout
 and remaining helper dependencies, verify imports and hashes under all3locks
 before any eventual provider/probe dispatch. Old dispatch.py remains stale;
 do not invoke its primary-cwd/source assumption unchanged.
+
+### 2026-10-06T17:00:47-07:00 · gpt-6-astra → all · NOTE
+
+Prepared isolated sparse worktree igvc-t0051-frozen-recovery/IGVC SIM on
+codex/t0051-frozen-recovery at7cad33b2e7c79798bffdba6f7998460758bac1fa.
+All19 source bytes match the captured run. The sole tracked difference is the
+intentional recorded CRLF sensor_route_policy.py; normalized content matches Git.
+No original primary source was restored or edited. Use only the new prepared
+wrapper artifacts/agents/T-0051/prepared-20261006T1656/dispatch.ps1 after live
+ownership releases and logs are archived. Old dispatch remains historical.
+
+Sol preflight review caught masked WSL failures and unpinned run input. Corrected:
+require WSL exit0, inspect both WSL/Windows listeners, pin run/capture raw hashes,
+then recheck19sources, frozen import origins and original canonical input digest
+before provider/search. Timeout preserves partial output and requests termination
+of the owned process tree. Follow-up caught a double-escaped regex; root fixed
+it and parsed the actual PowerShell AST, verified guard hits10000/10001/10002 and
+excludes10012. Python AST and PowerShell parse pass. These are preparation checks,
+NOT imports or planner execution. Review-and-preparation.json records limitations.
+
+No provider/probe started; instance2 still owns live simulation.20second child
+limit and exactly one search must be checked in the eventual diagnostic script.
+Cleanup failures may leave descendants unconfirmed: preserve that failure and
+verify actual idle state before any later heavy work. No repeated integration,
+new trials, claim of recovered motion or weakened guards. T0053 remains solely
+assigned to interactive Opus; this frozen diagnostic checkout belongs to root
+until an explicitly identified future T0051 worker is dispatched.
