@@ -173,6 +173,38 @@ class ReplayControlsTest(unittest.TestCase):
                          {'selected': 6, 'executed': 2, 'skipped': 4,
                           'skipped_by_provenance': {'predicted': 2, 'unknown_legacy': 1, 'malformed': 1}})
 
+    def test_out_of_float_range_json_integers_are_malformed_skips(self):
+        huge = 10**400  # a valid JSON integer that float() cannot represent
+        cases = {1: ('measured_pose', 0, 'measured_pose_invalid'),
+                 2: ('planning_pose', 1, 'planning_pose_invalid'),
+                 3: ('robot_xy', 0, 'input_pose_invalid'),
+                 4: ('robot_xy', 1, 'input_pose_invalid'),
+                 5: ('robot_yaw', None, 'input_pose_invalid')}
+        snapshots = {}
+        for sequence, (key, index, _) in cases.items():
+            payload = snapshot()
+            if key == 'robot_yaw':
+                payload['input']['robot_yaw'] = huge
+            elif key == 'robot_xy':
+                payload['input']['robot_xy'][index] = huge
+            else:
+                latency(payload)[key][index] = huge
+            snapshots[sequence] = payload
+        # Ordinary JSON integers remain valid measured poses.
+        snapshots[6] = snapshot((1, 2, 0))
+        rows = self.run_controls(snapshots, 6)
+        self.assertEqual([row['sequence'] for row in rows], [1, 2, 3, 4, 5, 6])
+        for row in rows[:5]:
+            with self.subTest(sequence=row['sequence']):
+                self.assertTrue(row['skipped'])
+                self.assertEqual(row['pose_provenance'], 'malformed')
+                self.assertEqual(row['skip_reason'], cases[row['sequence']][2])
+        self.assertFalse(rows[5]['skipped'])
+        self.assertEqual(rows[5]['pose_provenance'], 'measured')
+        self.assertEqual(len(self.backup), 2)
+        self.assertEqual(len(self.escape), 1)
+        self.assertEqual({args[5] for args, _ in self.backup + self.escape}, {(1, 2)})
+
     def test_measured_snapshot_arguments_and_history_are_unchanged(self):
         measured = snapshot((1., 2., .3))
         before = copy.deepcopy(measured)
