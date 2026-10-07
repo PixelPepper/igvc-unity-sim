@@ -1,15 +1,15 @@
 ---
 id: T-0061
 title: Add explicit pose provenance to dataset builders and shared policy
-status: in-progress
+status: accepted
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0061-dataset-pose-builder-opus
 base: ec0627a
-candidate: 25605a2769c3d1e6c7a9c5ea42a3377803716b1e
-claim: implemented
+candidate: 9ea5da030d42ec09d41d8eb957b091643fbbe959
+claim: tested
 lease: none
 updated: 2026-10-06
 ---
@@ -192,3 +192,77 @@ Matching PID 2412 lease records bracket validation, 19:07:03.286–19:07:05.688 
 ### 2026-10-06T19:08:41.091997-07:00 · gpt-6-astra → claude-opus-5-5 · ACK
 
 Received actual19:08:23 exact-model r1 ACK; sole revision owner interactive-opus-t0061-20261006-r1 is active. Both first-candidate reviews complete. Preserve all19test results/12failure entries; no acceptance for25605a2. Original implementation assignment expired; no headless duplicate. Sonnet review costUSD0.1943454/35.70s, interactive implementation and nativeSol billing unavailable. All validation locks released; no live lease. Await committed r1 handback before fresh review/lock-gated validation.
+
+### 2026-10-06T19:11:18-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+
+r1, alias interactive-opus-t0061-20261006-r1, model claude-opus-5-5. Commit **9ea5da0** on codex/t0061-dataset-pose-builder-opus, parent 25605a2.
+
+Files: build_dataset.py, dataset_policy.py, test_dataset_pose_policy.py, test_corridor_scorer.py (fixtures only). Only static `ast.parse` was run, on all five owned files.
+
+Blockers:
+1. The two `test_corridor_scorer.py` snapshot fixtures now use a `MEASURED` constant: `latency_compensation` with enabled/applied False, and measured_pose == planning_pose == `[*ROBOT, YAW]`. The default stays measured-only.
+2. `filter_rows` checks `isinstance(group, str)` before any dict or set use. Missing, null, number, list or dict groups and non-dict rows are each excluded as `group_invalid` and never admitted. Valid neighbouring rows keep their order. New test: `test_non_string_groups_are_excluded_without_crashing`.
+
+Risks:
+- **Count semantics.** `stats['pose']`/`summary['pose']` now carry `semantics` (`BUILDER_SEMANTICS`: groups = joined decisions, including zero-member ones; members = PRE-FILTER candidates, NOT emitted rows), `join` {decisions, joined, mismatched, unlabelled}, `provenance_by_kind`/`_reason`, `admitted_/excluded_groups` and `admitted_/excluded_members`. `filter_rows` uses `ROW_SEMANTICS`. `merge_counts` refuses parts with different semantics. Route stats now always include `unlabelled`.
+- **Corridor validation before pose admission.** `_corridor_target` validation runs first, so invalid path-v3 records raise even for pose-excluded decisions. Counts, cardinality, guidance and availability filters run after admission. New test: `test_invalid_targets_still_raise_when_pose_excluded`.
+- **`missing_snapshot`.** It now counts only a pose-admitted snapshot without costmap inputs. Missing or invalid files are pose `unavailable`. This is commented in the code and asserted in the corridor CLI test.
+- **New tests:** corridor CLI summary, zero-member decisions, and the semantics/join assertions. Mixed provenance is tested through `filter_rows` only. The spacing nit is fixed.
+
+NOT RUN:
+- `python3 -m unittest tools.tests.test_dataset_pose_policy tools.tests.test_learning_pipeline tools.tests.test_corridor_scorer`
+- the full `discover`
+
+Remaining work, unchanged: run_round, train and gate wiring. Stopping.
+
+### 2026-10-06T19:16:50.225792-07:00 · gpt-6-astra → claude-opus-5-5 · ACK
+
+Actual r1 handback received and clean HEAD 9ea5da030d42ec09d41d8eb957b091643fbbe959 bound. r1 implementation assignment ended; remain read-only. Root starts focused validation and Sonnet revision review; no integration/training/live lease.
+
+### 2026-10-06T19:18:32.615981-07:00 · claude-sonnet-5-5 → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0061/review-9ea5da0/sonnet-static-review.md
+
+**Verdict: approve 9ea5da0 on static review. I found no blockers.** I read the diffs against 25605a2 and ec0627a and ran no tests or code.
+
+**Prior blockers: both fixed**
+1. The two `test_corridor_scorer.py` fixtures now use a `MEASURED` metadata constant with `enabled=False`, `applied=False`, and `measured_pose == planning_pose == [*ROBOT, YAW]`. That matches the shape I asked for, and the default policy is unchanged.
+2. `filter_rows` checks `isinstance(key, str)` before any hashing. Missing, null, numeric, list and dict groups, and non-dict rows, are excluded as `group_invalid`. Valid neighbours keep their order, and the new test covers all of these.
+
+**Other items checked**
+- **Measured fixtures:** the snapshot is classified as measured, so rows are emitted.
+- **Count semantics:** `BUILDER_SEMANTICS` and `ROW_SEMANTICS` are documented, and `members` is explicitly pre-filter candidates, not emitted rows. `join` is carried through `merge_counts`. Mixed semantics raise `ValueError`.
+- **Corridor validation order:** `_corridor_target` now runs before pose admission, so invalid path-v3 records raise even for pose-excluded decisions. This matches ec0627a. The member count uses the same corridor-candidate count as before.
+- **Corridor tests:** the new `test_invalid_targets_still_raise_when_pose_excluded` covers the raise under all four policies and the skip once the targets are valid. The corridor CLI summary test pins policy, join, counts and `missing_snapshot`.
+- **Original requirements:** I saw no regression. The classifier is reused unchanged, numeric values are untouched, and the CLI and both builders share one `PosePolicy`.
+
+**Risks (non-blocking)**
+- `dropped_candidates` (the no-entry-direction/score and non-finite legacy-cost drops) now counts only pose-admitted groups. At ec0627a it counted every decision. This follows from admission coming first, but it changes the number.
+- `merge_counts([])` returns `{}`, with no zero-filled keys or `semantics`, when no run produces pose stats. The earlier version returned a zero-filled structure. Readers should tolerate the missing keys.
+- `filter_rows` counts `group_invalid` rows under `provenance_by_kind` as `unknown_legacy`. The row's real provenance isn't known, so this is cosmetic.
+- Zero-member decisions show up as `excluded_members` entries with value 0. This is documented and pinned by a test.
+- `test_corridor_scorer.py` is outside the packet's owned list. The root should record an amendment for the fixture-only edit.
+- Still unrun: `test_dataset_pose_policy`, `test_learning_pipeline` and `test_corridor_scorer`. `run_round.py` and `train_scorer.py` still call the builders, so later slices must handle the new `pose` keys and the new default of measured-only admission.
+
+### 2026-10-06T19:18:32.615981-07:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0061/validation-9ea5da0/sol-evidence-review.md
+
+# T0061 revised candidate evidence review
+
+Accept the focused test evidence for candidate `9ea5da030d42ec09d41d8eb957b091643fbbe959`, conditional on separate source review. Worker HEAD matches and is clean. All five recorded source/test hashes match current bytes. Verified log SHA-256: `2b8163bb647f2e3f22f3b3c9a1fcbeed5effc2992a065dc39c55f96d86348db1`.
+
+The saved log reports 23 test methods passing in 1.275 seconds; parent exit 0, no timeout, elapsed 1.813 seconds. Expected argparse refusal messages coexist with final OK and are not test failures. The command covers the policy suite plus selected route and corridor regressions, not the full learning/corridor suites or discovery.
+
+The revised handback reports explicit measured fixture metadata, malformed-group rejection, pre-filter count semantics, corridor summary coverage, and invalid-target rejection before pose exclusion. The log now includes route and corridor summaries distinguishing admitted candidate members from emitted rows and exposing join/exclusion counts. Passing focused tests support those synthetic paths, not unrestricted malformed-input robustness or real dataset behavior.
+
+Matching PID 6600 lease records bracket validation, 19:16:57.397–19:16:59.382 PDT. The previous 19-test/12-failure-entry log remains intact and hash-valid (`eddfa75c…`); revised evidence does not erase it.
+
+This is candidate-only slice 1. Source-review acceptance, train/gate/run_round wiring, integration and training remain pending. No historical captures, production relabeling, runtime autonomy or live benefit was evaluated.
+
+
+### 2026-10-06T19:18:32.615981-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+ACCEPT candidate9ea5da030d42ec09d41d8eb957b091643fbbe959 as tested slice1 only, NOT primary integration/training/promotion. Root all3lock validation23tests PASS, log2b8163bb647f2e3f22f3b3c9a1fcbeed5effc2992a065dc39c55f96d86348db1; both independent reviews accepted. Initial25605a2 failure preserved unchanged. All T0061 implementation assignments ended. Source-review scope concern is satisfied by explicit19:08:14 fixture ownership amendment. Empty merge_counts has no pose stats when no run supplied; no admission is inferred, later readers must use rows, not summary sidecars. dropped_candidates now only pose-admitted groups is intended ordering, and counter semantics distinguish pre-filter candidates from emitted rows. Remaining pipelines must propagate explicit policy before combined integration. No numeric/runtime/guard changes or live benefit claimed.
+
+Sonnet two source reviews actual costUSD0.3645836 (0.1943454+0.1702382), interactive and nativeSol billing unavailable. T0062 will own reader slice separately on this candidate; no duplicate owner.
