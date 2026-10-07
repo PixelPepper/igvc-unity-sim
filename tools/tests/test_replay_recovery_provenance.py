@@ -31,7 +31,7 @@ def snapshot(stamp=STAMP):
                'input': {'origin': [-5., -5.], 'resolution': .5, 'width': 4, 'height': 4,
                          'costs': [0]*15+[100], 'robot_xy': [9., 9.], 'robot_yaw': 1.,
                          'destination': [8., 9.],
-                         'planner_options': {'goal_footprint': [.4, .3], 'body_clearance_weight': .2,
+                         'planner_options': {'goal_footprint': [-1.1, .6, -.5, .5], 'body_clearance_weight': .2,
                                              'entrance_tracking': True}},
                'metadata': {'source_sha256': 'synthetic'}}
     if stamp is not ABSENT:
@@ -66,7 +66,7 @@ class ReplayHarness(unittest.TestCase):
         self.run = self.root/'synthetic-run'
         (self.run/'decisions').mkdir(parents=True)
         self.loaded, self.backup, self.escape = [], [], []
-        self.backup_effect = None
+        self.backup_effect = self.escape_effect = None
 
     def write(self, sequence, payload=None, raw=None):
         path = self.run/'decisions'/f'{sequence:05d}.json.gz'
@@ -92,6 +92,8 @@ class ReplayHarness(unittest.TestCase):
 
         def escape(*args, **kwargs):
             self.escape.append((args, kwargs))
+            if self.escape_effect is not None:
+                raise self.escape_effect
             return copy.deepcopy(ESCAPE)
 
         with mock.patch.object(replay_recovery, 'load_snapshot', side_effect=load), \
@@ -210,9 +212,14 @@ class AdmissionTest(ReplayHarness):
         payload = snapshot()
         del payload['input']['planner_options']
         shapes['no_options'] = payload
-        payload = snapshot()
-        payload['input']['planner_options']['goal_footprint'] = [.4]
-        shapes['footprint'] = payload
+        footprints = {'footprint_short': [.4], 'footprint_pair': [.4, .3],
+                      'footprint_unordered_x': [.6, -1.1, -.5, .5], 'footprint_unordered_y': [-1.1, .6, .5, -.5],
+                      'footprint_degenerate': [-1.1, -1.1, -.5, .5], 'footprint_nan': [-1.1, float('nan'), -.5, .5],
+                      'footprint_inf': [-1.1, .6, -.5, float('inf')], 'footprint_bool': [-1.1, .6, False, True]}
+        for name, value in footprints.items():
+            payload = snapshot()
+            payload['input']['planner_options']['goal_footprint'] = value
+            shapes[name] = payload
         cases = [('absent', None, 'snapshot_missing'),
                  ('bad_gzip', b'not gzip at all', 'snapshot_unreadable'),
                  ('truncated', valid[:len(valid)//2], 'snapshot_unreadable'),
@@ -257,6 +264,14 @@ class AdmissionTest(ReplayHarness):
                 with self.assertRaises(type(error)):
                     self.replay(event(4))
 
+    def test_escape_planner_errors_stay_visible(self):
+        self.write(4, snapshot())
+        for error in (RuntimeError('escape bug'), OSError('escape io'), KeyError('costs'), ValueError('bad')):
+            with self.subTest(error=type(error).__name__):
+                self.escape_effect = error
+                with self.assertRaises(type(error)):
+                    self.replay(event(4))
+
 
 class ReconstructionTest(ReplayHarness):
     def test_admitted_output_and_forwarded_values_are_unchanged(self):
@@ -287,10 +302,10 @@ class ReconstructionTest(ReplayHarness):
         self.assertEqual(escape_args, positional)
         self.assertEqual({key: backup_kwargs[key] for key in ('goal_footprint', 'max_search_seconds',
                                                                'forward_options')},
-                         {'goal_footprint': (.4, .3), 'max_search_seconds': 2.5, 'forward_options': options})
+                         {'goal_footprint': (-1.1, .6, -.5, .5), 'max_search_seconds': 2.5, 'forward_options': options})
         self.assertEqual({key: escape_kwargs[key] for key in ('goal_footprint', 'driven_path', 'straight_seconds',
                                                                'retrace_seconds', 'forward_options')},
-                         {'goal_footprint': (.4, .3), 'driven_path': [(.5*t, 2.) for t in range(7)],
+                         {'goal_footprint': (-1.1, .6, -.5, .5), 'driven_path': [(.5*t, 2.) for t in range(7)],
                           'straight_seconds': 2.5, 'retrace_seconds': 4., 'forward_options': options})
         (region,) = escape_kwargs['trap_regions']
         self.assertAlmostEqual(region['center'][0], 4.4)
@@ -298,9 +313,9 @@ class ReconstructionTest(ReplayHarness):
         for kwargs in (backup_kwargs, escape_kwargs):
             forward = kwargs['forward_planner']
             self.assertIs(forward.func, self.forward)
-        self.forward.assert_not_called()
             self.assertEqual(forward.keywords, {'lane_points': [], 'frozen_guidance': SELECTION,
                                                 'entrance_tracking': True})
+        self.forward.assert_not_called()
 
 
 class CommandLineTest(ReplayHarness):

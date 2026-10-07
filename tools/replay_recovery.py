@@ -165,7 +165,9 @@ def snapshot_problem(snapshot):
     if not _numbers(grid.get('destination'), 2):
         return 'destination'
     options = grid.get('planner_options')
-    if not isinstance(options, dict) or not _numbers(options.get('goal_footprint'), 2):
+    footprint = options.get('goal_footprint') if isinstance(options, dict) else None
+    # The live planner reads an ordered (xmin, xmax, ymin, ymax) body box.
+    if not _numbers(footprint, 4) or not (footprint[0] < footprint[1] and footprint[2] < footprint[3]):
         return 'goal_footprint'
     if 'body_clearance_weight' in options and not _number(options['body_clearance_weight']):
         return 'body_clearance_weight'
