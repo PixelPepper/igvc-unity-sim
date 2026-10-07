@@ -205,6 +205,35 @@ class ReplayControlsTest(unittest.TestCase):
         self.assertEqual(len(self.escape), 1)
         self.assertEqual({args[5] for args, _ in self.backup + self.escape}, {(1, 2)})
 
+    def test_distinct_large_json_integers_are_not_collapsed_by_float_conversion(self):
+        big = 2**53  # float(big) == float(big + 1), but the JSON integers differ
+        self.assertEqual(float(big), float(big + 1))
+        planning_mismatch = snapshot((big, 2, 0))
+        latency(planning_mismatch)['planning_pose'][0] = big + 1
+        input_mismatch = snapshot((big, 2, 0))
+        input_mismatch['input']['robot_xy'][0] = big + 1
+        measured_mismatch = snapshot((big, 2, 0))
+        latency(measured_mismatch)['measured_pose'][0] = big + 1
+        # Integer and float spellings of the same value remain one measured pose.
+        equivalent = snapshot((1., 2., 0.))
+        latency(equivalent)['measured_pose'] = [1, 2, 0]
+        latency(equivalent)['planning_pose'] = [1, 2., 0]
+        snapshots = {1: planning_mismatch, 2: input_mismatch, 3: measured_mismatch,
+                     4: snapshot((big + 1, 2, 0), enabled=True, applied=True), 5: equivalent}
+        before = copy.deepcopy(snapshots)
+        rows = self.run_controls(snapshots, 5)
+        self.assertEqual(snapshots, before)
+        self.assertEqual([row['sequence'] for row in rows], [1, 2, 3, 4, 5])
+        self.assertEqual([row['pose_provenance'] for row in rows],
+                         ['malformed', 'malformed', 'malformed', 'predicted', 'measured'])
+        self.assertEqual([row['skipped'] for row in rows], [True, True, True, True, False])
+        self.assertEqual([row['skip_reason'] for row in rows[:4]],
+                         ['planning_pose_input_mismatch', 'planning_pose_input_mismatch',
+                          'not_applied_pose_mismatch', 'latency_compensation_applied'])
+        self.assertEqual(len(self.backup), 2)
+        self.assertEqual(len(self.escape), 1)
+        self.assertEqual({args[5] for args, _ in self.backup + self.escape}, {(1., 2.)})
+
     def test_measured_snapshot_arguments_and_history_are_unchanged(self):
         measured = snapshot((1., 2., .3))
         before = copy.deepcopy(measured)

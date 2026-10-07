@@ -25,24 +25,28 @@ MALFORMED = 'malformed'
 KINDS = (MEASURED, PREDICTED, UNKNOWN_LEGACY, MALFORMED)
 
 
-def _finite_float(value):
-    """The value as a finite float, or None for bools, non-numbers and non-finite."""
+def _finite_number(value):
+    """True for a non-bool int or float that is finite and within float range."""
     if not isinstance(value, (int, float)) or isinstance(value, bool):
-        return None
+        return False
     try:
         # JSON integers are unbounded; one beyond float range is not a pose.
-        number = float(value)
+        return math.isfinite(float(value))
     except OverflowError:
-        return None
-    return number if math.isfinite(number) else None
+        return False
 
 
 def _pose(value):
-    """A finite three-element (x, y, yaw) tuple, or None."""
+    """The original finite (x, y, yaw) values as a tuple, or None.
+
+    Values are not converted: Python compares int and float exactly, whereas
+    float() would collapse distinct integers above 2**53 into equal poses.
+    """
     if not isinstance(value, (list, tuple)) or len(value) != 3:
         return None
-    pose = tuple(_finite_float(v) for v in value)
-    return None if None in pose else pose
+    if not all(_finite_number(v) for v in value):
+        return None
+    return tuple(value)
 
 
 def _input_pose(grid):
