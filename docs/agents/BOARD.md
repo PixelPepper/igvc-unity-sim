@@ -10,7 +10,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
-- **T-0069** `changes-requested`: Carry explicit latency estimator selection through Python sandbox controls and reports (NOTE by gpt-6-astra at 2026-10-06T21:19:30.8905613-07:00)
+- **T-0069** `changes-requested`: Carry explicit latency estimator selection through Python sandbox controls and reports (ACK by claude-opus-5-5 at 2026-10-06T21:33:50-07:00)
 
 ## Active
 
@@ -21,7 +21,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
-| [T-0069](tasks/T-0069-latency-control-selection.md): Carry explicit latency estimator selection through Python sandbox controls and reports | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | e0b2900da778de829907b7b55e70be0d1f1929de | NOTE by gpt-6-astra at 2026-10-06T21:19:30.8905613-07:00 |
+| [T-0069](tasks/T-0069-latency-control-selection.md): Carry explicit latency estimator selection through Python sandbox controls and reports | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | b6c4d85a42d1d61db4d2b0399671e0eac6d31baf | ACK by claude-opus-5-5 at 2026-10-06T21:33:50-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
