@@ -16,7 +16,7 @@ TOOLS = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(TOOLS))
 sys.path.insert(0, str(TOOLS / 'learning'))
 import dataset_policy  # noqa: E402
-from dataset_policy import PosePolicy, read_dataset_rows  # noqa: E402
+from dataset_policy import DatasetRejected, PosePolicy, read_dataset_rows  # noqa: E402
 import round_gate  # noqa: E402
 import train_scorer  # noqa: E402
 
@@ -264,6 +264,115 @@ class GateTests(unittest.TestCase):
         self.assertFalse(report['decision']['promote'])
         self.assertIn('d.jsonl:1: malformed dataset JSON', report['error'])
         self.assertEqual(report['pose_policy'], PosePolicy().to_dict())
+
+
+MISSING = object()
+
+
+class HeuristicChoiceTests(unittest.TestCase):
+    """Every member needs a present, strict boolean heuristic_choice; otherwise the whole group goes."""
+
+    def test_non_boolean_or_missing_values_reject_the_whole_group_in_both_readers(self):
+        valid = ranking_group('run-a:2', 'measured')
+        for member, bad in [(1, 2), (1, 0), (1, 1), (1, 1.0), (1, 'false'), (1, 'true'), (1, None), (1, MISSING),
+                            (0, 1), (0, 'true')]:
+            group = ranking_group('run-a:1', 'measured')
+            if bad is MISSING:
+                del group[member]['heuristic_choice']
+            else:
+                group[member]['heuristic_choice'] = bad
+            with self.subTest(member=member, bad=bad), tempfile.TemporaryDirectory() as tmp:
+                path = Path(tmp)/'d.jsonl'
+                write_jsonl(path, group+valid)
+                self.assertEqual(train_scorer.load_rows(path), valid)
+                self.assertEqual(round_gate.load_rows(path), valid)
+                rows, stats = read_dataset_rows(path, PosePolicy(True, True))
+                self.assertEqual(rows, valid)
+                self.assertEqual(stats['heuristic_invalid'], dict(rows=3, groups=1))
+                self.assertEqual(stats['ranking_excluded'], dict(rows=0, groups=0))
+                self.assertEqual(stats['usable'], dict(rows=3, groups=1))
+
+    def test_pose_guard_runs_before_the_heuristic_check(self):
+        group = ranking_group('run-a:1', 'measured') + [row('run-a:1', 'predicted', False, 2.)]
+        group[1]['heuristic_choice'] = 'false'
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'d.jsonl'
+            write_jsonl(path, group)
+            rows, stats = read_dataset_rows(path)
+        self.assertEqual(rows, [])
+        self.assertEqual(stats['pose']['excluded_groups'], {'kind_not_allowed:predicted': 1})
+        self.assertEqual(stats['heuristic_invalid'], dict(rows=0, groups=0))
+
+    def test_valid_boolean_groups_keep_the_ranking_rule(self):
+        two_true = [row('run-a:1', 'measured', True, 0.), row('run-a:1', 'measured', True, 1.)]
+        valid = ranking_group('run-a:2', 'measured')
+        with tempfile.TemporaryDirectory() as tmp:
+            path = Path(tmp)/'d.jsonl'
+            write_jsonl(path, two_true+valid)
+            rows, stats = read_dataset_rows(path)
+        self.assertEqual(rows, valid)
+        self.assertEqual(stats['heuristic_invalid'], dict(rows=0, groups=0))
+        self.assertEqual(stats['ranking_excluded'], dict(rows=2, groups=1))
+
+
+class PosePolicyConstructorTests(unittest.TestCase):
+    def test_non_boolean_opt_ins_are_rejected(self):
+        for name in ('allow_predicted', 'allow_unknown_legacy'):
+            for value in ('false', 'true', '', 0, 1, None, 1.0):
+                with self.subTest(name=name, value=value), self.assertRaises(TypeError):
+                    PosePolicy(**{name: value})
+
+    def test_defaults_and_explicit_bools_are_unchanged(self):
+        self.assertEqual(PosePolicy().to_dict(),
+                         dict(allowed=['measured'], allow_predicted=False, allow_unknown_legacy=False))
+        self.assertEqual(PosePolicy(True, False).allowed, frozenset({'measured', 'predicted'}))
+        self.assertEqual(PosePolicy(allow_unknown_legacy=True).allowed, frozenset({'measured', 'unknown_legacy'}))
+        self.assertEqual(PosePolicy(True, True), PosePolicy(allow_predicted=True, allow_unknown_legacy=True))
+
+
+class GateErrorKindTests(unittest.TestCase):
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        tmp = Path(self.tmp.name)
+        self.dataset, self.new, self.out = tmp/'d.jsonl', tmp/'new.json', tmp/'g.json'
+        write_jsonl(self.dataset, ranking_group('run-a:1', 'measured')
+                    + ranking_group('run-b:2', 'measured', run='run-b'))
+        self.new.write_text(json.dumps(dict(features=['score', 'min_lethal_clearance_m'])))
+        self.argv = ['--dataset', str(self.dataset), '--new', str(self.new), '--out', str(self.out)]
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def run_main(self):
+        with contextlib.redirect_stdout(io.StringIO()):
+            status = round_gate.main(self.argv)
+        return status, json.loads(self.out.read_text())
+
+    def test_cv_failure_is_an_evaluation_error_not_a_dataset_rejection(self):
+        with mock.patch.object(round_gate, 'cross_validate',
+                               side_effect=ValueError('Course-held-out CV needs at least two courses')):
+            status, report = self.run_main()
+        self.assertEqual((status, report['error_kind']), (3, 'evaluation'))
+        self.assertTrue(report['error'].startswith('gate evaluation failed: ValueError: Course-held-out'))
+        self.assertNotIn('rejected', report['error'])
+        self.assertFalse(report['decision']['promote'])
+        self.assertEqual(report['pose_policy'], PosePolicy().to_dict())
+
+    def test_bad_model_file_is_an_evaluation_error(self):
+        self.new.write_text('not json')
+        status, report = self.run_main()
+        self.assertEqual((status, report['error_kind']), (3, 'evaluation'))
+        self.assertIn('JSONDecodeError', report['error'])
+        self.assertFalse(report['decision']['promote'])
+
+    def test_malformed_dataset_is_a_dataset_rejection(self):
+        self.dataset.write_text('{"group": \n', encoding='utf-8')
+        with self.assertRaises(DatasetRejected):
+            round_gate.gate(self.dataset, self.new)
+        status, report = self.run_main()
+        self.assertEqual((status, report['error_kind']), (2, 'dataset'))
+        self.assertTrue(report['error'].startswith('rejected dataset: '))
+        self.assertFalse(report['decision']['promote'])
 
 
 if __name__ == '__main__':

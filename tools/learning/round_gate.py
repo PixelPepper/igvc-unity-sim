@@ -33,7 +33,8 @@ HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[1]
 sys.path.insert(0, str(HERE))
 from learned_scorer import LearnedScorer  # noqa: E402
-from dataset_policy import PosePolicy, add_pose_policy_arguments, policy_from_args, read_dataset_rows  # noqa: E402
+from dataset_policy import (DatasetRejected, PosePolicy, add_pose_policy_arguments,  # noqa: E402
+                            policy_from_args, read_dataset_rows)
 
 WEIGHTS = (.5, 1., 2., 4., 8.)
 MIN_UNSEEN = 100
@@ -255,7 +256,8 @@ def gate(dataset, new_model_path, current=None, repo=REPO, model_factory=make_mo
     ``pose_policy`` (dataset_policy.PosePolicy, default measured only) is applied by the shared
     reader before the ranking-group rule, for direct callers (run_round) and the CLI alike. The
     report records the policy and pre-pose / pose-admitted / usable counts, also when no usable
-    rows remain (never promotable). A malformed dataset raises ValueError.
+    rows remain (never promotable). A malformed dataset raises dataset_policy.DatasetRejected (a
+    ValueError); CV and model errors propagate unchanged and the CLI reports them separately.
     """
     policy = pose_policy if pose_policy is not None else PosePolicy()
     rows, admission = read_dataset_rows(dataset, policy)
@@ -313,10 +315,14 @@ def main(argv=None):
     status = 0
     try:
         report = gate(args.dataset, args.new, current, pose_policy=policy)
-    except ValueError as exc:  # malformed dataset: rejected whole, never promotable
-        report, status = dict(dataset=str(args.dataset), error=f'rejected dataset: {exc}',
+    except DatasetRejected as exc:  # malformed dataset file: rejected whole, never promotable
+        report, status = dict(dataset=str(args.dataset), error=f'rejected dataset: {exc}', error_kind='dataset',
                               pose_policy=policy.to_dict(),
                               decision=dict(promote=False, weight=None, reasons=['rejected dataset'])), 2
+    except Exception as exc:  # model file, CV or evaluation failure: not a dataset rejection; still fail closed
+        report, status = dict(dataset=str(args.dataset), error=f'gate evaluation failed: {type(exc).__name__}: {exc}',
+                              error_kind='evaluation', pose_policy=policy.to_dict(),
+                              decision=dict(promote=False, weight=None, reasons=['gate evaluation failed'])), 3
     text = json.dumps(report, indent=2)
     if args.out:  # also for empty or rejected datasets, so exclusions stay reviewable
         args.out.write_text(text + '\n', encoding='utf-8')

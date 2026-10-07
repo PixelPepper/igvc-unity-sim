@@ -28,9 +28,10 @@ API for builders and later readers:
 
 API for training and promotion readers (train_scorer, round_gate):
   read_dataset_rows(path, policy=None) -> (usable rows, admission stats)
-      pose admission (filter_rows) FIRST, then the ranking-group rule
-      (>= 2 members, exactly one heuristic_choice). ValueError, with the line
-      number, on a malformed JSON line or a non-object row: nothing partial.
+      pose admission (filter_rows) FIRST, then a strict boolean
+      heuristic_choice on every member, then the ranking-group rule (>= 2
+      members, exactly one true). DatasetRejected (a ValueError), with the
+      line number, on a malformed JSON line or a non-object row: nothing partial.
   add_pose_policy_arguments(parser) / policy_from_args(args)
       the shared --allow-predicted / --allow-unknown-legacy CLI flags.
 """
@@ -54,9 +55,17 @@ SNAPSHOT_SCHEMA = 1
 
 @dataclass(frozen=True)
 class PosePolicy:
-    """Which pose kinds a dataset admits. Measured always; malformed/unavailable never."""
+    """Which pose kinds a dataset admits. Measured always; malformed/unavailable never.
+
+    Opt-ins must be real bools: a string such as "false" or a number is a TypeError, never permission.
+    """
     allow_predicted: bool = False
     allow_unknown_legacy: bool = False
+
+    def __post_init__(self):
+        for name in ('allow_predicted', 'allow_unknown_legacy'):
+            if type(getattr(self, name)) is not bool:
+                raise TypeError(f'PosePolicy.{name} must be a bool, got {getattr(self, name)!r}')
 
     @property
     def allowed(self):
@@ -214,24 +223,33 @@ def filter_rows(rows, policy):
 READER_SEMANTICS = dict(
     pre_pose='every parsed dataset row; groups = distinct string group values',
     pose='filter_rows counts (ROW_SEMANTICS): whole groups admitted or excluded by pose provenance',
-    pose_admitted='rows and groups that passed pose admission, before the ranking-group rule',
-    ranking_excluded='pose-admitted groups dropped by the ranking-group rule (< 2 members or not exactly one '
-                     'heuristic_choice); no replenishment',
+    pose_admitted='rows and groups that passed pose admission, before the heuristic_choice and ranking rules',
+    heuristic_invalid='pose-admitted groups dropped whole because a member lacks a strict boolean '
+                      'heuristic_choice (missing, null, number, string, ...); never coerced or rescued',
+    ranking_excluded='remaining groups dropped by the ranking-group rule (< 2 members or not exactly one '
+                     'heuristic_choice true); no replenishment',
     usable='rows and groups returned for training or promotion')
+
+
+class DatasetRejected(ValueError):
+    """The dataset file itself was rejected (malformed JSON line or non-object row); nothing is read."""
 
 
 def read_dataset_rows(path, policy=None):
     """(usable rows, stats) of a build_dataset JSONL for training and promotion readers.
 
-    Pose admission (``policy``, default PosePolicy(): measured only) runs on
-    the whole file before the ranking-group rule: a group with any excluded,
-    mixed or invalid member is dropped whole even if the remaining members
-    would form a valid ranking group. Row values and the group-major order of
-    the previous readers (groups in first-appearance order, each group's rows
-    in file order) are unchanged. ``heuristic_choice`` is counted by truth
-    value; a missing one counts as false. Provenance comes only from each
-    row's pose_source/pose_reason (unlabelled rows: unknown_legacy), never
-    from flags, hashes or summary sidecars.
+    Order of admission, each on whole groups: pose provenance (``policy``,
+    default PosePolicy(): measured only), then a strict boolean
+    ``heuristic_choice`` on EVERY member (canonical builders emit bools, so
+    valid data is unaffected; 2, "false", null or a missing key reject the
+    group, counted as heuristic_invalid), then the ranking rule (>= 2 members,
+    exactly one true). A group with any excluded, mixed or invalid member is
+    dropped whole even if the remaining members would form a valid ranking
+    group. Row values and the group-major order of the previous readers
+    (groups in first-appearance order, each group's rows in file order) are
+    unchanged. Provenance comes only from each row's pose_source/pose_reason
+    (unlabelled rows: unknown_legacy), never from flags, hashes or summary
+    sidecars. A malformed file raises DatasetRejected (a ValueError).
     """
     policy = policy if policy is not None else PosePolicy()
     parsed = []
@@ -242,25 +260,28 @@ def read_dataset_rows(path, policy=None):
             try:
                 row = json.loads(line)
             except ValueError as error:
-                raise ValueError(f'{path}:{number}: malformed dataset JSON ({error})') from None
+                raise DatasetRejected(f'{path}:{number}: malformed dataset JSON ({error})') from None
             if not isinstance(row, dict):
-                raise ValueError(f'{path}:{number}: dataset row is not an object')
+                raise DatasetRejected(f'{path}:{number}: dataset row is not an object')
             parsed.append(row)
     admitted, pose = filter_rows(parsed, policy)
     groups = {}
     for row in admitted:
         groups.setdefault(row['group'], []).append(row)
-    usable = {group: members for group, members in groups.items()
-              if len(members) >= 2 and sum(bool(m.get('heuristic_choice')) for m in members) == 1}
+    strict = {group: members for group, members in groups.items()
+              if all(type(m.get('heuristic_choice')) is bool for m in members)}
+    usable = {group: members for group, members in strict.items()
+              if len(members) >= 2 and sum(m['heuristic_choice'] for m in members) == 1}
     rows = [row for members in usable.values() for row in members]
+    strict_rows = sum(len(members) for members in strict.values())
     stats = dict(semantics=dict(READER_SEMANTICS), pose_policy=policy.to_dict(),
                  pre_pose=dict(rows=len(parsed),
                                groups=len({r['group'] for r in parsed if isinstance(r.get('group'), str)})),
                  pose=pose, pose_admitted=dict(rows=len(admitted), groups=len(groups)),
-                 ranking_excluded=dict(rows=len(admitted)-len(rows), groups=len(groups)-len(usable)),
+                 heuristic_invalid=dict(rows=len(admitted)-strict_rows, groups=len(groups)-len(strict)),
+                 ranking_excluded=dict(rows=strict_rows-len(rows), groups=len(strict)-len(usable)),
                  usable=dict(rows=len(rows), groups=len(usable)))
     return rows, stats
-
 
 def add_pose_policy_arguments(parser):
     """The shared, combinable opt-in flags; neither given = measured only."""

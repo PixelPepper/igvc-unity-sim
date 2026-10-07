@@ -32,7 +32,8 @@ sys.path.insert(0, str(HERE))
 from build_dataset import FEATURES  # noqa: E402  (also puts tools/ on sys.path)
 from learned_scorer import SCHEMA, LearnedScorer  # noqa: E402
 from lane_corridor_policy import CORRIDOR_FEATURES  # noqa: E402
-from dataset_policy import add_pose_policy_arguments, policy_from_args, read_dataset_rows  # noqa: E402
+from dataset_policy import (DatasetRejected, add_pose_policy_arguments, policy_from_args,  # noqa: E402
+                            read_dataset_rows)
 
 KIND_FEATURES = dict(route=FEATURES, corridor=CORRIDOR_FEATURES)
 
@@ -198,7 +199,7 @@ def main(argv=None):
 
     try:
         rows, admission = read_dataset_rows(args.dataset, policy)
-    except ValueError as exc:  # malformed dataset: rejected whole, nothing fitted
+    except DatasetRejected as exc:  # malformed dataset: rejected whole, nothing fitted
         write_report(dict(kind=args.kind, dataset=str(args.dataset), pose_policy=policy.to_dict(),
                           error=f'rejected dataset: {exc}'))
         return 2
