@@ -36,7 +36,7 @@ from mission_completion import MissionCompletionRecorder
 from replacement_path import (ActivePathRecord, SEND_REVALIDATED, replacement_outcome, running_action,
                               snapshot_revalidator)
 from session_paths import session_dir
-from latency_compensation import LatencyCompensator
+from latency_compensation import LatencyCompensator, capture_planning_inputs
 
 # Recovery lane-entry gate: station step when the selected far gate has no clear body position.
 RECOVERY_GATE_RETREAT_STEP_M = .5
@@ -501,15 +501,14 @@ def run(args):
             heading_hint = heading_memory.propose((x,y), yaw, time.monotonic(), lookahead=7.)
             frozen_guidance = preserved_guidance((x,y,yaw), time.monotonic(), state['completed_destinations'])
             # Opt-in: plan from the pose expected at admission (identity when disabled or still).
-            planning_pose = latency_compensator.predict((x, y, yaw), latest.get('twist'))
             # Freeze the same observations sent to the worker. The current action
             # can continue while it plans; completion pose/age are recorded too.
-            inputs = dict(origin=[grid.info.origin.position.x, grid.info.origin.position.y],
-                          resolution=grid.info.resolution, width=grid.info.width, height=grid.info.height,
-                          costs=list(grid.data), robot_xy=list(planning_pose[:2]), robot_yaw=planning_pose[2],
-                          destination=[gx,gy], lane_points=list(latest.get('lane_xy', [])),
-                          heading_hint=heading_hint, planner_options=planner_options,
-                          frozen_guidance=frozen_guidance)
+            # The same predict call also yields the capture's pose provenance.
+            planning_pose, inputs, latency_metadata = capture_planning_inputs(
+                latency_compensator, (x, y, yaw), latest.get('twist'),
+                (grid.info.origin.position.x, grid.info.origin.position.y), grid.info.resolution,
+                grid.info.width, grid.info.height, grid.data, (gx, gy), latest.get('lane_xy', []),
+                heading_hint, planner_options, frozen_guidance)
             decision_sequence += 1
             submitted_at = time.monotonic()
             evidence_rows = latest.get('evidence_rows', [])
@@ -519,7 +518,8 @@ def run(args):
                             odom_stamp_ns=stamps.get('odom'), frame=grid.header.frame_id,
                             grid_age_wall_s=submitted_at-latest['grid'][0],
                             lane_age_wall_s=submitted_at-latest['lanes'][0],
-                            mission_sha256=state['mission_sha256'], source_sha256=state['source_sha256'])
+                            mission_sha256=state['mission_sha256'], source_sha256=state['source_sha256'],
+                            latency_compensation=latency_metadata)
             if entrance_tracking:
                 metadata.update(memory=dict(heading_memory.diagnostics),
                                 evidence_stamp_ns=stamps.get('lane_evidence'),
@@ -533,7 +533,10 @@ def run(args):
             outcomes.begin(decision_sequence, state['completed_destinations'], (x, y), (gx, gy))
             # Keep large per-point evidence in the compressed snapshot, not in
             # the bounded ROS event stream or every in-memory mission event.
-            decision_event('requested', capture_file=capture_file, input_metadata=compact_event_metadata(metadata),
+            # The event carries its own provenance copy; the snapshot dict is written by the recorder thread.
+            decision_event('requested', capture_file=capture_file,
+                           input_metadata=dict(compact_event_metadata(metadata),
+                                               latency_compensation=json.loads(json.dumps(latency_metadata))),
                            input_pose=[x,y,yaw], heading_hint=heading_hint,
                            active_goal=target, active_goal_id=active_goal_id)
             planning = planner.submit(*((evaluate_with_trap_memory, trap_regions) if trap_regions
