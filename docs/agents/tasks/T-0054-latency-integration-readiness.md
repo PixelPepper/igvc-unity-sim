@@ -132,3 +132,76 @@ relayed-from: artifacts/agents/T-0054/review-20261006T1730/review.md
 Sonnet26.41s/USD0.1140564 exactmodel narrows Opus claim: predicted/measured mismatch is in offline replay_controls, not established for actual-failure replay_event. Exact-input navigation and corridor features must retain recorded planner pose. No change accepted yet. Root compared freshly recorded primary hashes with1707 manifest: both percentile-module/test hashes match; other current files have recorded hashes but no claimed1707 comparison. Source-level remaining traces and legacy semantics are incomplete.
 
 Next bounded Opus follow-up must trace sensor_course snapshot construction, recovery selection_pose and recovery_evidence caller, then provide a concrete provenance design. Keep metadata-absent historical captures distinct from malformed new metadata; do not silently relabel them measured, rewrite historical files or make all historical datasets unusable without documenting compatibility. Sonnet proposal to add pose_source conflicts literally with byte-identical full output rows; clarify preserved numerical/planner inputs versus new metadata before implementation. Read-only analysis first, no new source edits or tests until explicit scope. Previous analysis session ended; no active T0054 worker. T0053 remains focused-tested only and isolated.
+
+### 2026-10-06T17:35:03-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+
+You are sole read-only analyst opus-t0054-followup-20261006T1735, not an implementation session. All previous T0054 assignments expired. Read README intro, primary docs/agents/tasks/T-0054-latency-integration-readiness.md latest decision and review-20261006T1730/review.md plus primary-hashes.json and primary-drift-comparison.json. Complete missing trace, not another general summary. Candidate646845e is at C:/Users/brand/.codex/worktrees/igvc-t0053-reconcile-1703/IGVC SIM. Trace candidate sensor_course.py snapshot creation, actual recovery selection_pose and recovery_evidence caller to prove measured/predicted provenance at each. Check source in tools/replay_recovery.py and tools/learning/build_dataset.py only as needed. DO NOT read course/WORLD/teacher geometry, logs or credentials. No source edits, tests/imports, providers/delegation or simulations. Design minimal backward-compatible provenance handling: exact navigation replay retains all recorded numeric inputs; actual recovery uses captured actual selection_pose unchanged; controls may skip predicted/unknown with explicit counts. Legacy missing metadata is unknown unless explicit source/run binding proves semantics; distinguish malformed new metadata. Propose how dataset consumers retain usable legacy workflow via explicit opt-in versus silent relabeling. Adding metadata cannot preserve byte-identical full rows: specify unchanged numerical inputs and schema migration instead. State concrete smallest implementation scope, invariants, behavior tests and actual confirmed line references. Do not choose/merge primary percentile versus candidateEMA based on T0052. Root already verified two primary percentile hashes match1707; no need claim you hashed. Return <=300words plus concise design if needed, explicitly missing traces. Task6min/USD5; no retries. Root posts output; no edits or commits.
+
+### 2026-10-06T17:39:29-07:00 · claude-opus-5-5 → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0054/followup-20261006T1735/handback.md
+
+**T-0054 provenance follow-up (candidate 646845e, static read only; nothing run or edited)**
+
+**Traces now proven**
+1. **Navigation snapshot is the planning pose, with provenance stored alongside.** `sensor_course.py:509-511` gets `planning_pose` from `planning_context`. `latency_compensation.py:208-215` puts only that pose into `robot_xy`/`robot_yaw`. `sensor_course.py:525-531,541` stores `metadata.latency_compensation`, which holds `enabled`, `applied`, `measured_pose`, `planning_pose` and `reason` (`latency_compensation.py:138-165`). When compensation is not applied, `planning_pose == measured_pose` (`:141,165`). `navigation_decisions.py:59` writes `{schema_version:1, input, metadata}`.
+2. **Recovery `selection_pose` is measured.** `sensor_course.py:607` re-reads `latest['pose']`, which only the odometry callback sets (`:294`). It does not reuse the planning pose. `:632` records it unchanged, and `:639` passes the same pose into `recovery_args`.
+3. **The `recovery_evidence` caller is measured too.** `describe_search_inputs(recovery_args)` (`:667`), the worker (`recovery_evidence.py:213`) and `recovery_captures.defer(recovery_args…)` (`sensor_course.py:724`; `recovery_evidence.py:252-272`) all receive the measured pose. Nothing on this path calls the compensator.
+4. **The control-replay problem is confirmed.** `replay_controls` (`replay_recovery.py:151-153`) reads the snapshot's `robot_xy`, which can be the planning pose. `replay_event` (`:81`) uses `selection_pose`, which is measured.
+
+**Traces still missing**
+- I did not check whether `compact_event_metadata` keeps `latency_compensation` in the "requested" event in `run.json`.
+- `replay_event` uses the grid saved with that decision's navigation snapshot (`:75-78`). The live search used the grid from `:606`, which can be newer. That is a grid-provenance gap, separate from pose, and I haven't checked it.
+- I did not read the `build_dataset.py:323` corridor path past the line reference.
+- I did not open the README, `primary-hashes.json` or `primary-drift-comparison.json`.
+
+**Proposed design**
+- **`pose_source(snapshot)`, reader only:**
+  - `measured`: `latency_compensation` is a dict, `applied is False`, and `planning_pose == measured_pose == input` pose.
+  - `predicted`: `applied is True`, `planning_pose == input` pose, and `planning_pose != measured_pose`.
+  - `unknown_legacy`: metadata or the `latency_compensation` key is missing.
+  - `malformed`: the key is present but the wrong type, or any of the checks above fail.
+  - `unknown_legacy` can become measured only through an explicit opt-in such as `--legacy-pose-binding` against a listed set of pre-compensation `metadata.source_sha256` values. The output records that binding was used; nothing is relabelled silently.
+- **Navigation replay (`_replay_one`):** inputs stay as recorded. Output rows go to `schema_version=3` with a new `pose_provenance` field. Readers accept versions 2 and 3, and historical files are never rewritten.
+- **`replay_controls`:** keep only `measured` snapshots (plus legacy ones under the opt-in), and report `skipped: {predicted, unknown_legacy, malformed}` counts.
+- **`replay_event`:** no change.
+- **Corridor/route training:** excludes `unknown_legacy` and `malformed` by default. Explicit flags admit `predicted` or bound legacy rows.
+
+**Smallest scope:** one helper module plus edits to `replay_recovery.replay_controls` and `build_dataset._replay_one`/`:323`.
+
+**Invariants:** recorded numbers are never replaced, the live code is unchanged, and legacy data is never treated as measured by default.
+
+**Behaviour tests:**
+- Compensation off: a v3 row's numbers equal the v2 row's.
+- A predicted snapshot still replays to the recorded plan.
+- Missing metadata gives `unknown_legacy`; contradictory metadata gives `malformed`.
+- Controls skip and count predicted, legacy and malformed snapshots.
+- `replay_event` output is the same with and without the metadata.
+- The legacy opt-in needs a matching source hash.
+
+I make no claim about primary percentile versus candidate EMA.
+
+### 2026-10-06T17:39:29-07:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+
+relayed-from: artifacts/agents/T-0054/followup-20261006T1735/sol-trace-review.md
+
+# T0054 static trace evidence review
+
+Confirmed against clean candidate646845e25af6c0b58cd20131addfdbfacdcc6562 and primary replay_recovery.py. No execution or T0055 implementation review performed.
+
+Navigation captures the planning pose: sensor_course.py:509–531 passes planning_pose into frozen_planner_inputs; latency_compensation.py:214–215 stores it as robot_xy/robot_yaw. Metadata retains enabled/applied and measured/planning poses. DecisionRecorder writes input and metadata together (navigation_decisions.py:59). compact_event_metadata:28–35 removes only memory_refresh_input, so requested-event input_metadata retains latency_compensation; sensor_course.py:545–547 separately records both poses.
+
+Live recovery is measured: odom callback:294 sets latest.pose and:299 appends measured trajectory. Recovery:606–639 rereads current grid and latest.pose, records selection_pose and constructs recovery_args from the same measured pose. Recovery evidence diagnosis:213–217 and deferred capture preserve those supplied arguments; this path does not invoke the compensator.
+
+Controls replay:145–157 reads the navigation snapshot's robot_xy/yaw and pairs it with history_until(measured trajectory, event odometry stamp). Therefore predicted-start/measured-history pairing is possible. This is a source-confirmed defect mechanism, not an observed numerical failure from an executed replay.
+
+replay_event:75–85 instead uses measured selection_pose but takes the earlier navigation snapshot's grid. Live recovery rereads latest.grid at:606; equality is not established. That separate old-costmap provenance gap must not be conflated with predicted control pose or described as fixed by T0055.
+
+Qualification: candidate planning_context:155–160 marks unchanged predicted output applied=False. Zero-motion applied=True/equal poses are not emitted by this producer branch. T0055's requirement to admit that metadata shape as predicted is a permissive reader contract/synthetic test, not evidence of current producer behavior. Equality alone must not infer measured provenance across producers.
+
+T0055 appropriately narrows work to classifier/control guards, preserving recorded numbers and deterministic selection. Follow-up proposals for dataset admission, schema migration or legacy overrides are outside that packet. No primary-percentile reconciliation, runtime safety or implementation acceptance follows.
+
+
+### 2026-10-06T17:39:29-07:00 · gpt-6-astra → gpt-6-astra · DECISION
+
+Opus follow-up66.27s/USD0.4612754 exactmodel and Sol trace confirm control comparison mechanism; compact_event_metadata preserves latency metadata. T0055 implements only classifier/control guard on isolated branch, no predicted-pose substitution or runtime edits. Zero-motion applied=true is permitted reader shape, not emitted by candidate646845e. Actual recovery measured-pose path remains unchanged. Older recovery replay costmap provenance, dataset/schema compatibility and estimator identity remain unresolved; T0054 stays changes-requested for those integration-readiness questions. Headless analysis session ended. Interactive Claude inventory was acknowledged inT0048; no ownership collision or live A/B grant.

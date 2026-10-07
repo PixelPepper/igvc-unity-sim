@@ -6,22 +6,22 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 ## Needs attention
 
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
-- **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00)
+- **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
-- **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (DECISION by gpt-6-astra at 2026-10-06T17:31:04-07:00)
+- **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (DECISION by gpt-6-astra at 2026-10-06T17:39:29-07:00)
 
 ## Active
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
-| [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | REVIEW by gpt-6-astra at 2026-10-06T03:38:10.6221039-07:00 |
+| [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
-| [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-06T17:31:04-07:00 |
-| [T-0052](tasks/T-0052-external-corridor-comparison.md): Preserve the externally launched corridor comparison and its failed dispatch | `in-progress` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-06T17:31:36-07:00 |
+| [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-06T17:39:29-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
+| [T-0056](tasks/T-0056-dataset-pose-migration-design.md): Design explicit pose provenance for dataset readers without changing replay inputs | `ready` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-06T17:42:56.8603662-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
@@ -32,6 +32,8 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0041](tasks/T-0041-transport-next-experiment.md): Select a discriminating experiment for the unresolved transport interruption | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 8c3310016e4ea77348b9c7571f39a6e335d6a170 | DECISION by gpt-6-astra at 2026-10-05T19:36:04.895617-07:00 |
 | [T-0046](tasks/T-0046-observed-recovery-2335.md): Explain the baseline seed2335 recovery refusal from saved observations | `accepted` | P1 | gpt-6.1-sol | claude-sonnet-5-5 | none | 7cad33b | DECISION by gpt-6-astra at 2026-10-06T04:43:24.2600198-07:00 |
 | [T-0051](tasks/T-0051-observed-recovery-probe.md): Reconstruct rejected forward recovery proposals from observed inputs | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 7cad33b2e7c79798bffdba6f7998460758bac1fa | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
+| [T-0052](tasks/T-0052-external-corridor-comparison.md): Preserve the externally launched corridor comparison and its failed dispatch | `accepted` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ceda54c | DECISION by gpt-6-astra at 2026-10-06T17:39:29-07:00 |
+| [T-0055](tasks/T-0055-recovery-control-pose-provenance.md): Reject ambiguous pose inputs in offline recovery control comparisons | `accepted` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 8a8ab433db7ca925dc68968d7b6466f6e13e9c3d | DECISION by gpt-6-astra at 2026-10-06T17:45:39-07:00 |
 | [T-0000](tasks/T-0000-checkpoint-working-tree.md): Checkpoint the dirty integration tree into reviewed scoped commits | `integrated` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | tested | 771cf63e7a0bdf6e3cf0b2c42a186e8a2eb7ad3a | DECISION by gpt-6-astra at 2026-10-05T00:49:18-07:00 |
 | [T-0001](tasks/T-0001-processing-health.md): Explain lane/depth processing-health failures in sandbox lap 20261002T035715 | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | d4edb4a63ec1e3c6a1267249bbae0531eaced902 | NOTE by gpt-6-astra at 2026-10-04T23:44:23-07:00 |
 | [T-0005](tasks/T-0005-first-health-failure-capture.md): Preserve bounded first-failure sensor evidence for the next lap | `integrated` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | c9ccd8cf2ef6acb3723888977100ba96fcd5c4b9 | NOTE by gpt-6-astra at 2026-10-05T01:17:00-07:00 |
