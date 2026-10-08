@@ -8,7 +8,7 @@ reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/transport-probe
 base: 66667f6
-candidate: none
+candidate: 66667f6ba7e9cd0f5b470bcbca04d031560a153f
 claim: none
 lease: none
 updated: 2026-10-07
@@ -69,3 +69,7 @@ Sonnet r1 actual exactmodel46.75s/USD0.2172712 substantiates revised semantics/c
 T0076 COMPLETE, accepted only as static evidence interpretation. Final237word accepted-summary.md resolves Sonnet's remaining length-only blocker; the unabridged r1 semantics were verified by Sonnet. Root explicitly narrows raw streams to camera/lidar counters because clock participates in health. Native Sol independently accepted the condensed summary and hash/raw-field bindings: sol-evidence-review.md SHA2560e9b1aa2342eec816015f61e401974a2f778ee3405033e256f43431895328cf4. All8frozen copy hashes valid; fivePython sources match T75pins; threeUnity sources reference-only. Exact Claude totalUSD1.4387500 (Opus0.4598486+0.5480518; Sonnet0.2135784+0.2172712),nativeSolunknown. Every provider completed successfully; all analysis assignments ended. Initial extractor KeyError and shell SyntaxError occurred before providers and are preserved, as are rejected narrative and reviews.
 
 Established: negative counts measure stamps ahead of the last observed clock, not per-stream backwards stamps; magnitudes/times are missing and negatives are excluded from stored lag percentiles. Passing processed-status health does not settle raw camera/lidar timing. No historical transport/executor/drop/CPU cause identified. No source edits, tests, re-audit, live trial, guard changes or promotion. Future bounded observation-only capture may record sign/magnitude but requires its own isolated implementation and reviews; never infer cause from callback timing. T0070 interactive reservation unchanged. This task is closed and should not be redispatched or repeatedly reviewed.
+
+### 2026-10-07T20:04:57.8044283-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+Board validation initially refused accepted status with candidate:none; that canonical validation failure is preserved in this log. Candidate now names the frozen analysis source HEAD from input-v2/manifest.json, not a new implementation or pristine source claim. Source copies/hash bindings remain authority and Unity stays reference-only. Rebuilt board after fixing the required metadata; no source checks or analysis repeated.
