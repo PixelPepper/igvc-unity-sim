@@ -123,14 +123,20 @@ def classify_sim_time(response):
     return observed | dict(status='true')
 
 
-def check_sim_time(make_client, spin, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION_TIMEOUT,
+def check_sim_time(make_client, spin, release, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION_TIMEOUT,
                    monotonic=time.monotonic):
-    """Query use_sim_time on each node through its parameter services; never raises."""
+    """Query use_sim_time on each node through its parameter services; never raises.
+
+    Every client returned by make_client is passed to release before the next node is
+    queried, so repeated checks hold at most one live client and never accumulate.
+    """
     started = monotonic()
     deadline = started+min(timeout, CLOCK_ADMISSION_TIMEOUT)
     observations = []
     for name in nodes:
         observed = dict(node=name, status='timeout', value=None, type=None, error=None)
+        observations.append(observed)
+        client = None
         try:
             remaining = deadline-monotonic()
             if remaining <= 0:
@@ -139,7 +145,7 @@ def check_sim_time(make_client, spin, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION
             if not client.wait_for_services(timeout_sec=remaining):
                 observed.update(status='service_unavailable',
                                 error='Parameter services not discovered within %.1f s' % remaining)
-                observations.append(observed); continue
+                continue
             remaining = deadline-monotonic()
             if remaining <= 0:
                 raise TimeoutError('Admission deadline exhausted after service discovery')
@@ -148,15 +154,25 @@ def check_sim_time(make_client, spin, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION
             if not future.done():
                 future.cancel()
                 raise TimeoutError('No parameter response within %.1f s' % remaining)
+            if monotonic() > deadline:
+                # A response completed after the bound is not admitted, whatever it says.
+                raise TimeoutError('Parameter response completed after the admission deadline')
             failure = future.exception()
             if failure is not None:
                 raise failure
             observed.update(classify_sim_time(future.result()))
         except TimeoutError as exc:
-            observed.update(status='timeout', error=str(exc))
+            observed.update(status='timeout', value=None, type=None, error=str(exc))
         except Exception as exc:
             observed.update(status='exception', value=None, type=None, error=type(exc).__name__+': '+str(exc))
-        observations.append(observed)
+        finally:
+            if client is not None:
+                try:
+                    release(client)
+                except Exception as exc:
+                    # A leaked client is a lifecycle failure; never admit through it.
+                    observed.update(status='release_failed', error=(observed['error'] or 'observed '+observed['status'])+
+                                    '; client release failed: '+type(exc).__name__+': '+str(exc))
     return dict(parameter='use_sim_time', requirement='exactly one Boolean true per node',
                 requested_nodes=list(nodes), timeout_seconds=min(timeout, CLOCK_ADMISSION_TIMEOUT),
                 elapsed_seconds=round(monotonic()-started, 3),
@@ -195,21 +211,29 @@ class RosControl:
         self.call(self.reset, self.Trigger.Request())
 
     def verify_sim_time(self, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION_TIMEOUT):
-        clients = []
-        def make_client(name):
-            from rclpy.parameter_client import AsyncParameterClient
-            clients.append(AsyncParameterClient(self.node, name))
-            return clients[-1]
+        from rcl_interfaces.srv import GetParameters
+        node = self.node
+
+        class Parameters:
+            """One direct GetParameters client per node, owned only for a single query."""
+            def __init__(self, name):
+                self.client = node.create_client(GetParameters, name.rstrip('/')+'/get_parameters')
+
+            def wait_for_services(self, timeout_sec):
+                return self.client.wait_for_service(timeout_sec=timeout_sec)
+
+            def get_parameters(self, names):
+                request = GetParameters.Request(); request.names = list(names)
+                return self.client.call_async(request)
+
+        def release(parameters):
+            # Public Node API; the shared supervisor node itself stays alive.
+            if node.destroy_client(parameters.client) is False:
+                raise RuntimeError('Node.destroy_client did not release the parameter client')
+
         def spin(future, timeout_sec):
-            self.rclpy.spin_until_future_complete(self.node, future, timeout_sec=timeout_sec)
-        try:
-            return check_sim_time(make_client, spin, nodes, timeout)
-        finally:
-            for client in clients:
-                try:
-                    client.destroy()
-                except Exception:
-                    pass
+            self.rclpy.spin_until_future_complete(node, future, timeout_sec=timeout_sec)
+        return check_sim_time(Parameters, spin, release, nodes, timeout)
 
     def close(self):
         self.node.destroy_node(); self.rclpy.shutdown()

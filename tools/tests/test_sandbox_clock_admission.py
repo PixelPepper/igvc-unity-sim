@@ -9,7 +9,7 @@ from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import sandbox_session
-from sandbox_session import CLOCK_NODES, Supervisor, atomic_json, check_sim_time, classify_sim_time
+from sandbox_session import CLOCK_NODES, RosControl, Supervisor, atomic_json, check_sim_time, classify_sim_time
 
 try:
     # Use the real message shape when ROS is installed; otherwise mirror its fields.
@@ -59,10 +59,11 @@ class FakeClock:
 
 
 class FakeParameters:
-    """Per-node AsyncParameterClient stand-in with configurable behavior."""
-    def __init__(self, clock, behaviors):
-        self.clock, self.behaviors = clock, behaviors
+    """Per-node parameter client stand-in with configurable behavior and lifecycle tracking."""
+    def __init__(self, clock, behaviors, late=0.0, release_error=None):
+        self.clock, self.behaviors, self.late, self.release_error = clock, behaviors, late, release_error
         self.created, self.waits, self.spins, self.futures = [], [], [], []
+        self.live, self.released = [], []
 
     def make_client(self, name):
         behavior = self.behaviors[name]
@@ -89,15 +90,25 @@ class FakeParameters:
                     future = FakeFuture(behavior)
                 fake.futures.append(future)
                 return future
-        return Client()
+        client = Client()
+        self.live.append(client)
+        return client
+
+    def release(self, client):
+        self.live.remove(client)
+        self.released.append(client)
+        if self.release_error:
+            raise self.release_error
 
     def spin(self, future, timeout_sec):
         self.spins.append(timeout_sec)
         if not future.done():
             self.clock.now += timeout_sec
+        else:
+            self.clock.now += self.late
 
-    def check(self):
-        return check_sim_time(self.make_client, self.spin, monotonic=self.clock)
+    def check(self, **kwargs):
+        return check_sim_time(self.make_client, self.spin, self.release, monotonic=self.clock, **kwargs)
 
 
 class ClassificationTests(unittest.TestCase):
@@ -175,8 +186,149 @@ class CheckTests(unittest.TestCase):
 
     def test_requested_timeout_cannot_exceed_admission_bound(self):
         fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: 'unavailable', CLOCK_NODES[1]: TRUE()})
-        check_sim_time(fake.make_client, fake.spin, timeout=60, monotonic=fake.clock)
+        fake.check(timeout=60)
         self.assertLessEqual(fake.waits[0][1], sandbox_session.CLOCK_ADMISSION_TIMEOUT)
+
+    def test_late_true_response_after_deadline_is_not_admitted(self):
+        # The response completes, but the fake clock overruns the remaining budget while spinning.
+        fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: TRUE(), CLOCK_NODES[1]: TRUE()},
+                              late=sandbox_session.CLOCK_ADMISSION_TIMEOUT+0.5)
+        evidence = fake.check()
+        self.assertFalse(evidence['admitted'])
+        self.assertEqual(evidence['nodes'][0]['status'], 'timeout')
+        self.assertIsNone(evidence['nodes'][0]['value'])
+        self.assertIn('after the admission deadline', evidence['nodes'][0]['error'])
+        self.assertEqual(evidence['nodes'][1]['status'], 'timeout')
+        self.assertEqual(fake.live, [])
+
+    def test_response_within_deadline_is_admitted(self):
+        fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: TRUE(), CLOCK_NODES[1]: TRUE()},
+                              late=sandbox_session.CLOCK_ADMISSION_TIMEOUT/2)
+        self.assertTrue(fake.check()['admitted'])
+
+    def test_every_client_is_released_across_repeated_checks(self):
+        behaviors = [TRUE(), response(parameter(1, False)), response(parameter(0)), 'unavailable',
+                     'silent', FakeFuture(exception=ValueError('bad reply')), response()]
+        for round_ in range(3):
+            for behavior in behaviors:
+                with self.subTest(round=round_, behavior=behavior):
+                    fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: behavior, CLOCK_NODES[1]: TRUE()})
+                    fake.check()
+                    self.assertEqual(fake.live, [])
+                    self.assertEqual(len(fake.released), len(fake.created))
+
+    def test_client_construction_failure_has_nothing_to_release(self):
+        fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: RuntimeError('graph failure'), CLOCK_NODES[1]: TRUE()})
+        evidence = fake.check()
+        self.assertEqual(evidence['nodes'][0]['status'], 'exception')
+        self.assertEqual((fake.created, fake.live, len(fake.released)), ([CLOCK_NODES[1]], [], 1))
+
+    def test_release_failure_denies_admission(self):
+        fake = FakeParameters(FakeClock(), {CLOCK_NODES[0]: TRUE(), CLOCK_NODES[1]: TRUE()},
+                              release_error=RuntimeError('destroy refused'))
+        evidence = fake.check()
+        self.assertFalse(evidence['admitted'])
+        for item in evidence['nodes']:
+            self.assertEqual(item['status'], 'release_failed')
+            self.assertIn('destroy refused', item['error'])
+
+
+class FakeGetParameters:
+    class Request:
+        def __init__(self):
+            self.names = []
+
+
+class FakeServiceClient:
+    def __init__(self, behavior):
+        self.behavior = behavior
+
+    def wait_for_service(self, timeout_sec=None):
+        assert 0 < timeout_sec <= sandbox_session.CLOCK_ADMISSION_TIMEOUT
+        if isinstance(self.behavior, OSError):
+            raise self.behavior
+        return self.behavior != 'unavailable'
+
+    def call_async(self, request):
+        assert list(request.names) == ['use_sim_time']
+        if isinstance(self.behavior, Exception):
+            raise self.behavior
+        if self.behavior == 'silent':
+            return FakeFuture(done=False)
+        return FakeFuture(self.behavior)
+
+
+class FakeNode:
+    """Public rclpy Node surface: create_client/destroy_client; the node itself must survive."""
+    def __init__(self, behaviors, refuse_destroy=False):
+        self.behaviors, self.refuse_destroy = behaviors, refuse_destroy
+        self.live, self.services, self.destroyed_node = [], [], False
+
+    def create_client(self, srv_type, service):
+        assert srv_type is FakeGetParameters and service.endswith('/get_parameters')
+        self.services.append(service)
+        behavior = self.behaviors[service[:-len('/get_parameters')]]
+        if behavior == 'refuse_create':
+            raise RuntimeError('client creation refused')
+        self.live.append(FakeServiceClient(behavior))
+        return self.live[-1]
+
+    def destroy_client(self, client):
+        if self.refuse_destroy or client not in self.live:
+            return False
+        self.live.remove(client)
+        return True
+
+    def destroy_node(self):
+        self.destroyed_node = True
+
+
+class RosControlLifecycleTests(unittest.TestCase):
+    def setUp(self):
+        services = SimpleNamespace(GetParameters=FakeGetParameters)
+        patcher = patch.dict(sys.modules, {'rcl_interfaces': SimpleNamespace(srv=services),
+                                           'rcl_interfaces.srv': services})
+        patcher.start(); self.addCleanup(patcher.stop)
+
+    def control(self, node):
+        ros = RosControl.__new__(RosControl)
+        ros.node = node
+        ros.rclpy = SimpleNamespace(spin_until_future_complete=lambda node_, future, timeout_sec=None: None)
+        return ros
+
+    def test_repeated_verification_does_not_grow_client_count(self):
+        node = FakeNode({name: TRUE() for name in CLOCK_NODES})
+        ros = self.control(node)
+        for _ in range(25):
+            self.assertTrue(ros.verify_sim_time()['admitted'])
+            self.assertEqual(node.live, [])
+        self.assertEqual(node.services, [name+'/get_parameters' for name in CLOCK_NODES]*25)
+        self.assertFalse(node.destroyed_node)
+
+    def test_failure_paths_do_not_grow_client_count(self):
+        cases = {'false': response(parameter(1, False)), 'absent': response(parameter(0)),
+                 'wrong_type': response(parameter(4, True, string_value='true')),
+                 'malformed': response(), 'service_unavailable': 'unavailable', 'timeout': 'silent',
+                 'exception': RuntimeError('call failed'), 'discovery_error': OSError('graph down'),
+                 'create_error': 'refuse_create'}
+        expected = dict(discovery_error='exception', create_error='exception')
+        for status, behavior in cases.items():
+            with self.subTest(status=status):
+                node = FakeNode({CLOCK_NODES[0]: behavior, CLOCK_NODES[1]: TRUE()})
+                ros = self.control(node)
+                for _ in range(5):
+                    evidence = ros.verify_sim_time()
+                    self.assertFalse(evidence['admitted'])
+                    self.assertEqual(evidence['nodes'][0]['status'], expected.get(status, status))
+                    self.assertEqual(evidence['nodes'][1]['status'], 'true')
+                    self.assertEqual(node.live, [])
+                self.assertFalse(node.destroyed_node)
+
+    def test_refused_destroy_fails_closed(self):
+        node = FakeNode({name: TRUE() for name in CLOCK_NODES}, refuse_destroy=True)
+        evidence = self.control(node).verify_sim_time()
+        self.assertFalse(evidence['admitted'])
+        self.assertEqual({item['status'] for item in evidence['nodes']}, {'release_failed'})
 
 
 class SupervisorAdmissionTests(unittest.TestCase):
