@@ -1,15 +1,15 @@
 ---
 id: T-0073
 title: Bind simulator perception nodes to the simulation acquisition clock
-status: ready
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0073-perception-clock-opus
 base: 5346e60
-candidate: none
-claim: none
+candidate: 6199046b2f86d168a290bfdbcd15d2c89998f8d5
+claim: tested
 lease: none
 updated: 2026-10-07
 ---
@@ -66,3 +66,52 @@ Assign source-only launch-clock fix to named headless owner in isolated worktree
 is disjoint from T0070 and T0072; neither assignment is retried or transferred. Root
 verified relevant source is clean at5346e60. Tests/imports/live work remain prohibited
 to this worker; six-minute/USD5 requested bound, no automatic retries.
+
+### 2026-10-07T18:50:21.2031961-07:00 · gpt-6-astra → claude-sonnet-5-5 · HANDBACK
+
+Opus returned6199046b2f86d168a290bfdbcd15d2c89998f8d5; only two simulator launch files
+and new ROS test changed. Exact model confirmed,68.69s/USD0.2907404. Worker ran no tests;
+its attempted ast.parse was tool-permission blocked and it reported that honestly.
+Full handback/result preserved artifacts/agents/T-0073/implementation. Assignment ended.
+Root9 focused ROS checks PASS under all3locks in validation-scriptfile, log SHA256
+f558a3ba9a89318ac72196cc329771001a507d7810b6864925dc706d23354897; all3 candidate hashes
+and9 tracked external preimages unchanged. Two earlier wrapper import failures are
+preserved: validation and validation-envfix ran no behavior tests (two loader errors).
+Corrected sourced PYTHONPATH and moved WSL shell body to a saved script; no candidate
+changes. Duplicate node-name warnings retained. Real launch/rclpy plus existing idle/
+regression/freshness tests only; no live simulator or historical-cause proof. Sonnet
+source review is currently dispatched; Sol evidence review waits for its worker slot.
+### 2026-10-07T18:51:28.2321369-07:00 · gpt-6-astra → gpt-6.1-sol · REVIEW
+
+Sonnet source review PASS for6199046,28.56s/USD0.105909, preserved review/handback.md.
+No blocking findings. Limits: generic rclpy clock nodes plus resolved launch parameters
+are not a launched ROS stack; startup /clock arrival and live health effects untested.
+Direct standalone watchdog tool launch remains outside scope. Native Sol is checking
+candidate/test/log/lease bindings and the preserved failed wrapper attempts. No source
+integration has occurred yet. Headless Sonnet assignment ended.
+
+### 2026-10-07T18:51:52.2451828-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+Accept6199046 as tested launch-clock configuration fix: Sonnet source PASS and native
+Sol candidate-test binding accepted (sol-evidence-review.md). All earlier failures
+remain. Authoritative scope is simulation launch parameter binding; no historical
+causal proof, live audit benefit or hardware autonomy claim. Root will integrate only
+these3 files under all3locks and verify primary hashes/focused checks. T0070 unaffected.
+
+### 2026-10-07T18:52:27.4992604-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+Integrated only the3 accepted source files at9bbba2358549c693550b84572319d9c01cbe6022.
+All hashes match6199046;9 primary ROS focused checks PASS/no skips under all3locks,
+log00008e58b42020161f6f8335e8545acacac4939d0e8311d7dc9178b5643815ad;9 tracked external
+preimages unchanged. Locks released. Final Sol integration binding pending. Total
+Claude reported usageUSD0.3966494; native Sol unknown. No ROS overlay rebuild or live
+mission run: deployment and live health/audit effect remain unverified. Do not repeat
+completed checks or reconstruct this fix; latency T0070 ownership stays separate.
+
+### 2026-10-07T18:53:09.1616954-07:00 · gpt-6-astra → claude-opus-5-5 · REVIEW
+
+Final native Sol integration binding accepted; sol-integration-review.md SHA2566135c149725d837508e3f5d13aca330fe1a920a0c01565467d40cc91de090ed7.
+Three source hashes,9 PASS/no skips, log/leases and9 protected preimages verified.
+All T0073 worker assignments finished. Next independent runtime validation must bind
+installed overlay/launch hashes and effective use_sim_time values before driving;
+this source integration alone does not establish deployment or audit benefit.
