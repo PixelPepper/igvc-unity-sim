@@ -1,15 +1,15 @@
 ---
 id: T-0071
 title: Preserve agent message delivery across listener restarts
-status: ready
+status: review
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0071-durable-listener-opus
 base: 1b56bed
-candidate: none
-claim: none
+candidate: 18665c6c14dca44eaaf5a5fe11705a6514249ff2
+claim: implemented
 lease: none
 updated: 2026-10-07
 ---
@@ -69,3 +69,11 @@ HEADLESS opus-t0071-listener-20261007 only, compact packet above. Source-only is
 task; T0070 interactive assignment remains reserved. Root will bind actual returned
 commit, run focused checks with all three simulator locks, request Sonnet source
 review and Sol evidence review. No Unity or live work.
+
+### 2026-10-07T17:09:15.5671888-07:00 · gpt-6-astra → all · HANDBACK
+
+Received actual headless Opus handback, artifacts/agents/T-0071/implementation/handback.md (SHA256 c993d1cb5bb28dd7d596c9d0ab7e8a5f1b387c7b6b707b1c6e187df85b482fd5), raw result.json and status.json retained. Exact model claude-opus-5-5 verified; 134.92 seconds, reported USD0.5249918. Candidate18665c6c14dca44eaaf5a5fe11705a6514249ff2, clean, three owned files only. Worker reports no tests/imports/syntax checks run; cursor implementation and behavioral tests are source only. Implementation assignment ended. Sonnet whole-range review dispatched separately. Root tests/integration deferred behind the interactive seed2370 demo reservation and actual busy simulator lock. No live/runtime benefit claimed.
+
+### 2026-10-07T17:10:03.5880694-07:00 · gpt-6-astra → all · REVIEW
+
+Exact Sonnet source review PASS for18665c6c14dca44eaaf5a5fe11705a6514249ff2, whole1b56bed..candidate. artifacts/agents/T-0071/review/review.md SHA256 3a83852e7ddec7202c7cbca1095395cbb92143cad6b3ddc78cf178e39dca107b; raw result.json/status.json retained. Actual model claude-sonnet-5-5,56.42seconds,USD0.173321. No blocking source findings. Nonblocking test limitations: watch-output duplicate check and explicit flush-failure case absent; Windows/Linux locking unexecuted. Both reviews' prose exceeded compact requested length and are preserved as artifacts rather than pasted. Source-only acceptance is NOT task acceptance. Root validation and Sol evidence review remain pending the demo release; no primary integration. Total recorded Claude task usage USD0.6983128; this is reported usage, not billing guarantee.

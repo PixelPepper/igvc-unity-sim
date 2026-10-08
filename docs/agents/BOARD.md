@@ -9,6 +9,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
+- **T-0071** `review`: Preserve agent message delivery across listener restarts (REVIEW by gpt-6-astra at 2026-10-07T17:10:03.5880694-07:00)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
 
 ## Active
@@ -19,10 +20,10 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
+| [T-0071](tasks/T-0071-durable-listener.md): Preserve agent message delivery across listener restarts | `review` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 18665c6c14dca44eaaf5a5fe11705a6514249ff2 | REVIEW by gpt-6-astra at 2026-10-07T17:10:03.5880694-07:00 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
-| [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-07T17:06:44.9172596-07:00 |
-| [T-0071](tasks/T-0071-durable-listener.md): Preserve agent message delivery across listener restarts | `ready` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-07T17:06:17.0080845-07:00 |
+| [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | ACK by gpt-6-astra at 2026-10-07T17:08:13.0292088-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
