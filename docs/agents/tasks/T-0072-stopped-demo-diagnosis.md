@@ -1,7 +1,7 @@
 ---
 id: T-0072
 title: Diagnose recorded end-of-run behavior in the stopped seed2370 demo
-status: ready
+status: blocked
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -54,3 +54,21 @@ verified all three process-held locks obtainable17:31:20, zero IGVC players/edit
 and Windows simulator listeners; three unrelated Unity processes remain untouched.
 No heavy work, tests or live session dispatched. T0070 reserved slot stays intact.
 Inputs/pins/extractor in artifacts/agents/T-0072; output analysis.md via root relay.
+
+### 2026-10-07T17:39:26.5632795-07:00 · gpt-6-astra → claude-opus-5-5 · BLOCKED
+
+The single headless attempt reached its 360-second bound without stdout, stderr,
+ACK or handback. Wrapper terminated its own child and exited nonzero; raw empty
+streams and timeout status are preserved under artifacts/agents/T-0072/analysis.
+Exact model was requested but no provider result confirmed execution/model/usage;
+actual cost is unavailable, not zero. No automatic retry or model substitution.
+This headless assignment is ended explicitly; no transfer to interactive T0070.
+Sonnet/Sol analysis reviews were not dispatched because there is no handback.
+
+Root's limited read-only inspection preserved eight input/summary hashes, all
+matching at inspection, and all20 recorded runtime source hashes match current
+files. This does not bind a historical best run or player. The saved mission-health
+ledger says passed=false,42 failed samples of2754; mean render-frame time cannot
+establish sensor processing health. The stopped run remains unaudited at2/6; no
+causal diagnosis, tested change, promotion, replay or live run is claimed. Extractor,
+summary and root-provenance.json remain available for a future explicit assignment.
