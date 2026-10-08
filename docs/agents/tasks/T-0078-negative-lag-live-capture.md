@@ -82,3 +82,7 @@ T0078 COMPLETE. Accept only new diagnostic capture evidence; navigation FAILED1/
 Live diagnostic accepted:64records+342overflow+0skips=406negativecounts, allrecordsvalid, first64 only. Recorded sensorstamps are10-30ms LATER than lastreceivedclock (signedclock-minus-sensor -30..-10ms),6recordsbeforearmedmission58within. No locations/times for overflow or transport/executor/drop/CPUcause identified. Source/player575pins unchanged,20runtimehashesmatch, actualclockadmission true, launcherexit0 and allleasesreleased12:25:24. Sol checked14artifactpins/all64events and sameprocessmonotonicclock, did not re-audit or rehashplayer. ExactClaudeUSD0.1528764,nativeSolunknown. All workersfinished. No furthertrial/audit/reviews for this task.
 
 Next justified development target is the recorded no-forward-plan/local-recovery-budget failure despite healthy processing, using this new run's observed-only evidence in a separate bounded task. Never repeat T0051probe or the timed-outT0072 request, weaken recovery/freshness/body/unknown/audit guards, or infer that T0077 instrumentation caused the failure. Keep previous T0075success and all prior failures as separate records. T0070 interactive source reservation unchanged; no source/build/push in this task.
+
+### 2026-10-08T12:32:15.4130581-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+
+Correction: final Sol verified15 summary-pinned artifacts, not14 as mistyped in the preceding decision. The14figure is the number of passing audit checks. Exact review/hash remains unchanged; no verification rerun.
