@@ -26,6 +26,9 @@ class SensorTelemetry:
     # Statuses whose last values are retained in a first-failure snapshot.
     SNAPSHOT_STATUSES = ('lanes', 'depth_processing', 'lane_health', 'depth_health', 'lidar_processing')
     SNAPSHOT_STREAMS = ('clock', 'rgb', 'rgb_info', 'depth', 'depth_info', 'scan') + SNAPSHOT_STATUSES
+    # Fixed allowlist and global capacity for first-negative-lag raw sensor events.
+    NEGATIVE_LAG_STREAMS = ('rgb', 'rgb_info', 'depth', 'depth_info', 'scan')
+    NEGATIVE_LAG_CAPACITY = 64
 
     def __init__(self, clock=time.monotonic, window=4096, event_limit=384, status_byte_limit=4096,
                  snapshot_events=32, snapshot_byte_limit=262144):
@@ -50,6 +53,10 @@ class SensorTelemetry:
         self.reasons = {}
         self.status_byte_limit = status_byte_limit
         self.status_rejections = {}
+        # (stream, stamp_ns, clock_stamp_ns, callback_monotonic_s) tuples; never evicted.
+        self.negative_lag_events = []
+        self.negative_lag_overflow = 0
+        self.negative_lag_capture_skips = 0
 
     def observe_clock(self, stamp_ns):
         if self.sim_ns is not None and stamp_ns < self.sim_ns:
@@ -79,8 +86,32 @@ class SensorTelemetry:
                     stream['lags'].append(lag)
                 else:
                     stream['negative_lag_samples'] += 1
+                    self._capture_negative_lag(name, stamp_ns, now)
         stream['count'] += 1
         stream['last_wall'] = now
+
+    @staticmethod
+    def _exact_stamp(value):
+        return type(value) is int and 0 <= value < 2**63
+
+    def _capture_negative_lag(self, name, stamp_ns, now):
+        """Keep the first allowlisted negative-lag events; observation only, never raises.
+
+        Only explicit type/range checks: no new clock reads and no wrapper around
+        the legacy calculations. Values outside the diagnostic contract (non-int or
+        out-of-range stamps, non-finite callback time) are counted as skips.
+        """
+        if type(name) is not str or name not in self.NEGATIVE_LAG_STREAMS:
+            return
+        clock_ns = self.sim_ns
+        finite_now = (type(now) is float and math.isfinite(now) or
+                      type(now) is int and -2**63 < now < 2**63)
+        if not (self._exact_stamp(stamp_ns) and self._exact_stamp(clock_ns) and finite_now):
+            self.negative_lag_capture_skips += 1
+        elif len(self.negative_lag_events) < self.NEGATIVE_LAG_CAPACITY:
+            self.negative_lag_events.append((name, stamp_ns, clock_ns, now))
+        else:
+            self.negative_lag_overflow += 1
 
     def status(self, name, payload):
         self.observe(name)
@@ -253,6 +284,28 @@ class SensorTelemetry:
                                   'capture_error': 'snapshot_exceeds_byte_limit'})
         return encoded  # serialized: later mutation cannot alter the retained copy
 
+    def _negative_lag_report(self):
+        # Fresh containers per call: callers cannot mutate retained evidence.
+        return {
+            'capacity': self.NEGATIVE_LAG_CAPACITY, 'streams': list(self.NEGATIVE_LAG_STREAMS),
+            'captured_count': len(self.negative_lag_events),
+            'overflow_count': self.negative_lag_overflow,
+            'invalid_value_skip_count': self.negative_lag_capture_skips,
+            'events': [{'stream': name, 'stamp_ns': stamp, 'latest_clock_stamp_ns': clock_ns,
+                        'callback_monotonic_s': now}
+                       for name, stamp, clock_ns, now in self.negative_lag_events],
+            'accounting': 'Counts cover only allowlisted streams whose observe() call already '
+                          'incremented negative_lag_samples. Each such event is exactly one of: '
+                          'captured (first capacity valid events, never evicted), overflow (valid '
+                          'events after capacity is full) or invalid_value_skip (stamp or clock not an '
+                          'int in [0, 2**63), or non-finite callback time), so their sum equals the '
+                          'allowlisted negative_lag_samples total.',
+            'scope': 'Whole telemetry lifetime from construction; no mission interval tagging. '
+                     'callback_monotonic_s is the same clock value (time.monotonic by default) '
+                     'observe() already read for that callback;latest_clock_stamp_ns is the last received /clock.',
+            'interpretation': 'Callback-local ordering evidence only. It cannot identify transport, '
+                              'executor, drop or CPU causes, and does not explain past runs.'}
+
     def report(self):
         now = self.clock()
         result = {}
@@ -278,6 +331,7 @@ class SensorTelemetry:
                 'status_reason_counts': {name: dict(counts) for name, counts in self.reasons.items()},
                 'status_rejection_counts': {name: dict(counts) for name, counts in self.status_rejections.items()},
                 'processing_health_summary': self.health_summary(now),
+                'negative_lag_capture': self._negative_lag_report(),
                 'recent_events': list(self.events), 'total_status_events': self.event_count,
                 'limits': {'samples_per_stream': self.window, 'status_events': self.events.maxlen,
                            'retained_status_bytes_each': self.status_byte_limit, 'reason_keys_per_stream': 64},
