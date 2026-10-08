@@ -35,8 +35,9 @@ def generate_launch_description():
         # Remember paint actually seen during this mission; do not erase a
         # boundary behind the camera while negotiating an observed detour.
         Node(package='igvc_perception', executable='lane_detector', output='screen',
-             parameters=[{'point_ttl': 1200.0}]),
-        Node(package='igvc_perception', executable='depth_processor', output='screen'),
+             parameters=[{'use_sim_time': True, 'point_ttl': 1200.0}]),
+        Node(package='igvc_perception', executable='depth_processor', output='screen',
+             parameters=[{'use_sim_time': True}]),
         Node(package='igvc_perception', executable='scan_ground_filter', output='screen',
              parameters=[{'use_sim_time': True}]),
         Node(package='nav2_lifecycle_manager', executable='lifecycle_manager',
