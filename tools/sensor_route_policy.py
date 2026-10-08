@@ -15,6 +15,39 @@ import time
 from swept_footprint import arc_sweep_box
 
 
+# Optional bounded record of the select_local_goal exit stage actually executed.
+# It names where the call stopped, never why a safe route might not exist.
+FORWARD_REJECTION_VERSION = 1
+FORWARD_REJECTION_STAGES = (
+    'incomplete', 'invalid_options_or_input', 'start_outside_grid',
+    'start_clearance_rejected', 'progress_target_too_close',
+    'start_footprint_rejected', 'forward_no_admissible_candidate',
+    'forward_route_returned', 'not_forward_search')
+
+
+def _rejection_record(sink):
+    """Reset and return a plain-dict sink; any other type is ignored (None).
+
+    Only fixed scalar fields are stored, so a reused collector never retains a
+    previous call's stage or search counts.
+    """
+    if type(sink) is not dict:
+        return None
+    sink.clear()
+    sink.update(version=FORWARD_REJECTION_VERSION, stage='incomplete',
+                evidence='executed_stage_not_causal_proof', route_returned=False,
+                forward_search_evaluated=False, expanded_states=None,
+                expansion_limit=None, budget_exhausted=None,
+                time_budget_exhausted=None, search_exhausted=None)
+    return sink
+
+
+def _record_stage(record, stage, **fields):
+    if record is not None:
+        record['stage'] = stage
+        record.update(fields)
+
+
 def _circle_clear(x, y, radius, costs, width, height, resolution, origin):
     """Exact circle-versus-occupied-square check at a continuous pose."""
     ox, oy = origin
@@ -149,13 +182,15 @@ def _forward_goal(clear, costs, width, height, resolution, origin,
                   continuation_reserve=0., destination_yaw=None, destination_yaw_tolerance=.35,
                   body_clearance_weight=0., body_clearance_scale=.30,
                   route_alternatives=0, alternative_max_seconds=None,
-                  learned_scorer=None, learned_weight=0., alternative_search_fraction=.1):
+                  learned_scorer=None, learned_weight=0., alternative_search_fraction=.1,
+                  rejection=None):
     """Bounded hybrid search: continuous poses, quantized position/heading keys.
 
     Only forward straight and circular primitives exist, with bounded curvature;
     pose coordinates are never snapped to grid centres. The grid is used for
     dominance and collision checks only. This is an observed-space proposal,
     not a replacement for the execution controller's full-footprint checks.
+    ``rejection`` (a reset record or None) receives only the null exit stage.
     """
     ox, oy = origin
     angle_step = math.pi / 8
@@ -186,6 +221,7 @@ def _forward_goal(clear, costs, width, height, resolution, origin,
         # incorrectly forbid moving parallel to or away from a nearby cell.
         if not _rectangle_clear(*robot_xy, robot_yaw, goal_footprint,
                                 costs, width, height, resolution, origin, hazard_rows):
+            _record_stage(rejection, 'start_footprint_rejected')
             return None
     primitives = {}
     for heading in range(16):
@@ -414,6 +450,15 @@ def _forward_goal(clear, costs, width, height, resolution, origin,
                                                   + minimum_turn_radius*nh_error), i))
         heapq.heapify(queue)
     if best is None:
+        # Without a choice no side pass ran, so these are the main search's
+        # final counters, combined exactly as _forward_result reports them.
+        _record_stage(rejection, 'forward_no_admissible_candidate',
+            forward_search_evaluated=True, expanded_states=expanded,
+            expansion_limit=expansion_limit,
+            budget_exhausted=time_budget_exhausted or (
+                expanded >= expansion_limit and bool(queue)),
+            time_budget_exhausted=time_budget_exhausted,
+            search_exhausted=not queue)
         return None
     if not collect_alternatives:
         return _forward_result(nodes, best, best_route, expanded, expansion_limit,
@@ -861,7 +906,8 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
                       continuation_reserve=0., destination_yaw=None, destination_yaw_tolerance=.35,
                       body_clearance_weight=0., body_clearance_scale=.30,
                       route_alternatives=4, alternative_max_seconds=None,
-                      learned_scorer=None, learned_weight=0., alternative_search_fraction=.1):
+                      learned_scorer=None, learned_weight=0., alternative_search_fraction=.1,
+                      rejection_diagnostics=None):
     """Return ``{local_goal, yaw, path, diagnostics}``, or fail closed with None.
 
     Coordinates and distances are metres, yaw is radians, and ``costs`` is the
@@ -939,7 +985,18 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     another path pose at least 1 m along the path is selected; a valid original
     short final approach remains allowed. The holonomic mode checks only the
     goal rectangle. Nav2 must still validate and safely execute its own path.
+    Optional ``rejection_diagnostics`` (a plain dict; other types are ignored)
+    is cleared and then receives a fixed versioned scalar record of the exit
+    stage executed (``FORWARD_REJECTION_STAGES``). A forward search without an
+    admissible candidate also records its expansion count and budget, time and
+    queue exhaustion flags. This is stage evidence, not causal proof that no
+    safe route exists. A returned forward route records no rejection, and the
+    holonomic search records only ``not_forward_search``. The record never
+    affects validation, search, budgets or the returned plan.
     """
+    record = _rejection_record(rejection_diagnostics)
+    # Every early return in this block is an option/input rejection.
+    _record_stage(record, 'invalid_options_or_input')
     try:
         if (not math.isfinite(body_clearance_weight) or not 0 <= body_clearance_weight <= 10
                 or not math.isfinite(body_clearance_scale) or not 0 < body_clearance_scale <= 1
@@ -985,12 +1042,14 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
             return None
     except (TypeError, ValueError, OverflowError):
         return None
+    _record_stage(record, 'incomplete')
 
     ox, oy = origin_xy
     rx, ry = robot_xy
     gx, gy = destination_xy
     sx, sy = math.floor((rx - ox) / resolution), math.floor((ry - oy) / resolution)
     if not (0 <= sx < width and 0 <= sy < height):
+        _record_stage(record, 'start_outside_grid')
         return None
     # Extra cell diagonal covers obstacle cell area, swept grid edges and the
     # initial robot-to-cell-centre offset, not merely point obstacle centres.
@@ -1002,24 +1061,33 @@ def select_local_goal(origin_xy, resolution, width, height, costs,
     if not clear[start] and not (forward_only and _circle_clear(
             rx, ry, robot_radius + resolution*.25,
             costs, width, height, resolution, origin_xy)):
+        _record_stage(record, 'start_clearance_rejected')
         return None
     initial_distance = math.hypot(gx - rx, gy - ry)
     if initial_distance < min_progress:
+        _record_stage(record, 'progress_target_too_close')
         return None
 
     def point(index):
         return ox + (index % width + .5) * resolution, oy + (index // width + .5) * resolution
 
     if forward_only:
-        return _forward_goal(clear, costs, width, height, resolution,
-                             origin_xy, robot_xy, robot_yaw, destination_xy,
-                             robot_radius, lookahead, max_path_length, min_progress,
-                             goal_footprint, minimum_turn_radius, max_expansions,
-                             max_search_seconds, min_goal_distance, continuation_reserve,
-                             destination_yaw, destination_yaw_tolerance,
-                             body_clearance_weight, body_clearance_scale,
-                             route_alternatives, alternative_max_seconds,
-                             learned_scorer, learned_weight, alternative_search_fraction)
+        result = _forward_goal(clear, costs, width, height, resolution,
+                               origin_xy, robot_xy, robot_yaw, destination_xy,
+                               robot_radius, lookahead, max_path_length, min_progress,
+                               goal_footprint, minimum_turn_radius, max_expansions,
+                               max_search_seconds, min_goal_distance, continuation_reserve,
+                               destination_yaw, destination_yaw_tolerance,
+                               body_clearance_weight, body_clearance_scale,
+                               route_alternatives, alternative_max_seconds,
+                               learned_scorer, learned_weight, alternative_search_fraction,
+                               record)
+        if result is not None:
+            _record_stage(record, 'forward_route_returned', route_returned=True,
+                          forward_search_evaluated=True)
+        return result
+    # The holonomic search is not instrumented; its outcome is only the return.
+    _record_stage(record, 'not_forward_search', route_returned=None)
 
     infinity = float('inf')
     count = width * height

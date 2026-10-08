@@ -318,9 +318,15 @@ def plan_observed_navigation(origin, resolution, width, height, costs,
                              guidance_diagnostics=None, entrance_tracking=False,
                              frozen_guidance=None, **planner_options):
     diagnostic = guidance_diagnostics if guidance_diagnostics is not None else {}
+    # A reused envelope must not show a previous call's planner exit stage.
+    diagnostic.pop('forward_rejection', None)
     # Corridor re-rank options belong to guidance only; select_local_goal never sees them.
     corridor_scorer = planner_options.pop('corridor_scorer', None)
     corridor_weight = planner_options.pop('corridor_weight', 0.)
+    # A caller's separate plain-dict sink is honoured; otherwise a private one
+    # is used, so the reset can never clear the guidance envelope itself.
+    sink = planner_options.pop('rejection_diagnostics', None)
+    rejection = sink if type(sink) is dict and sink is not diagnostic else {}
     if frozen_guidance is None:
         selected = select_observed_guidance(lane_points, robot_xy, robot_yaw, destination,
             heading_hint, entrance_tracking=entrance_tracking,
@@ -354,7 +360,10 @@ def plan_observed_navigation(origin, resolution, width, height, costs,
     if selected['yaw'] is not None and planner_options.get('forward_only', False):
         planner_options['destination_yaw'] = selected['yaw']
     plan = select_local_goal(origin, resolution, width, height, costs,
-                             robot_xy, robot_yaw, target, **planner_options)
+                             robot_xy, robot_yaw, target, rejection_diagnostics=rejection,
+                             **planner_options)
+    # Detached scalar copy: executed planner exit stage, not proof of no route.
+    diagnostic['forward_rejection'] = dict(rejection)
     # A blocked visible entrance must not silently fall back to the GPS shortcut.
     if plan is not None:
         plan['diagnostics']['guidance'] = selected['guidance']
