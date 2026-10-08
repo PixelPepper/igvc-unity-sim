@@ -82,6 +82,89 @@ def stop_child(child):
     raise RuntimeError('Subprocess did not confirm exit; ownership retained')
 
 
+# Perception nodes whose use_sim_time must be true before a mission may spawn.
+CLOCK_NODES = ('/igvc_lane_detector', '/igvc_depth_processor')
+# One monotonic deadline bounds discovery and responses for every node together.
+CLOCK_ADMISSION_TIMEOUT = 15.0
+# rcl_interfaces/msg/ParameterType constants (kept local so unit tests need no ROS).
+PARAMETER_NOT_SET, PARAMETER_BOOL = 0, 1
+CLOCK_SCOPE = ('Configuration admission only: use_sim_time=true does not prove /clock delivery, '
+               'sensor freshness or processing health, or a safe or audited mission')
+
+
+class ClockAdmissionError(RuntimeError):
+    """Perception clock configuration was not positively confirmed."""
+
+
+def classify_sim_time(response):
+    """Strictly classify a GetParameters response for the single use_sim_time request."""
+    observed = dict(status='malformed', value=None, type=None, error=None)
+    values = getattr(response, 'values', None)
+    try:
+        values = list(values)
+    except TypeError:
+        return observed | dict(error='Response has no parameter value sequence')
+    if len(values) != 1:
+        return observed | dict(error='Expected exactly one parameter value, received %d' % len(values))
+    kind = getattr(values[0], 'type', None)
+    if type(kind) is not int:
+        return observed | dict(error='Parameter type is not an integer: %r' % (kind,))
+    observed['type'] = kind
+    if kind == PARAMETER_NOT_SET:
+        return observed | dict(status='absent', error='use_sim_time is not set')
+    if kind != PARAMETER_BOOL:
+        return observed | dict(status='wrong_type', error='use_sim_time has non-Boolean parameter type %d' % kind)
+    flag = getattr(values[0], 'bool_value', None)
+    if type(flag) is not bool:
+        return observed | dict(error='Boolean parameter carries non-Boolean value %r' % (flag,))
+    observed['value'] = flag
+    if flag is not True:
+        return observed | dict(status='false', error='use_sim_time is false')
+    return observed | dict(status='true')
+
+
+def check_sim_time(make_client, spin, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION_TIMEOUT,
+                   monotonic=time.monotonic):
+    """Query use_sim_time on each node through its parameter services; never raises."""
+    started = monotonic()
+    deadline = started+min(timeout, CLOCK_ADMISSION_TIMEOUT)
+    observations = []
+    for name in nodes:
+        observed = dict(node=name, status='timeout', value=None, type=None, error=None)
+        try:
+            remaining = deadline-monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Admission deadline exhausted before querying this node')
+            client = make_client(name)
+            if not client.wait_for_services(timeout_sec=remaining):
+                observed.update(status='service_unavailable',
+                                error='Parameter services not discovered within %.1f s' % remaining)
+                observations.append(observed); continue
+            remaining = deadline-monotonic()
+            if remaining <= 0:
+                raise TimeoutError('Admission deadline exhausted after service discovery')
+            future = client.get_parameters(['use_sim_time'])
+            spin(future, remaining)
+            if not future.done():
+                future.cancel()
+                raise TimeoutError('No parameter response within %.1f s' % remaining)
+            failure = future.exception()
+            if failure is not None:
+                raise failure
+            observed.update(classify_sim_time(future.result()))
+        except TimeoutError as exc:
+            observed.update(status='timeout', error=str(exc))
+        except Exception as exc:
+            observed.update(status='exception', value=None, type=None, error=type(exc).__name__+': '+str(exc))
+        observations.append(observed)
+    return dict(parameter='use_sim_time', requirement='exactly one Boolean true per node',
+                requested_nodes=list(nodes), timeout_seconds=min(timeout, CLOCK_ADMISSION_TIMEOUT),
+                elapsed_seconds=round(monotonic()-started, 3),
+                checked_utc=datetime.now(timezone.utc).isoformat(),
+                admitted=len(observations) == len(nodes) > 0 and all(item['status'] == 'true' for item in observations),
+                nodes=observations, scope=CLOCK_SCOPE)
+
+
 class RosControl:
     def __init__(self):
         import rclpy
@@ -110,6 +193,23 @@ class RosControl:
         request = self.SetBool.Request(); request.data = False
         self.call(self.estop, request)
         self.call(self.reset, self.Trigger.Request())
+
+    def verify_sim_time(self, nodes=CLOCK_NODES, timeout=CLOCK_ADMISSION_TIMEOUT):
+        clients = []
+        def make_client(name):
+            from rclpy.parameter_client import AsyncParameterClient
+            clients.append(AsyncParameterClient(self.node, name))
+            return clients[-1]
+        def spin(future, timeout_sec):
+            self.rclpy.spin_until_future_complete(self.node, future, timeout_sec=timeout_sec)
+        try:
+            return check_sim_time(make_client, spin, nodes, timeout)
+        finally:
+            for client in clients:
+                try:
+                    client.destroy()
+                except Exception:
+                    pass
 
     def close(self):
         self.node.destroy_node(); self.rclpy.shutdown()
@@ -232,18 +332,62 @@ class Supervisor:
                     profile_sha256=hashlib.sha256(profile_path.read_bytes()).hexdigest(),
                     mission_argv=argv, created_utc=datetime.now(timezone.utc).isoformat()))
         self.nav_owned = True
-        self.nav('start', profile_path)
-        with (self.folder / 'mission.log').open('w') as log:
-            self.child = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
-                                          stdin=subprocess.DEVNULL, start_new_session=True)
-        provenance = json.loads((self.folder / 'provenance.json').read_text())
-        provenance['mission_pid'] = self.child.pid
-        provenance['supervisor_pid'] = os.getpid()
-        provenance['navigation_session'] = json.loads((session_dir(ROOT) / 'nav.json').read_text())
-        frozen_course = self.folder / 'course.json'
-        provenance['course_sha256'] = hashlib.sha256(frozen_course.read_bytes()).hexdigest() if frozen_course.exists() else None
-        atomic_json(self.folder / 'provenance.json', provenance)
+        try:
+            self.nav('start', profile_path)
+            # Simulator autonomy stays disabled; no mission spawns without admission.
+            self.status('starting', 'Verifying perception use_sim_time configuration')
+            self.admit_clock()
+            with (self.folder / 'mission.log').open('w') as log:
+                self.child = subprocess.Popen(argv, stdout=log, stderr=subprocess.STDOUT,
+                                              stdin=subprocess.DEVNULL, start_new_session=True)
+            provenance = json.loads((self.folder / 'provenance.json').read_text())
+            provenance['mission_pid'] = self.child.pid
+            provenance['supervisor_pid'] = os.getpid()
+            provenance['navigation_session'] = json.loads((session_dir(ROOT) / 'nav.json').read_text())
+            frozen_course = self.folder / 'course.json'
+            provenance['course_sha256'] = hashlib.sha256(frozen_course.read_bytes()).hexdigest() if frozen_course.exists() else None
+            atomic_json(self.folder / 'provenance.json', provenance)
+        except (OSError, ValueError) as exc:
+            # process_command treats these as invalid commands without cleanup;
+            # navigation (and possibly a mission) is owned now, so force cleanup.
+            raise RuntimeError('Mission start failed after navigation start: '+str(exc)) from exc
         self.status('running', 'Sensor-led mission running')
+
+    def admit_clock(self):
+        """Persist perception clock configuration evidence; raise unless positively admitted."""
+        try:
+            evidence = self.ros.verify_sim_time()
+            if not isinstance(evidence, dict) or not isinstance(evidence.get('nodes'), list):
+                raise TypeError('Clock admission returned malformed evidence')
+        except Exception as exc:
+            # Record the failure itself; never fabricate observations.
+            evidence = dict(parameter='use_sim_time', requirement='exactly one Boolean true per node',
+                            requested_nodes=list(CLOCK_NODES), admitted=False,
+                            checked_utc=datetime.now(timezone.utc).isoformat(),
+                            error=type(exc).__name__+': '+str(exc), scope=CLOCK_SCOPE,
+                            nodes=[dict(node=name, status='not_observed', value=None, type=None, error=None)
+                                   for name in CLOCK_NODES])
+        observed = {item.get('node'): item for item in evidence['nodes'] if isinstance(item, dict)}
+        admitted = (evidence.get('admitted') is True and
+                    all(observed.get(name, {}).get('status') == 'true' and
+                        observed[name].get('value') is True for name in CLOCK_NODES))
+        evidence['admitted'] = admitted
+        persist_error = None
+        try:
+            atomic_json(self.folder / 'clock-admission.json', evidence)
+            provenance = json.loads((self.folder / 'provenance.json').read_text())
+            provenance['clock_configuration'] = evidence
+            atomic_json(self.folder / 'provenance.json', provenance)
+        except Exception as exc:
+            persist_error = 'clock evidence not persisted: '+str(exc)
+        if not admitted:
+            reasons = evidence.get('error') or '; '.join(
+                '%s=%s (%s)' % (name, observed.get(name, {}).get('status', 'missing'),
+                                observed.get(name, {}).get('error') or 'no detail') for name in CLOCK_NODES)
+            raise ClockAdmissionError('Perception clock admission failed (use_sim_time): '+reasons+
+                                      ('; '+persist_error if persist_error else ''))
+        if persist_error:
+            raise ClockAdmissionError('Perception clock admitted but '+persist_error)
 
     def tick(self):
         try:
