@@ -21,9 +21,9 @@ ORIGIN = dict(latitude=42., longitude=-83., altitude=0., world_frame='odom',
 CORNERS = [(0., 0.), (20., 0.), (20., 20.), (-10., 20.), (-10., 0.), (0., 0.)]
 # Ends on y=1 and stops 3.5 m past the line: offset crossing, endpoint far from origin.
 # Turn at the WORLD corner, then drift: turning at (-10, 1) pins reachable
-# progress at arc 89 (nearest point) until the corridor is exited. The 1 m
-# inner miter vertices at (-10, 0) fold the x=-7 stripe back down to y~0.94,
-# so the body stays on y=0 until its rear clears x=-7 before drifting to y=1.
+# progress at arc 89 (nearest point) until the corridor is exited. The inner
+# miter at (-10, 0) folds the x=-7 stripe down to about y=1, so the body
+# stays on y=0 until its rear clears x=-7 before drifting to y=1.
 LAP = [(0, 0), (20, 0), (20, 20), (-10, 20), (-10, 0), (-5, 0), (-3, 1), (3.5, 1)]
 
 
@@ -146,13 +146,25 @@ class FinishCrossingAuditTests(unittest.TestCase):
         self.assertFalse(result['passed'])
 
     def test_crossing_before_final_gate_cannot_complete_topology(self):
-        samples = walk(LAP)
-        result = topology_evidence(samples, self.course, finish_crossing=True,
-                                   crossing=dict(previous_sample_index=3, sample_index=4))
-        self.assertFalse(result['passed'])
-        self.assertEqual(result['gates_visited'], result['gates_required'])
-        result = topology_evidence(samples, self.course, finish_crossing=True, crossing=None)
-        self.assertFalse(result['passed'])
+        # Stays inside the corridor and stops before x=0, so only the
+        # crossing-after-final-gate ordering can decide the outcome.
+        samples = walk(LAP[:-1]+[(-1, 1)])
+        def topology(crossing):
+            return topology_evidence(samples, self.course, finish_crossing=True, crossing=crossing)
+        late = topology(None)
+        self.assertFalse(late['passed'])
+        self.assertEqual(late['gates_visited'], late['gates_required'])
+        completed = late['gates_completed_sample_index']
+        self.assertLess(3, completed)
+        self.assertLess(completed, len(samples)-1)
+        early = topology(dict(previous_sample_index=3, sample_index=4))
+        self.assertFalse(early['passed'])
+        self.assertEqual(early['gates_visited'], early['gates_required'])
+        self.assertIn('no accepted finish crossing', early['reason'])
+        self.assertNotIn('Outside ordered WORLD corridor', early['reason'])
+        # Positive control: same samples, crossing at the final-gate segment, passes.
+        control = topology(dict(previous_sample_index=completed, sample_index=completed+1))
+        self.assertTrue(control['passed'], control.get('reason'))
 
     def test_no_crossing_and_reverse_crossing_fail(self):
         for name, lap in (('none', LAP[:-1]+[(-1, 1)]),
