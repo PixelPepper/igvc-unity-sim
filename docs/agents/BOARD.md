@@ -5,7 +5,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 ## Needs attention
 
-- **T-0083** `blocked`: Audit a completed lap by ordered finish-line crossing rather than a final point (BLOCKED by gpt-6-astra at 2026-10-10T20:57:07.4494027-07:00)
+- **T-0083** `blocked`: Audit a completed lap by ordered finish-line crossing rather than a final point (NOTE by gpt-6-astra at 2026-10-10T20:58:38.7250495-07:00)
 - **T-0072** `blocked`: Diagnose recorded end-of-run behavior in the stopped seed2370 demo (BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00)
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
@@ -18,7 +18,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 | Task | Status | Pri | Owner | Reviewers | Claim | Candidate | Last message |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| [T-0083](tasks/T-0083-finish-crossing-auditor.md): Audit a completed lap by ordered finish-line crossing rather than a final point | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-10T20:57:07.4494027-07:00 |
+| [T-0083](tasks/T-0083-finish-crossing-auditor.md): Audit a completed lap by ordered finish-line crossing rather than a final point | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-10T20:58:38.7250495-07:00 |
 | [T-0072](tasks/T-0072-stopped-demo-diagnosis.md): Diagnose recorded end-of-run behavior in the stopped seed2370 demo | `blocked` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00 |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |

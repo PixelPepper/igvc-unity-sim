@@ -92,3 +92,15 @@ concrete remaining work only; no authenticated candidate claim. User asked
 through async input whether to authorize a smaller same-model continuation.
 T0084 remainsbacklog; T0070 reservation unchanged. Rootsourceunchanged except
 acceptedT0082 foundation. No newlive/audit/replay/promotion.
+
+### 2026-10-10T20:58:38.7250495-07:00 · gpt-6-astra → team · NOTE
+Root bounded partial preflight completed:52methods,49PASS/3FAIL,no skips;
+WSLsuite64.021s,parent62.703s retained separately. Failures are new offset/early
+crossing fixtures failing paint/topology, and early-final-gate assertion45/49.
+No cause beyond actual assertions established; no weakened guards or fixture
+claim of otherwise passing audit. Partial3sourcefiles frozen under timeout-source
+with hashes; no source commit/provideridentity/usage/handback. Primary unaffected.
+All3locks released20:57:55.808Oct10;11protectedpreimagesunchanged.
+Await explicit user authorization for bounded same-model continuation; do not
+redispatch merely from heartbeat. RuntimeT0084 remainsbacklog.
+
