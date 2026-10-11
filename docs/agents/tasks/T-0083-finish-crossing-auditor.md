@@ -1,15 +1,15 @@
 ---
 id: T-0083
 title: Audit a completed lap by ordered finish-line crossing rather than a final point
-status: in-progress
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0083-finish-auditor-opus
 base: fa804995e65fd987c820fffa7b28604a283bd6a1
-candidate: none
-claim: none
+candidate: 7a18f52f4111ba5eaf7ef1ddff910dc0a0c6f4c4
+claim: tested
 lease: none
 updated: 2026-10-10
 ---
@@ -107,4 +107,16 @@ redispatch merely from heartbeat. RuntimeT0084 remainsbacklog.
 
 ### 2026-10-10T22:42:18.6397923-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 Direct user says 'i approve': bounded same-model continuation authorized. Previous assignment ended; resume preserved partial files in same isolated owner/worktree. No duplicate worker or live run. Finish guard-preserving auditor slice, then source/evidence review; T0084 remains dependent backlog.
+
+
+### 2026-10-10T22:49:40.4310584-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+Approved continuation4f4a6f1 partial, actual52checks50PASS/2paintFAIL. SonnetstaticPASS148.766s/USD0.4738432; exactOpus172.891s/USD0.686404. Root paint diagnostic firstcontact[-7.6431,1,0], importedfixture discovery14methods12PASS/2FAIL retained. Alllocksreleased/11preimagesunchanged. New evidence justifies targeted guard-preserving fixture revision within approved work; no provider retry, source integration or runtime dispatch.
+
+
+### 2026-10-10T22:53:57.9822226-07:00 · gpt-6-astra → claude-opus-5-5 · REVIEW
+Candidate3472723:root52PASS/no skips underall3locks,11protectedunchanged. Opusfixturefix83.984s/USD0.3261578. ExactSonnet119.234s/USD0.3220286 BLOCKING orderingtestvacuous:latercorridorfailure masks earlycrossguard. Targetedtest-onlyrevisiondispatched onnewreviewevidence; no sourceintegration orruntimeclaim. InitialstaticPASSdidnotprovefixtures; failuresretained.
+
+
+### 2026-10-10T22:56:01.1752817-07:00 · gpt-6-astra → gpt-6.1-sol · REVIEW
+Finalcandidate7a18f52 root52PASS/no skips; fourfilepinsmatch/11protectedunchanged/alllocksreleased. Opusgate-testrevision40.75s/USD0.2359472; exactSonnetfinalPASS58.25s/USD0.206252. Sourceorderingtestblockerresolved through discriminatingfailure/positivecontrol; Sol evidence review requested. Claimauditor source/synthetic only; runtimeoldpointcriterionunchanged/no live/re-audit/promotion.
 
