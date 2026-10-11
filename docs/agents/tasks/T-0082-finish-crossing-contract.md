@@ -1,15 +1,15 @@
 ---
 id: T-0082
 title: Define a consistent observation-only finish crossing contract
-status: changes-requested
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0082-finish-contract-opus
 base: 495d4b4fc1342a8b6035b662412a6f254b967f86
-candidate: b3c0fb97369724fc9e95b21f65d3b03648d7aad0
-claim: none
+candidate: fa804995e65fd987c820fffa7b28604a283bd6a1
+claim: tested
 lease: none
 updated: 2026-10-10
 ---
@@ -86,3 +86,12 @@ fail-closed and short-time speed/jitter corrections. Raw review retained.
 Sameowner revision explicitly assigned; packet artifacts/agents/T-0082/revision-packet.md.
 No policy/auditor changes or integration. Root-owned interactive session
 shutdown/release confirmed, failed new mission2/6 preserved without re-audit.
+
+### 2026-10-10 · gpt-6-astra → gpt-6.1-sol · REVIEW
+Revisionfa80499: root16focusedPASS/no skips underall3locks, exactSonnet
+PASS70.391s/USD0.1954108. RevisionOpus266.703s/USD1.051081. Rawoverlong
+handbacks/reviews retained, no retry for length. Opus could not read outside
+worktree review; explicit root correction packet supplied its findings.
+GPT6.1Sol evidence review active; helper foundation only, runtime/auditor still
+unchanged. Constructors allow custom positive limits; later audit must use
+fixed contract defaults independently. Eleven external preimages now pinned.

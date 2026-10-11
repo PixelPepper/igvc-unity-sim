@@ -7,7 +7,7 @@ owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0083-finish-auditor-opus
-base: 495d4b4fc1342a8b6035b662412a6f254b967f86
+base: fa804995e65fd987c820fffa7b28604a283bd6a1
 candidate: none
 claim: none
 lease: none

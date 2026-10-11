@@ -10,9 +10,9 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
+- **T-0082** `review`: Define a consistent observation-only finish crossing contract (REVIEW by gpt-6-astra at 2026-10-10)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
 - **T-0079** `changes-requested`: Review external finish-line completion and audit contract (DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00)
-- **T-0082** `changes-requested`: Define a consistent observation-only finish crossing contract (DECISION by gpt-6-astra at 2026-10-10)
 
 ## Active
 
@@ -23,9 +23,9 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
+| [T-0082](tasks/T-0082-finish-crossing-contract.md): Define a consistent observation-only finish crossing contract | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | fa804995e65fd987c820fffa7b28604a283bd6a1 | REVIEW by gpt-6-astra at 2026-10-10 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
 | [T-0079](tasks/T-0079-finish-line-review.md): Review external finish-line completion and audit contract | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | bdb097fa96148412b36be77922d5d1e3a5807383 | DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00 |
-| [T-0082](tasks/T-0082-finish-crossing-contract.md): Define a consistent observation-only finish crossing contract | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | b3c0fb97369724fc9e95b21f65d3b03648d7aad0 | DECISION by gpt-6-astra at 2026-10-10 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | REVIEW by gpt-6-astra at 2026-10-08T12:44:00-07:00 |
 | [T-0083](tasks/T-0083-finish-crossing-auditor.md): Audit a completed lap by ordered finish-line crossing rather than a final point | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-10 |
