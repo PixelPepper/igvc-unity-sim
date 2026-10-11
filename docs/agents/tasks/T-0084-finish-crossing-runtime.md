@@ -1,13 +1,13 @@
 ---
 id: T-0084
 title: Complete sensor-led missions on finish-line crossing
-status: backlog
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0084-finish-runtime-opus
-base: 495d4b4fc1342a8b6035b662412a6f254b967f86
+base: 7a18f52f4111ba5eaf7ef1ddff910dc0a0c6f4c4
 candidate: none
 claim: none
 lease: none
@@ -70,3 +70,8 @@ Exact Opus5.5 high USD5/360s. No automatic provider retry or substitution.
 ### 2026-10-10 · gpt-6-astra → claude-opus-5-5 · NOTE
 Dependent runtime packet prepared, not dispatched. New isolated ownership;
 T0070 reservation and T0079 external candidate untouched.
+
+
+### 2026-10-10T22:59:13.2328569-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+T0083finalintegrationbindingaccepted; frozenbase7a18f52 includes allsourceandexternalcheckpoint. Namedisolatedownerassignedruntimeonly5paths, no auditorchange. Userapprovedcontinuationofrequestedfinishlinechange. T0070reserved/T0079externaluntouched; no live/build/testsbyworker. Root ownslockedvalidation/integration.
+
