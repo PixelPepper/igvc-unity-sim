@@ -1,7 +1,7 @@
 ---
 id: T-0083
 title: Audit a completed lap by ordered finish-line crossing rather than a final point
-status: blocked
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -103,4 +103,8 @@ with hashes; no source commit/provideridentity/usage/handback. Primary unaffecte
 All3locks released20:57:55.808Oct10;11protectedpreimagesunchanged.
 Await explicit user authorization for bounded same-model continuation; do not
 redispatch merely from heartbeat. RuntimeT0084 remainsbacklog.
+
+
+### 2026-10-10T22:42:18.6397923-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+Direct user says 'i approve': bounded same-model continuation authorized. Previous assignment ended; resume preserved partial files in same isolated owner/worktree. No duplicate worker or live run. Finish guard-preserving auditor slice, then source/evidence review; T0084 remains dependent backlog.
 
