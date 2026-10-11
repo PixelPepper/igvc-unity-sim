@@ -1,7 +1,7 @@
 ---
 id: T-0083
 title: Audit a completed lap by ordered finish-line crossing rather than a final point
-status: backlog
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -50,6 +50,8 @@ crossing must not fail solely because the axle moves past the origin, while
 all remaining corridor/paint/body checks still apply. Do not add unconditional
 projection or skip lateral checks. Final distance retained descriptive only.
 
+Use FIXED contract limits regardless of claimed runtime overrides; reject a claimed
+line/limits mismatch rather than silently widening span, speed or interval.
 Tests: valid complete offset crossing >0.4m away with all required synthetic
 evidence and full audit pass; same trajectory failing legacy point semantics;
 early/reverse/no crossing, wrong unsupported/malformed version, fixed-line
@@ -73,3 +75,8 @@ T0070 reservation and external T0079 candidate untouched.
 Initial placeholder base failed board validation; replaced with actual current
 snapshot identity. Packet remains backlog and will be rebased/frozen on accepted
 T0082 candidate before dispatch. No implementation assignment issued.
+
+### 2026-10-10 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+Accepted T0082 foundationbasefa80499, primarybindingd44f98a.
+Named isolated owner assigned auditor-only slice; runtime task remains backlog.
+Current live session stopped/alllocksreleased; source-only worker, root tests.

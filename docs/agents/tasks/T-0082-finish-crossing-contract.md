@@ -1,7 +1,7 @@
 ---
 id: T-0082
 title: Define a consistent observation-only finish crossing contract
-status: review
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -10,7 +10,7 @@ branch: codex/t0082-finish-contract-opus
 base: 495d4b4fc1342a8b6035b662412a6f254b967f86
 candidate: fa804995e65fd987c820fffa7b28604a283bd6a1
 claim: tested
-lease: none
+lease: released
 updated: 2026-10-10
 ---
 
@@ -95,3 +95,11 @@ worktree review; explicit root correction packet supplied its findings.
 GPT6.1Sol evidence review active; helper foundation only, runtime/auditor still
 unchanged. Constructors allow custom positive limits; later audit must use
 fixed contract defaults independently. Eleven external preimages now pinned.
+
+### 2026-10-10 · gpt-6-astra → team · DECISION
+T0082 accepted and integratedd44f98ab6659b41e047d403759c4a22ad0a67723
+(two source commits41dc23b+d44f98a). Candidatefa80499/root16PASS and primary
+16PASS/no skips,3sourcehashes match,11protectedpreimagesunchanged,all3locks
+released. Solcandidate5ad401bf... and integration9b907390... accepted.
+Claude totalUSD2.639046; Solusageunknown. Rawoverlongrecords retained.
+Foundationonly; no runtime/auditor change or live crossing claim yet.
