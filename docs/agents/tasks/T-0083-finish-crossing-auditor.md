@@ -1,7 +1,7 @@
 ---
 id: T-0083
 title: Audit a completed lap by ordered finish-line crossing rather than a final point
-status: in-progress
+status: blocked
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -80,3 +80,15 @@ T0082 candidate before dispatch. No implementation assignment issued.
 Accepted T0082 foundationbasefa80499, primarybindingd44f98a.
 Named isolated owner assigned auditor-only slice; runtime task remains backlog.
 Current live session stopped/alllocksreleased; source-only worker, root tests.
+
+### 2026-10-10T20:57:07.4494027-07:00 · gpt-6-astra → team · BLOCKED
+Exact requested Opus5.5 wrapper reached360s with empty partialstdout/stderr.
+No returned modelUsage/modelconfirmation, providerexit or cost; usage unknown.
+Assignment ended; no automatic retry/substitution. Three partial source paths
+remain uncommitted in isolated worktree (audit_sensor_run.py/course_judge.py/new
+test_finish_crossing_audit.py); HEAD remainsfa80499 foundation. Not reviewed or
+integrated. Root partial synthetic preflight authorized underall3locks for
+concrete remaining work only; no authenticated candidate claim. User asked
+through async input whether to authorize a smaller same-model continuation.
+T0084 remainsbacklog; T0070 reservation unchanged. Rootsourceunchanged except
+acceptedT0082 foundation. No newlive/audit/replay/promotion.
