@@ -1,14 +1,14 @@
 ---
 id: T-0082
 title: Define a consistent observation-only finish crossing contract
-status: in-progress
+status: changes-requested
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0082-finish-contract-opus
 base: 495d4b4fc1342a8b6035b662412a6f254b967f86
-candidate: none
+candidate: b3c0fb97369724fc9e95b21f65d3b03648d7aad0
 claim: none
 lease: none
 updated: 2026-10-10
@@ -78,3 +78,11 @@ duplicate T0070 or redispatch of T0079. Source snapshot includes9tracked externa
 edits and DisplayAwake source/meta without primary index changes; .claude and
 unrelated untracked proposals excluded. Current interactive mission running;
 no heavy tests, process/port checks or integration until leases permit.
+
+### 2026-10-10 · gpt-6-astra → claude-opus-5-5 · DECISION
+Root11focusedPASS underall3locks; exactOpus272.08s/USD1.0345306.
+ExactSonnet138.72s/USD0.3580236 requests huge-int/intermediate-overflow
+fail-closed and short-time speed/jitter corrections. Raw review retained.
+Sameowner revision explicitly assigned; packet artifacts/agents/T-0082/revision-packet.md.
+No policy/auditor changes or integration. Root-owned interactive session
+shutdown/release confirmed, failed new mission2/6 preserved without re-audit.
