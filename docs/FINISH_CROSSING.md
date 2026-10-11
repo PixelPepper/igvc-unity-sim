@@ -49,31 +49,50 @@ this contract even if a body-paint check fails.
 Each sample gets a deterministic decision. The tracker credits at most one
 crossing, and it latches (`already_crossed`) after that. Here, `along` is the
 displacement along the normal, and a point on the line (`along == 0`) counts
-as behind it.
+as behind it. Gates are checked in this order:
 
-- `invalid_sample`: a value is non-finite or not numeric, or `eligible` is not a bool. The tracker drops the previous sample and disarms.
+- `invalid_sample`: a value is non-finite, not numeric (bools included), an int too large for a float (for example `10**400`), or `eligible` is not a bool. The same outcome applies when finite but extreme values overflow the projection, interval or step arithmetic (for example `x` jumping from `-1e308` to `+1e308`). The tracker drops the previous sample and disarms. Overflowed intermediates are never recorded, so decisions and reports never contain inf or nan.
+- `already_crossed`: a crossing has latched. A malformed sample still reports `invalid_sample` first.
 - `first_sample` / `continuity_restart`: there is no continuous predecessor. A sample like this never arms the tracker and never crosses.
 - `discontinuous_interval`: `dt <= 0` or `dt > 0.5 s` (the audit's gap limit). The tracker breaks continuity and disarms.
-- `step_too_long`: displacement > 1.2 m, which is 2.2 m/s × 0.5 s plus an allowance. This rejects teleports.
+- `step_too_long`: displacement > 1.2 m (absolute bound). The tracker breaks continuity and disarms.
+- `speed_too_high`: displacement > (2.2 + 1e-6) m/s × `dt`. This checks the actual speed over the interval, so a 0.22 m jump in 0.01 s (22 m/s) is rejected even though it is inside the 1.2 m bound. The comparison does not divide, so a tiny `dt` cannot produce inf. The tracker breaks continuity and disarms.
 - `reverse`: `before > 0 >= after`. The tracker disarms.
-- `stationary` / `no_crossing`: no `before <= 0 < after` transition.
-- For a forward transition, the tracker interpolates the crossing at `f = -before/(after-before)`. Then:
+- `stationary` / `no_crossing`: no `before <= 0 < after` transition. The outcome is `stationary` when the step is <= `MIN_MOTION_M` (1e-6 m). An exactly stationary sample never counts.
+- For a forward transition, the tracker interpolates the crossing at `f = -before/(after-before)`, records it as a candidate and disarms. Then:
+  - `tiny_jitter` if the step is <= `MIN_MOTION_M` (1e-6 m).
   - `ineligible` if the first five destinations have not been visited in order.
   - `not_armed` if no eligible, continuous sample has reached `along <= -1 m` with `|lateral| <= 3 m` since the last disarm.
   - `outside_span` if the interpolated `|lateral| > 3 m`.
   - `crossed` otherwise.
 
+There is no heading, direction-cosine or alignment requirement. Any forward
+crossing within the line span counts. `direction_cosine` is recorded as
+provenance only.
+
 Every forward candidate records its provenance: sample indices, interpolated
-stamp, x/y, lateral offset, before/after `along`, step, interval, direction
-cosine and contract version. `report()` gives the policy plus either the
-crossing or an explicit `crossed: false`.
+stamp, x/y, lateral offset, before/after `along`, step, interval, speed,
+direction cosine and contract version. `report()` gives the policy (including
+the speed limit, allowance, minimum motion and audit tolerance) plus either
+the crossing or an explicit `crossed: false`. It also keeps bounded failure
+provenance. `last_outcome` holds the scalar fields of the latest decision.
+`last_candidate` holds the latest forward candidate with its outcome, including
+a rejected one such as `outside_span`, `not_armed` or `tiny_jitter`. The report
+keeps only these two entries, so its size does not grow with the run.
 
 These rules give no credit at startup (not eligible, and starting on the line
 counts as behind it). They also give no credit when the robot is stationary,
-backs up, crosses early, crosses far from the lane, teleports, or crosses again
-after a reversal without first re-approaching from at least 1 m behind. Crossing
+jitters forward by at most 1e-6 m, backs up, crosses early, crosses far from
+the lane, teleports, moves faster than 2.2 m/s, or crosses again after a
+reversal without first re-approaching from at least 1 m behind. Crossing
 anywhere within ±3 m succeeds. There is no final 0.4 m radius and no
 requirement that the endpoint return to the origin.
+
+Observation-level limitation: the tracker judges received odom samples only.
+A forward odom step larger than 1e-6 m does not prove that the robot
+physically moved. The minimum-motion and speed gates do not exclude sensor
+noise, odom drift or estimator jumps that stay within the limits. The
+contract makes no physical, noise or live claim.
 
 ## Destination 6 replacement
 
@@ -87,15 +106,19 @@ visit. The helper never computes visits.
 The audit has to establish the same line on its own:
 
 1. Mission origin maps to ENU (0,0) with `axes == x_east_y_north_z_up`. The course `frame == 'odom'`.
-2. WORLD centerline: `points[0] == points[-1] == (0,0)`. Both the first and last segments point along +X within a stated tolerance. The half width at the origin is at least 3.0 m. If any of these fails, report `finish_contract_unsupported`, which is a failure. Never fall back to a WORLD tangent as the definition.
+2. WORLD centerline compatibility, all with `AUDIT_TOLERANCE` = 1e-6: `points[0]` and `points[-1]` each lie within 1e-6 m of (0,0). The normalized directions of the first and last segments each match (1,0) within 1e-6 per component. The half width at the origin is at least 3.0 − 1e-6 m. If any of these fails, report `finish_contract_unsupported`, which is a failure. Never fall back to a WORLD tangent as the definition.
 3. Run `FinishCrossingTracker(FIXTURE_LINE)` over the axle samples, with `eligible` set to `sample_index > visits[4].sample_index`.
 4. Add new checks, `finish_line_crossed_after_ordered_visits` and `five_destinations_independently_visited_in_order`, plus a `finish_crossing` report block. Replace `returned_within_0_4_m` and the radius-based sixth visit. Replace topology's `progress >= total-.4` and end-distance ≤ 0.4 with "all gates visited, then crossing accepted". Keep the ordered corridor through the crossing sample.
 5. Keep reporting `final_distance_to_origin_m` for information only.
 
-Legacy semantics: a report that lacks `finish_crossing.contract_version`
-follows the old rules (`returned_within_0_4_m`, six radius visits, topology
-end ≤ 0.4 m). Do not reinterpret or regrade old reports. The new auditor
-selects the contract explicitly and records the version.
+Contract selection reads `run.finish_crossing.contract_version`. The helper's
+`select_contract(run)` encodes the rule:
+
+- No `finish_crossing` key: legacy. The report follows the old rules (`returned_within_0_4_m`, six radius visits, topology end ≤ 0.4 m). Do not reinterpret or regrade old reports.
+- A `finish_crossing` block whose `contract_version` is exactly `finish-crossing/1`: this contract.
+- Anything else (a block that is not a mapping, a missing version or a different version): fail closed with an error. Never fall back to legacy.
+
+The new auditor selects the contract explicitly and records the version.
 
 ## Runtime adoption (separate slice)
 
@@ -110,8 +133,10 @@ should instead do the following:
 - Keep the costmap, corridor, speed ≤ 2.2 m/s, health/freshness, identity and recovery guards. The target is a hint and must not override them.
 - Record each tracker decision that changes the outcome, plus `report()`, in the mission ledger next to the existing completion evidence.
 
-## Unrun checks
+## Test status
 
-The tests are source-only. Run `python -m unittest tools.tests.test_finish_crossing`
-under all three locks after the live session ends. There is no live evidence
-yet.
+The helper foundation tests at commit `b3c0fb9` ran from the repository root:
+11 PASS. This revision changes both the helper and the tests, and the revised
+tests are UNRUN. Run `python -m unittest tools.tests.test_finish_crossing`
+under all three locks after the live session ends. This task changes no
+auditor or runtime code, and there is no live evidence yet.
