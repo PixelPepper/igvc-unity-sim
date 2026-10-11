@@ -8,8 +8,51 @@ import re
 
 from generate_course_variant import BODY_RADIUS, body_clearance
 from gps_mission import LocalFrame
-from course_judge import identity_evidence, paint_evidence, topology_evidence, ramp_body_evidence
+from course_judge import (identity_evidence, paint_evidence, topology_evidence, ramp_body_evidence,
+                          world_points)
+from finish_crossing import (AUDIT_TOLERANCE, CONTRACT_VERSION, FIXTURE_HALF_SPAN_M, FIXTURE_LINE,
+                             LEGACY_CONTRACT, FinishCrossingTracker, select_contract)
 from sensor_telemetry import SensorTelemetry
+
+
+def finish_line_compatibility(run, course, mission):
+    """Establish the fixed finish-crossing/1 line independently of runtime claims.
+
+    The line is always FIXTURE_LINE: public origin, +X normal, 3 m half span.
+    A claimed line or limit that differs is rejected, never adopted, and an
+    incompatible course or mission fails instead of choosing another line.
+    """
+    reasons = []
+    tol = AUDIT_TOLERANCE
+    policy = FinishCrossingTracker(FIXTURE_LINE).policy()
+    for key, value in run['finish_crossing'].items():
+        if key in policy and (isinstance(value, bool) or value != policy[key]):
+            reasons.append(f'claimed_{key}_mismatch')
+    try:
+        origin = mission['origin']
+        if origin.get('world_frame') != 'odom' or origin.get('axes') != 'x_east_y_north_z_up':
+            reasons.append('mission_frame_not_odom_x_east_y_north_z_up')
+        frame = LocalFrame(origin)
+        if math.hypot(*frame.to_enu(origin['latitude'], origin['longitude'], origin['altitude'])[:2]) > tol:
+            reasons.append('mission_origin_not_enu_zero')
+        goals = mission['goals']
+        if len(goals) != 6:
+            reasons.append('mission_not_six_destinations')
+        elif math.hypot(*frame.to_enu(goals[5]['latitude'], goals[5]['longitude'],
+                                      goals[5]['altitude'])[:2]) > tol:
+            reasons.append('final_destination_not_origin')
+        points, widths = world_points(course)
+        unit = lambda a, b: tuple((b[k]-a[k])/math.dist(a, b) for k in range(2))
+        if max(math.dist(points[0], (0., 0.)), math.dist(points[-1], (0., 0.))) > tol:
+            reasons.append('world_loop_not_at_origin')
+        for name, direction in (('first', unit(points[0], points[1])), ('last', unit(points[-2], points[-1]))):
+            if abs(direction[0]-FIXTURE_LINE.normal[0]) > tol or abs(direction[1]-FIXTURE_LINE.normal[1]) > tol:
+                reasons.append(f'world_{name}_segment_not_plus_x')
+        if min(widths[0], widths[-1]) < FIXTURE_HALF_SPAN_M-tol:
+            reasons.append('world_half_width_below_line_span')
+    except (KeyError, TypeError, ValueError, AttributeError, IndexError, ZeroDivisionError):
+        reasons.append('invalid_course_or_mission_geometry')
+    return dict(passed=not reasons, reasons=reasons, line=FIXTURE_LINE.describe())
 
 
 def mission_identity_evidence(run, expected_hash):
@@ -240,6 +283,12 @@ def audit(run, course, mission=None, *, course_sha256=None, mission_sha256=None,
     identity = identity_evidence(run, course_sha256)
     mission_identity = mission_identity_evidence(run, mission_sha256)
     health = sensor_health_evidence(run, samples if valid else [])
+    # Absence keeps legacy radius grading; anything but finish-crossing/1 fails closed.
+    try:
+        contract, contract_error = select_contract(run), None
+    except ValueError as error:
+        contract, contract_error = 'unsupported', str(error)
+    crossing_contract = contract != LEGACY_CONTRACT
     checks = {
         'course_identity_matches': identity['passed'],
         'mission_identity_matches': mission_identity['passed'],
@@ -252,7 +301,14 @@ def audit(run, course, mission=None, *, course_sha256=None, mission_sha256=None,
         'zero_line_blocks': bool(re.search(r'(?:^|\s)line_blocks=0(?:\s|$)', run.get('sim_status', ''))),
         'finite_trajectory': valid,
     }
+    finish = dict(contract_version=contract, error=contract_error)
+    if crossing_contract:
+        compatibility = (finish_line_compatibility(run, course, mission) if contract == CONTRACT_VERSION
+                         else dict(passed=False, reasons=['unsupported_finish_contract']))
+        finish['compatibility'] = compatibility
+        checks['finish_contract_supported'] = compatibility['passed']
     report = {'passed': False, 'source_status': run.get('status'),
+              'finish_contract': contract, 'finish_crossing': finish,
               'completed_destinations': run.get('completed_destinations'),
               'checks': checks, 'sample_count': len(samples),
               'topology_certified': False, 'full_loop_certified': False,
@@ -333,7 +389,8 @@ def audit(run, course, mission=None, *, course_sha256=None, mission_sha256=None,
     checks['sampled_obstacles_clear'] = bool(obstacles) and collision_samples == 0
     checks['swept_obstacles_clear'] = bool(obstacles) and uncertain_segments == 0
     final_distance = math.hypot(samples[-1][1], samples[-1][2])
-    checks['returned_within_0_4_m'] = final_distance <= .4
+    if not crossing_contract:
+        checks['returned_within_0_4_m'] = final_distance <= .4
     ramp_evidence = [ramp_traversal(samples, ramp) for ramp in course.get('ramps', [])]
     checks['all_ramps_traversed_entry_to_exit'] = bool(ramp_evidence) and all(
         evidence['passed'] for evidence in ramp_evidence)
@@ -347,8 +404,41 @@ def audit(run, course, mission=None, *, course_sha256=None, mission_sha256=None,
                               'The asymmetric rectangle is not a physical wheel-support polygon; '
                               'wheel contact, elevation, suspension and rollover are not certified.')
 
+    visits = []
+    if mission is not None:
+        frame = LocalFrame(mission['origin'])
+        cursor = 0
+        # Under the crossing contract only the first five are radius visits.
+        for goal in mission.get('goals', [])[:5 if crossing_contract else None]:
+            x, y, _ = frame.to_enu(goal['latitude'], goal['longitude'], goal['altitude'])
+            while cursor < len(samples) and math.hypot(samples[cursor][1]-x, samples[cursor][2]-y) > goal['radius_m']:
+                cursor += 1
+            if cursor == len(samples):
+                break
+            visits.append({'destination_index': len(visits), 'sample_index': cursor,
+                           'stamp': samples[cursor][0]})
+    six_goals = mission is not None and len(mission.get('goals', [])) == 6
+    crossing = None
+    if crossing_contract:
+        # Independent reconstruction: runtime counts, claimed crossings and
+        # indices are never consulted. Eligibility starts after the fifth visit.
+        fifth = visits[4]['sample_index'] if six_goals and len(visits) == 5 else None
+        if checks['finish_contract_supported']:
+            tracker = FinishCrossingTracker(FIXTURE_LINE)
+            for index, (stamp, x, y, _) in enumerate(samples):
+                tracker.observe(stamp, x, y, eligible=fifth is not None and index > fifth)
+            crossing = tracker.crossing
+            finish['audit'] = tracker.report()
+        finish['fifth_visit_sample_index'] = fifth
+        checks['five_destinations_independently_visited_in_order'] = fifth is not None
+        checks['finish_line_crossed_after_ordered_visits'] = (
+            crossing is not None and fifth is not None and crossing['previous_sample_index'] > fifth)
+    else:
+        checks['six_destinations_independently_visited_in_order'] = six_goals and len(visits) == 6
+
     paint = paint_evidence(samples, course)
-    topology = topology_evidence(samples, course, open_area_lateral_m=open_area_lateral_m)
+    topology = topology_evidence(samples, course, open_area_lateral_m=open_area_lateral_m,
+                                 finish_crossing=crossing_contract, crossing=crossing)
     report['paint_crossing'] = paint
     report['world_topology'] = topology
     checks['whole_footprint_paint_sweep_clear'] = paint['passed']
@@ -357,20 +447,6 @@ def audit(run, course, mission=None, *, course_sha256=None, mission_sha256=None,
     report['topology_certified'] = qualified and topology['passed']
     report['paint_crossing_certified'] = qualified and paint['passed']
 
-    visits = []
-    if mission is not None:
-        frame = LocalFrame(mission['origin'])
-        cursor = 0
-        for goal in mission.get('goals', []):
-            x, y, _ = frame.to_enu(goal['latitude'], goal['longitude'], goal['altitude'])
-            while cursor < len(samples) and math.hypot(samples[cursor][1]-x, samples[cursor][2]-y) > goal['radius_m']:
-                cursor += 1
-            if cursor == len(samples):
-                break
-            visits.append({'destination_index': len(visits), 'sample_index': cursor,
-                           'stamp': samples[cursor][0]})
-    checks['six_destinations_independently_visited_in_order'] = (
-        mission is not None and len(mission.get('goals', [])) == 6 and len(visits) == 6)
     report.update(
         passed=all(checks.values()), observed_destination_visits=visits,
         footprint={'x_min': -1.1, 'x_max': .6, 'y_min': -.5, 'y_max': .5},

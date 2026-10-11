@@ -100,3 +100,22 @@ latched even after the bounded event history rolls over. The audit binds the
 ledger to odometry indices and rejects motion outside that monitored interval.
 This establishes sampled processing coverage under that gap bound, not
 continuous health, accurate perception or physical safety between samples.
+
+## finish-crossing/1 adoption (T-0083)
+
+Runs carrying `finish_crossing.contract_version == 'finish-crossing/1'` are graded
+by an ordered forward crossing of the fixed line (origin, +X normal, 3 m half
+span); runs without the block keep legacy point/radius grading. Any other or
+malformed version fails closed. Claimed line/limit values differing from the
+fixed contract are rejected, never adopted. The auditor reconstructs the first
+five GPS radius visits and replays its own `FinishCrossingTracker`, eligible
+only after the fifth-visit sample; runtime counts and claimed indices are
+ignored. WORLD course and mission must share the fixed origin, +X first/last
+segments and at least 3 m half width.
+
+Topology completion requires the audit's accepted crossing at or after the
+sample completing the final ordered gate; final-arc and endpoint proximity are
+not required and `final_distance_to_origin_m` is descriptive only. Only after
+that crossing may the reachable projection continue onto the loop start,
+bounded by `POST_CROSSING_ARC_M`; corridor, paint, body, ramp and obstacle
+checks still apply to every terminal sample.

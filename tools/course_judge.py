@@ -8,6 +8,9 @@ from generate_course_variant import BODY_RADIUS, box, polygon_distance
 FOOTPRINT = (-1.1, .6, -.5, .5)
 PAINT_HALF_WIDTH = .06
 SWEEP_STEP = .02
+# finish-crossing/1 only: after an accepted crossing that follows every gate,
+# terminal samples may continue onto the closed loop's start, at most this far.
+POST_CROSSING_ARC_M = 6.
 
 
 def identity_evidence(run, expected_hash):
@@ -138,15 +141,26 @@ def paint_evidence(samples, course):
         return dict(passed=False, geometry_available=False, reason=str(error))
 
 
-def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m=2.):
+def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m=2.,
+                      finish_crossing=False, crossing=None):
     """Ordered WORLD cross-sections plus reachable unwrapped local projection.
 
     Bounds are explicit development scoring policy, not competition rules.
     No finish jump, global nearest branch, or stationary progress credit exists.
+    Legacy completion needs the final 0.4 m of arc and an end within 0.4 m of
+    the origin. With finish_crossing, completion instead needs the audit's own
+    accepted crossing (tracker provenance) strictly after the segment that
+    visits the final gate. Only after both may the reachable projection window
+    continue past the closed arc onto the loop start, bounded by
+    POST_CROSSING_ARC_M; the corridor check still applies to every sample.
     """
     policy = dict(open_area_lateral_m=open_area_lateral_m, gate_spacing_m=gate_spacing_m,
-                  start_finish_tolerance_m=.4, arc_motion_multiplier=1.5,
-                  intended_direction='WORLD centerline array order')
+                  arc_motion_multiplier=1.5, intended_direction='WORLD centerline array order')
+    if finish_crossing:
+        policy.update(start_tolerance_m=.4, completion='finish-crossing/1 after final gate',
+                      post_crossing_arc_m=POST_CROSSING_ARC_M)
+    else:
+        policy.update(start_finish_tolerance_m=.4)
     result = dict(passed=False, policy=policy, gates_visited=0)
     try:
         if not (math.isfinite(open_area_lateral_m) and 1 <= open_area_lateral_m <= 20
@@ -157,6 +171,12 @@ def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m
         for a, b in zip(points, points[1:]):
             arcs.append(arcs[-1]+math.dist(a, b))
         total = arcs[-1]
+        last_segment = len(points)-2
+        # The closed loop repeated once; reachable only after an accepted crossing.
+        raw = course['centerline']+course['centerline'][1:]
+        ext_points, ext_widths, ext_arcs = points+points[1:], widths+widths[1:], list(arcs)
+        for a, b in zip(points, points[1:]):
+            ext_arcs.append(ext_arcs[-1]+math.dist(a, b))
         def at(arc):
             i = min(len(points)-2, max(0, bisect.bisect_right(arcs, arc)-1))
             length = arcs[i+1]-arcs[i]
@@ -171,25 +191,48 @@ def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m
         result.update(gates_required=len(gates), total_arc_m=total, progress_m=0., maximum_progress_m=0.)
         if math.dist(samples[0][1:3], points[0]) > .4:
             raise ValueError('Run did not start at WORLD loop origin')
+        crossing_index = None
+        completed = 0 if not gates else None
+        if finish_crossing and crossing is not None:
+            # Crossing segment (previous, index]; only the audit tracker's ints are used.
+            crossing_index = crossing['previous_sample_index']
+            if (type(crossing_index) is not int or type(crossing['sample_index']) is not int
+                    or crossing['sample_index'] != crossing_index+1
+                    or not 0 <= crossing_index < len(samples)-1):
+                raise ValueError('Invalid finish crossing provenance')
         progress = maximum = 0.
         visited = 0
+        limit, limit_segment = total, last_segment
         for index, (a, b) in enumerate(zip(samples, samples[1:]), 1):
             delta = math.dist(a[1:3], b[1:3])
-            lo, hi = max(0., progress-1.5*delta), min(total, progress+1.5*delta)
-            # Both ends index segments, not vertices. At the finish (lo == total)
+            if (limit == total and crossing_index is not None and completed is not None
+                    and index > crossing_index >= completed):
+                # Terminal samples after the accepted crossing may pass the
+                # origin onto the loop start; the corridor check below remains.
+                limit = total+min(total, POST_CROSSING_ARC_M)
+                limit_segment = min(len(ext_points)-2, bisect.bisect_left(ext_arcs, limit))
+            lo, hi = max(0., progress-1.5*delta), min(limit, progress+1.5*delta)
+            # Both ends index segments, not vertices. At the finish (lo == limit)
             # bisect_right returns the last vertex, so clamp as at() and `last` do.
-            first = min(len(points)-2, max(0, bisect.bisect_right(arcs, lo)-1))
-            last = min(len(points)-2, bisect.bisect_left(arcs, hi))
+            first = min(limit_segment, max(0, bisect.bisect_right(ext_arcs, lo)-1))
+            last = min(limit_segment, bisect.bisect_left(ext_arcs, hi))
             candidates = []
             for i in range(first, last+1):
-                length = arcs[i+1]-arcs[i]
-                lower, upper = max(0., (lo-arcs[i])/length), min(1., (hi-arcs[i])/length)
+                length = ext_arcs[i+1]-ext_arcs[i]
+                lower, upper = max(0., (lo-ext_arcs[i])/length), min(1., (hi-ext_arcs[i])/length)
                 if lower > upper:
                     continue
-                t = sum((b[k+1]-points[i][k])*(points[i+1][k]-points[i][k]) for k in range(2))/length**2
+                t = sum((b[k+1]-ext_points[i][k])*(ext_points[i+1][k]-ext_points[i][k])
+                        for k in range(2))/length**2
                 t = max(lower, min(upper, t))
-                arc = arcs[i]+t*length
-                p, _, width = at(arc)
+                arc = ext_arcs[i]+t*length
+                if i <= last_segment:
+                    p, _, width = at(arc)
+                else:
+                    p = tuple(ext_points[i][k]+t*(ext_points[i+1][k]-ext_points[i][k]) for k in range(2))
+                    marked = raw[i]['painted'] and raw[i+1]['painted']
+                    width = (ext_widths[i]+t*(ext_widths[i+1]-ext_widths[i]) if marked
+                             else open_area_lateral_m)
                 candidates.append((math.dist(b[1:3], p), abs(arc-progress), arc, width))
             if not candidates:
                 # Fail closed with an explicit reason rather than an opaque exception.
@@ -212,12 +255,24 @@ def topology_evidence(samples, course, *, open_area_lateral_m=8., gate_spacing_m
                 if math.dist(crossing, p) > gate_width+.001:
                     break
                 visited += 1
+                if visited == len(gates):
+                    completed = index
             result.update(gates_visited=visited, progress_m=progress, maximum_progress_m=maximum,
                           last_sample_index=index, last_lateral_m=lateral)
-        result['passed'] = (visited == len(gates) and progress >= total-.4
-                            and math.dist(samples[-1][1:3], points[0]) <= .4)
-        if not result['passed']:
-            result['reason'] = 'Incomplete ordered WORLD loop or missing physical cross-section visits'
+        if finish_crossing:
+            # No final-arc or endpoint proximity: the later crossing replaces both.
+            result.update(gates_completed_sample_index=completed,
+                          crossing_previous_sample_index=crossing_index)
+            result['passed'] = (visited == len(gates) and completed is not None
+                                and crossing_index is not None and crossing_index >= completed)
+            if not result['passed']:
+                result['reason'] = ('Missing ordered cross-section visits or no accepted finish '
+                                    'crossing after the final gate')
+        else:
+            result['passed'] = (visited == len(gates) and progress >= total-.4
+                                and math.dist(samples[-1][1:3], points[0]) <= .4)
+            if not result['passed']:
+                result['reason'] = 'Incomplete ordered WORLD loop or missing physical cross-section visits'
     except (ValueError, KeyError, TypeError) as error:
         result['reason'] = str(error)
     return result
