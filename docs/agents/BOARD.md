@@ -29,6 +29,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | REVIEW by gpt-6-astra at 2026-10-08T12:44:00-07:00 |
 | [T-0083](tasks/T-0083-finish-crossing-auditor.md): Audit a completed lap by ordered finish-line crossing rather than a final point | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-10 |
+| [T-0084](tasks/T-0084-finish-crossing-runtime.md): Complete sensor-led missions on finish-line crossing | `backlog` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-10 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
