@@ -21,8 +21,10 @@ ORIGIN = dict(latitude=42., longitude=-83., altitude=0., world_frame='odom',
 CORNERS = [(0., 0.), (20., 0.), (20., 20.), (-10., 20.), (-10., 0.), (0., 0.)]
 # Ends on y=1 and stops 3.5 m past the line: offset crossing, endpoint far from origin.
 # Turn at the WORLD corner, then drift: turning at (-10, 1) pins reachable
-# progress at arc 89 (nearest point) until the corridor is exited.
-LAP = [(0, 0), (20, 0), (20, 20), (-10, 20), (-10, 0), (-8, 1), (3.5, 1)]
+# progress at arc 89 (nearest point) until the corridor is exited. The 1 m
+# inner miter vertices at (-10, 0) fold the x=-7 stripe back down to y~0.94,
+# so the body stays on y=0 until its rear clears x=-7 before drifting to y=1.
+LAP = [(0, 0), (20, 0), (20, 20), (-10, 20), (-10, 0), (-5, 0), (-3, 1), (3.5, 1)]
 
 
 def course_fixture(corners=CORNERS, origin_half_width=3.):
