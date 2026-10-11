@@ -1,7 +1,7 @@
 ---
 id: T-0084
 title: Complete sensor-led missions on finish-line crossing
-status: in-progress
+status: blocked
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -74,4 +74,8 @@ T0070 reservation and T0079 external candidate untouched.
 
 ### 2026-10-10T22:59:13.2328569-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 T0083finalintegrationbindingaccepted; frozenbase7a18f52 includes allsourceandexternalcheckpoint. Namedisolatedownerassignedruntimeonly5paths, no auditorchange. Userapprovedcontinuationofrequestedfinishlinechange. T0070reserved/T0079externaluntouched; no live/build/testsbyworker. Root ownslockedvalidation/integration.
+
+
+### 2026-10-10T23:05:48.1618438-07:00 · gpt-6-astra → team · BLOCKED
+RuntimeOpusrequestedimplementationreached360s localtimeoutwithempty stdout/stderr,no handback/commit/providerexit/modelUsage/costconfirmation; usageunknown. Assignmentended/noautomaticretry. Fiveuncommittedownedpaths frozenunderartifacts/agents/T-0084/timeout-source; HEAD7a18f52. Rootboundedpartialpreflight36PASS/no skips underall3locks,11protectedunchanged/alllocksreleased. Thisispartialpure/syntheticchecksonly,noacceptedcandidate/source/evidencereview/ROSloop/live orintegration. Primaryruntimeunchanged; T0083auditorintegrated7faacd4. Usermustapproveboundedfollow-upbeforerelaunch. T0070reserved.
 
