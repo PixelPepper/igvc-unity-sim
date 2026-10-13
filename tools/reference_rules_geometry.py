@@ -273,7 +273,8 @@ def frac_index(geo, section, fraction):
 
 
 # Drum layout. Intended class is fixed BEFORE measurement. Top/bottom stations are the diagram's x positions;
-# NML interior obstacles keep diagram order, evenly spaced (r1 measured chokes at diagram spacing); 2 omitted.
+# NML interior obstacles keep diagram order, evenly spaced (r1 measured chokes at diagram spacing); all 95 present (r6
+# restored the two end singles near the NML ends).
 PLUS = ((0, 0), (.72, 0), (-.72, 0), (0, .72), (0, -.72))
 TRIANGLE = ((-.36, -.31), (.36, -.31), (0, .31))
 ROW_ACROSS = ((0, -.72), (0, 0), (0, .72))
@@ -663,7 +664,8 @@ def geometry_doc(variant, geo, drums, ramp, starts):
                 interpretations=['centreline = smoothed midline of the traced reference tapes, NML closed by a straight',
                                  'black diagram circles are black drums, not potholes', 'optional 2 ft potholes omitted',
                                  'NML boundaries are the coloured drum columns; no tape across NML',
-                                 'two NML centre singles omitted; NML interior obstacles evenly spaced in diagram order'])
+                                 'all 95 reference drums present; NML interior obstacles evenly spaced in diagram order; the two '
+                                 'NML centre singles (diagram py 311/861) sit 0.35 of a station gap from each NML end'])
 
 
 def unity_input(variant, geo, drums, ramp, starts):
