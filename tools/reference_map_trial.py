@@ -167,11 +167,22 @@ def main(argv=None):
         profile, baseline = build_profile(settings)
         profile_path = folder/'profile.yaml'; profile_path.write_text(yaml.safe_dump(profile, sort_keys=False))
         report['profile'] = dict(path=str(profile_path), baseline=str(baseline))
-        code, output = nav('start', profile_path); report['nav_start'] = dict(code=code, output=output)
-        if code != 0 or not (session_dir(ROOT)/'nav.json').exists():
-            report['refused'] = 'navigation did not start as a new owned session'
+        try:
+            code, output = nav('start', profile_path)
+        except (subprocess.TimeoutExpired, OSError) as exc:
+            code, output = -1, type(exc).__name__+': '+str(exc)
+        report['nav_start'] = dict(code=code, output=output)
+        state = session_dir(ROOT)/'nav.json'
+        if state.exists():
+            # nav.json was absent before this run (checked above), so any session now recorded is ours.
+            nav_owned = True
+            report['nav_owned_state'] = json.loads(state.read_text())
+        if code != 0:
+            if nav_owned:
+                cleanup_ok = False   # a group may be running from a failed/timed-out start; stop ours, flag uncertainty
+                report['log'].append('navigation start failed after creating state; treated as owned, cleanup uncertain')
+            report['refused'] = 'navigation did not start cleanly'
             return 2
-        nav_owned = True
         try:
             evidence = ros.verify_sim_time()
         except Exception as exc:   # record the failure itself; never fabricate admission
@@ -203,7 +214,11 @@ def main(argv=None):
         except Exception as exc:
             cleanup_ok = False; report['log'].append('gate disable failed: '+str(exc))
         if nav_owned:
-            code, output = nav('stop'); report['nav_stop'] = dict(code=code, output=output)
+            try:
+                code, output = nav('stop')
+            except (subprocess.TimeoutExpired, OSError) as exc:
+                code, output = -1, type(exc).__name__+': '+str(exc)
+            report['nav_stop'] = dict(code=code, output=output)
             if code != 0:
                 cleanup_ok = False
         ros.close()

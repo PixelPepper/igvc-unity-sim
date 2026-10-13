@@ -26,7 +26,8 @@ powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action trial -
   - Every action holds all three simulator locks.
   - It refuses to run if any Unity, IGVC or R3a player, port 10000-10002 (Windows or WSL), or **any managed ROS group** (r3a, nav, perception) is active. Port or process query errors stop it.
   - A ROS session counts as owned only when `ros_session.py start` reports that it newly started it.
-  - Cleanup stops only owned processes and sessions and confirms their exit. If it cannot confirm, it writes `artifacts/iterations/reference-drive-ownership-retained.json` and exits non-zero.
+  - Cleanup stops only owned processes and sessions and confirms their exit. If it cannot confirm, the launcher keeps holding the real lock handles. It re-checks only what it owned every 30 s, read-only, and keeps `<run>/ownership-retained.json` current with recovery instructions. It releases the locks only when everything owned is verifiably gone, or when root creates `<run>/root-recovery-release`. The status file is not a lease.
+  - The managed ROS idle check also runs before `build`. A failed or timed-out r3a or nav start that leaves a group running is treated as owned, because none existed before, and cleanup is then flagged as uncertain.
 - **Run directory:** each run writes a new `artifacts/reference-drive/runs/<utc>-<id>/`, containing `launcher.log`, `autonomy.json`, `reference-conditions.json` and `unity.log`. Failed runs are kept.
 
 ## Scene

@@ -6,8 +6,10 @@
 #           (speed <= 0.6 m/s, timeout <= 180 s), no retry. Diagnostic only (no full-lap audit for this map).
 # Ownership: holds all three exclusive simulator locks for the whole invocation; refuses if any Unity editor/player,
 # IGVC/R3a player, port 10000-10002 (Windows or WSL) or ANY managed ROS group (r3a/probe, nav, perception) is active.
-# Cleanup touches only what this invocation started and confirmed as newly owned. If cleanup cannot be confirmed it
-# writes artifacts/iterations/reference-drive-ownership-retained.json and exits non-zero (the run directory is kept).
+# Cleanup touches only what this invocation started and confirmed as newly owned. If cleanup cannot be confirmed the
+# launcher does NOT release its locks: it stays alive holding the real lock handles, re-checks only its owned PIDs/ROS
+# group every 30 s (read-only), keeps <run>/ownership-retained.json current with recovery instructions, and releases
+# only when everything owned is verifiably gone or root creates <run>/root-recovery-release.
 param(
     [ValidateSet('build','start','smoke','trial')][string]$Action='start',
     [ValidateSet('clear-noon','overcast','low-sun')][string]$Conditions='clear-noon',
@@ -41,6 +43,17 @@ try {
     $wslPorts=@($ss.out -split "`n" | Where-Object { $_ -match ':(10000|10001|10002)\s' })
     Log "idle check: unity/players=$($busy.Count) [$(($busy|ForEach-Object{$_.Name}) -join ',')] windows_ports=$($ports.Count) wsl_ports=$($wslPorts.Count)"
     if($busy.Count -or $ports.Count -or $wslPorts.Count){ throw 'Simulator resources in use; not starting (no foreign process is touched)' }
+    # ROS environment of the original single simulator (domain 42, no instance); managed ROS idle check for EVERY action.
+    $linuxRoot=(Wsl-Checked @('wslpath','-a',$repoRoot)).Trim()
+    $linuxRun=(Wsl-Checked @('wslpath','-a',$run)).Trim()
+    $wslHome=(Wsl-Checked @('printenv','HOME')).Trim()
+    $env:IGVC_ROS_WORKSPACE="$wslHome/igvc_ws"; $env:IGVC_ROS_DOMAIN_ID='42'; Remove-Item Env:IGVC_INSTANCE -ErrorAction SilentlyContinue
+    $env:WSLENV=(@($env:WSLENV -split ':' | Where-Object {$_ -and $_ -notmatch '^IGVC_(ROS_WORKSPACE|ROS_DOMAIN_ID|INSTANCE)(/.*)?$'})+@('IGVC_ROS_WORKSPACE','IGVC_ROS_DOMAIN_ID')) -join ':'
+    foreach($mode in 'r3a','nav','perception'){
+        $status=Wsl-Checked @('python3',"$linuxRoot/tools/ros_session.py",'status',$mode)
+        Log "ros_session status $mode : $status"
+        if($status -notmatch 'stopped'){ throw "Managed ROS $mode group is active; not starting (it is not ours)" }
+    }
 
     if($Action -eq 'build'){
         $buildLog=Join-Path $run 'unity-build.log'
@@ -53,23 +66,16 @@ try {
     }
     else {
         if(!(Test-Path -LiteralPath $player)){ throw "Player missing: run '-Action build' first ($player)" }
-        # ROS environment of the original single simulator (domain 42, no instance).
-        $linuxRoot=(Wsl-Checked @('wslpath','-a',$repoRoot)).Trim()
-        $linuxRun=(Wsl-Checked @('wslpath','-a',$run)).Trim()
-        $wslHome=(Wsl-Checked @('printenv','HOME')).Trim()
-        $env:IGVC_ROS_WORKSPACE="$wslHome/igvc_ws"; $env:IGVC_ROS_DOMAIN_ID='42'; Remove-Item Env:IGVC_INSTANCE -ErrorAction SilentlyContinue
-        $env:WSLENV=(@($env:WSLENV -split ':' | Where-Object {$_ -and $_ -notmatch '^IGVC_(ROS_WORKSPACE|ROS_DOMAIN_ID|INSTANCE)(/.*)?$'})+@('IGVC_ROS_WORKSPACE','IGVC_ROS_DOMAIN_ID')) -join ':'
-        # Every managed ROS group must be stopped; nothing existing is ever claimed.
-        foreach($mode in 'r3a','nav','perception'){
-            $status=Wsl-Checked @('python3',"$linuxRoot/tools/ros_session.py",'status',$mode)
-            Log "ros_session status $mode : $status"
-            if($status -notmatch 'stopped'){ throw "Managed ROS $mode group is active; not starting (it is not ours)" }
-        }
         Wsl-Checked @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_mission.py",'--out',"$linuxRun/autonomy.json",'--max-speed',$MaxSpeed.ToString($invariant)) | Out-Null
         Wsl-Checked @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/agents/verify_iteration_overlay.py",$linuxRoot,$env:IGVC_ROS_WORKSPACE) | Out-Null
-        $started=Wsl-Checked @('python3',"$linuxRoot/tools/ros_session.py",'start','r3a')
-        if($started -notmatch 'ROS started: PID (\d+)'){ throw "r3a session not newly started by this invocation: $started" }
-        $ownsRos=$true; Log "owned managed r3a session pid=$($Matches[1])"
+        $start=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'start','r3a')
+        if($start.code -eq 0 -and $start.out -match 'ROS started: PID (\d+)'){ $ownsRos=$true; Log "owned managed r3a session pid=$($Matches[1])" }
+        else {
+            # The preflight proved r3a stopped, so any r3a group running now was started by this invocation.
+            $after=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'status','r3a')
+            if($after.out -notmatch 'stopped'){ $ownsRos=$true; Log "r3a start failed but a group is running; treated as owned: $($after.out)" }
+            throw "r3a session start failed ($($start.code)): $($start.out)"
+        }
         $style=if($Hidden){'Hidden'}else{'Normal'}
         $playerArgs="-screen-fullscreen 0 -screen-width 1600 -screen-height 1000 --line-guard scoring --reference-conditions $Conditions --reference-run-dir `"$run`" -logFile `"$(Join-Path $run 'unity.log')`""
         $ownedPlayer=Start-Process -FilePath $player -ArgumentList $playerArgs -WindowStyle $style -PassThru
@@ -107,9 +113,20 @@ finally {
         if($stop.code -ne 0){ $cleanupFailed+='owned r3a ROS group did not stop' }
     }
     if($cleanupFailed.Count){
-        $marker=Join-Path $repoRoot 'artifacts/iterations/reference-drive-ownership-retained.json'
-        Set-Content -Encoding utf8 $marker ("{`"run`": `"$($run -replace '\\','/')`", `"problems`": [" + (($cleanupFailed|ForEach-Object{"`"$_`""}) -join ', ') + "]}")
-        Log "CLEANUP NOT CONFIRMED: $($cleanupFailed -join '; '); marker $marker written"
+        # A file is not a lease: keep holding the real lock handles until everything owned is verifiably gone.
+        $statusFile=Join-Path $run 'ownership-retained.json'; $release=Join-Path $run 'root-recovery-release'
+        Log "CLEANUP NOT CONFIRMED: $($cleanupFailed -join '; '). Holding all locks (launcher pid $PID); see $statusFile"
+        while($true){
+            $alive=@(@($ownedPlayer,$ownedBuild) | Where-Object { $_ -and -not $_.HasExited } | ForEach-Object { $_.Id })
+            $rosAlive=$false
+            if($ownsRos){ $s=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'status','r3a'); $rosAlive=($s.code -ne 0 -or $s.out -notmatch 'stopped') }
+            $problems=(($cleanupFailed|ForEach-Object{"`"$_`""}) -join ', ')
+            $recovery="Root: stop the listed owned processes and/or the r3a group (python3 tools/ros_session.py stop r3a), or after manual verification create $($release -replace '\\','/') so this launcher releases its locks."
+            Set-Content -Encoding utf8 $statusFile ("{`"launcher_pid`": $PID, `"locks_held`": true, `"run`": `"$($run -replace '\\','/')`", `"owned_pids_alive`": [$($alive -join ', ')], `"owned_r3a_group_alive`": $($rosAlive.ToString().ToLower()), `"checked`": `"$(Get-Date -Format o)`", `"problems`": [$problems], `"recovery`": `"$recovery`"}")
+            if(-not $alive.Count -and -not $rosAlive){ Log 'owned processes and r3a group verified gone; releasing locks'; $cleanupFailed=@(); break }
+            if(Test-Path -LiteralPath $release){ Log 'root recovery release file present; releasing locks on root instruction'; break }
+            Start-Sleep -Seconds 30
+        }
     }
     foreach($h in $locks){ $h.Dispose() }
     Log "released $($locks.Count) locks; run directory kept: $run"
