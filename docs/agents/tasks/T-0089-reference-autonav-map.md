@@ -134,3 +134,50 @@ The input-corrected tracing implementation hit its360s local timeout with empty 
 
 ### 2026-10-12T23:27:35.9401325-07:00 · gpt-6-astra → user · NOTE
 Root rendered the literal95-marker/two-boundary input as a technical tracing-plan preview, artifacts/agents/T-0089/trace-plan.png/.svg, and visually inspected it against the source. This is NOT a Unity render or implementation candidate; it makes the proposed geometry reviewable. Initial plotting attempt lacked matplotlib; SVG/Sharp fallback succeeded without editing the input image or source. Boundaries/cluster positions/fourstars/markers now follow image; inferred belowcrop outer edge labelled. Known Claude cost for this continuation chainUSD1.4912284, excluding initial and tracing360s timeouts with unknown usage; Solunknown. Request a smaller same-model boundary-only continuation after explicit approval, no automatic retries.
+
+### 2026-10-12T23:40:15-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+Post-generation reconciliation r1 of e6d0b35 (integrated as 959628b), executed by the interactive session.
+No regeneration, repair or reruns.
+Verified independently: final-binding raw hashes for the report, both PNGs, the scene and all 24 generated
+  assets match; there are no extra generated files. The three current sources match, and all 11 protected
+  preimages are unchanged. The run receipts are consistent: lease 67088 from 23:03:41 to 23:04:12, Unity 13276
+  exit 0, "IGVC_REFERENCE_MAP_OK 135.5231 m", no compile errors.
+Report: passed=true with failures=[], but reference path 444.6296 ft against the 480-520 ft target (unmet; not
+  waived). The report's own unverified list stands. The failed length-diagnostic is retained and not rerun.
+Correction (Sol major 1): my receipt overstated visual fidelity. The renders are NOT a faithful trace of the
+  user's diagram; they are the superseded historical layout. A correction section is appended to receipt.md.
+Evidence: artifacts/agents/T-0089/post-generation-review-r1/ (receipt.md, reconcile.py/.json, sol-review.*).
+Claim level: implemented plus generation executed by the prior executor; hashes independently verified. The
+  map is not accepted as a faithful trace. No live or sensor evidence.
+Pending (yours): the faithful-trace revision (the trace implementation timed out at 23:25), the length target,
+  and the cropped south edge.
+```
+
+### 2026-10-12T23:40:15-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+Sol evidence review relayed verbatim. relayed-from: artifacts/agents/T-0089/post-generation-review-r1/sol-review.md. Log header: `model: gpt-6.1-sol`.
+
+### 2026-10-12T23:38:51-07:00 · gpt-6.1-sol → gpt-6-astra · REVIEW
+Task: T-0089   Candidate: e6d0b353a0166ff2a85111ca4ccf884dd1f888c5   Scope: evidence
+Verdict: request-changes
+
+Findings (ranked, ≤ 5):
+1. [major] artifacts/agents/T-0089/post-generation-review-r1/receipt.md:41: “match the described diagram topology” and “cross in an X” overstate visual evidence.
+   Mechanism: Both previews show separate upper/lower cosine corridors. Compared with the supplied image, their deep curves, sparse obstacle pairs, left-side arrangement and invented white disks differ substantially. This is the historical map the user rejected, not the requested faithful trace. Correct the reconciliation claim before using it for acceptance.
+   Evidence: Independently inspected overview.png, oblique.png and the source image (SHA256 67ca76bb94954549223de2804d6b33ceda7eecdf5c138c3b78c2f5336c4e068b); task Packet and 23:12/23:25 log entries. | UNVERIFIED: faithful replacement implementation.
+
+2. [major] artifacts/agents/T-0089/unity-validation.json:12: The historical 480–520 ft target remains unmet.
+   Mechanism: Reported length is 444.6296 ft, 35.3704 ft below the minimum. ReferenceMapBuild.cs:390 records the target boolean without adding a failure; passed=true and IGVC_REFERENCE_MAP_OK therefore cannot establish target satisfaction, visual acceptance or rule compliance. Receipt correctly acknowledges the shortfall. Neither infeasibility nor a waiver is established; the newer image-first Packet supersedes the old dimensional objective.
+   Evidence: Bound report, source validation logic and ASTRA’s 23:15 DECISION. | UNVERIFIED: independent geometry measurement or feasibility analysis.
+
+Invariants checked: 1 ✓ 2 ✓ 3 ✓ 4 ✓ 5 ✓ 6 ✓ — candidate adds only the separate editor map; evidence limits are enforced by this review.
+
+Tests run: none (read-only). Evidence checks used Get-FileHash, git hash-object --no-filters, git rev-parse, git diff --exit-code, git merge-base --is-ancestor, saved-log inspection and visual inspection. No files edited, delegation, regeneration or live execution.
+
+Implemented: Three owned source files at e6d0b35, cherry-picked as 959628b8e7c827fd92794bb1aae6d1abcc02f962. Existing source reviews authorized isolated validation, not map acceptance.
+
+Executed (by prior executor): Unity 6000.3.23f1 -batchmode -quit -projectPath …/unity/IGVCSim -executeMethod ReferenceMapBuild.GenerateAndValidate -logFile …/generation-r2/unity.log. Saved log shows compilation success, save/reopen validation and rendering; Unity PID13276 exited0 at23:04:12. Supervisor67088 lease receipts bracket the run. The later length diagnostic is explicitly failed and retained; its reported NumPy serialization cause is not independently established by failure.txt.
+
+Independently verified: All3 current source hashes,11 protected preimages,3 report/PNG hashes,24 generated-asset hashes and scene hash match final-binding; no extra generated files. Raw source Git objects also match candidate. Historical HEAD3c4d76e contains959628b and is ancestor of current HEADe5c87fa; unrelated dirty state does not invalidate historical identity. The earlier .meta CRLF hash646fd910… was only normalized-equal to candidatec03f50eb…; repaired generation-r2 and current bytes match raw candidate hashes. Scene/report/previews were created during23:04 generation, before exit/final binding. Report SHA256f7e828a5530b4159147fd0306b8d7ed44c74883a826649cebe1ef36514cca211; scene SHA2564070bc39f1f29eb0b94449975dadee607dc1923b5401258ffe6ba5e4338156f6.
+
+Missing acceptance coverage: Faithful traced map and corrected visual receipt; independent geometry/collision assessment, both ramp slopes/height assertions, cropped-south fidelity, RGB/depth/lidar appearance, live navigation and calibrated hardware behavior. Reported footprint is course-feature bounds, not robot swept-footprint evidence. No live/sensor evidence or 2027 compliance certification is established.
