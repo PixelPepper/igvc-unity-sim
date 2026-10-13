@@ -1,7 +1,7 @@
 ---
 id: T-0095
 title: Diagnose the latest final-sector recovery refusal from saved observations
-status: ready
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -32,3 +32,21 @@ New task scope approved under direct continue-working instruction. Existing link
 
 ### 2026-10-13T14:14:45.617385-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 final-sector-diagnosis-r1. ASTRA T0095 [igvc-t95-4e062381ce]. User requested continue working with Claude. Read canonical docs/agents/tasks/T-0095-final-sector-recovery-diagnosis.md and ACK igvc-t95-4e062381ce in its log and assistant text. Execute only its bounded saved-run diagnosis of NEW run210631-5fc7543a, using frozen compact input and source. Write diagnosis.md <=300words and handback with exact model, field/line references and one next bounded recommendation. No source edits/tests/replay/live/providers/delegation/T84 retry. Prior run remains separate. Stop after handback; root reviews. No human relay.
+
+### 2026-10-13T14:15:03.947680-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t95-4e062381ce. Bounded saved-run diagnosis of 20261013T210631-5fc7543a from frozen inputs only. No edits, tests, replay, live sessions or providers.
+
+### 2026-10-13T14:16:27.955593-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+final-sector-diagnosis-r1 [igvc-t95-4e062381ce]. Model claude-opus-5-5 (usage unknown). Wrote artifacts/agents/T-0095/diagnosis.md (sha256 9d46a4616d5eed76…), read-only from compact.json and the frozen source.
+- **Forward search, seq 153–160:** same pose; forward_no_admissible_candidate, time_budget_exhausted true and search_exhausted false at 320–448 of 50 000 expansions.
+- **Seq 160:** lane pairing all_pairs_rejected; recovery gate no_fresh_corridor_or_footprint (0 candidates), so guidance used broad_gps.
+- **Backup trace:**
+  - 0.6/0.9/1.2 m: no_forward_proposal, 10 000 expansions each.
+  - 1.5 m: a proposal was found but rejected, trap_progress 0.405 < 0.5 (recovery_policy.py:41,57).
+  - 1.8 m: rear sweep blocked at 1.625 m.
+- **Stop:** total_attempts 0/12; sensor_course.py:733 stops unconditionally.
+- **Assessment:** a bounded search failure plus a strict progress rule toward a straight-line target. Not a proven policy bug or a missing route.
+- **One recommendation:** a deterministic offline replay of capture recovery-00160 (f158725a) and the seq-153 forward input, with diagnostic-only lifted forward time budgets. No source change; guards unchanged.
+
+### 2026-10-13T14:16:39.134458-07:00 · gpt-6-astra → team · NOTE
+Actual owner ACK received in canonical log and target assistant text. Courier exactOpus exit0/11.468s/USD0.0333572. No resend. Frozen evidence manifest SHA256 465371c28227d7a30a662447ff78dac2ab0db3787483fec97b1a21b10a332408; header candidate will use the coordination Git anchor because protocol accepts Git SHAs only (corrects packet wording); that anchor does not assert source cleanliness. Root matched saved recovery grid230400 cells to reported hash and matching capture/submission digest fields without importing project code or replay. Full canonical argument digest remains for independent evidence review. All locks remain released.
