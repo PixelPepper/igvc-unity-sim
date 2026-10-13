@@ -281,3 +281,8 @@ Heavy local tests, replays and builds wait until the live lease is released.
 Record overlapping work and retain the uncontrolled-host-load qualification.
 This narrow update supersedes ADR-009's read-only overlap limitation, not its
 exclusive runtime or no-heavy-compute restrictions.
+
+
+## 2026-10-12T23:56:06-07:00: Delivery update to ADR-002
+
+The user requested automatic coordination with the named existing Claude Desktop session, without manual message relays. The historical ADR-002 statement that interactive sessions cannot be messaged directly is superseded for this verified route: Claude CLI 2.1.285 ListAgents/SendMessage, invoked through a bounded authenticated courier, delivered a message to the existing Desktop session and its exact transcript plus canonical task log acknowledged it. Task logs remain the source of truth; this changes delivery, not ownership or acceptance authority. See SESSION_DELIVERY.md for limits, deduplication, receipts and heartbeat pickup. No permission changes, Remote Control, duplicate session resumes or automatic blocked retries are authorized.
