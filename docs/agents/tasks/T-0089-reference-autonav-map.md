@@ -1,5 +1,5 @@
 ---
-id: T-0085
+id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
 status: blocked
 priority: P2
@@ -14,7 +14,7 @@ lease: none
 updated: 2026-10-12
 ---
 
-# T-0085: Diagram-derived AutoNav authoring map
+# T-0089: Diagram-derived AutoNav authoring map
 
 ## Packet
 
@@ -128,3 +128,6 @@ Exported as course JSON (centerline with half_width, plus obstacles), the map co
 ### 2026-10-12T18:13:37.7282620-07:00 · gpt-6-astra → team · BLOCKED
 The implementation wrapper reached its 360 s local timeout. No stdout/stderr handback, commit, actual modelUsage, cost or provider exit confirmation. Requested model was Opus5.5; actual identity and usage remain unknown. Assignment ended; no automatic retry. Partial ReferenceMapBuild.cs is frozen with its hash under artifacts/agents/T-0085/timeout-source. All12 external preimages unchanged. No source/evidence review, Unity compilation, generated scene or integration. Ask user for a smaller bounded same-model continuation. T0084 remains blocked independently and T0070 remains reserved.
 
+
+### 2026-10-12T18:14:41.612195-07:00 · gpt-6-astra → team · DECISION
+Concurrent creation of separate course-profile tasks allocated T0085-T0088. This isolated map task is renumbered T0089; those other tasks and source owners are unchanged. Preserve the historical codex/t0085-reference-map-opus branch/worktree and artifacts/agents/T-0085/ outputs as immutable timeout evidence. Mirrored map evidence is now artifacts/agents/T-0089/. Any approved continuation must correct its output namespace before execution. No new worker dispatched.
