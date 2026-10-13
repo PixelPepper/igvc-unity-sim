@@ -1,7 +1,7 @@
 ---
 id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: blocked
+status: ready
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -11,7 +11,7 @@ base: 76af47bf3acf09307ef570c8cfbe4cc9784b90c7
 candidate: e6d0b353a0166ff2a85111ca4ccf884dd1f888c5
 claim: none
 lease: none
-updated: 2026-10-12
+updated: 2026-10-13
 ---
 
 # T-0089: Diagram-derived AutoNav authoring map
@@ -20,7 +20,9 @@ updated: 2026-10-12
 
 The latest DIRECT human correction supersedes the prior rule-dimension-first reconstruction: "this map doesn't resemble the image. look at the image and make it the same". The previous cosine loop and16drums/6invented white disks are rejected for visual fidelity. Keep prior commits/evidence immutable.
 
-One bounded same-author revision on C:/Users/brand/.codex/worktrees/igvc-t0085-reference-map/IGVC SIM, named opus-t0089-trace-revision-20261012. HEAD e6d0b353a0166ff2a85111ca4ccf884dd1f888c5. Source-only; owned ONLY ReferenceMapBuild.cs, its.meta, docs/REFERENCE_AUTONAV_MAP.md. Never touch other sources, scenes, builds, ROS, runtime/finish/auditors, primary coordination, or T0070 reservation. No tests/imports/Unity/providers/delegation. Commit only owned paths and return <=300words with actual candidate and UNRUN checks. ExactOpus5.5 high360s/USD5, no automatic error/timeout retry.
+The direct human request on October 13, "ok lets keep going, build the new map according to the image of the new 2027 igvc course for autonav", authorizes continuing this map revision and its reviews/root Unity validation. The old named headless trace assignment has ended and is explicitly revoked. Ownership now transfers to the existing interactive exact Opus 5.5 session "IGVC SIM handoff and mechanicsSandbox integration", transcript cd916c5d-b081-45dc-8f01-c4d90eab0446. No duplicate implementation worker. Work only in C:/Users/brand/.codex/worktrees/igvc-t0085-reference-map/IGVC SIM, branch codex/t0085-reference-map-opus, starting clean e6d0b353a0166ff2a85111ca4ccf884dd1f888c5.
+
+Own ONLY unity/IGVCSim/Assets/IGVC/Editor/ReferenceMapBuild.cs, its .meta and docs/REFERENCE_AUTONAV_MAP.md. Complete the faithful image reconstruction below as one bounded source slice. No Unity execution, scene generation, builds, ROS/live tests, other source edits, providers or delegation. You may append ACK/HANDBACK to THIS primary task log only; ASTRA owns headers/board/integration. Use existing exact Opus 5.5, confirm identity if available, no model substitution. Budget 15 minutes active work, then commit partial or completed source and report remaining work; no provider/auth/quota/model retry. This is the newly human-approved continuation, not an automatic retry. T0070 reservation remains unchanged; its last read-only reconciliation is complete. T0084 is independently blocked. Commit only owned paths, return <=300 words with candidate, scope, checks UNRUN, unresolved risks and actual usage if exposed. ASTRA will send Sonnet/Sol reviews and generate Unity after acceptance.
 
 Read README.md and the latest image C:/Users/brand/.codex/worktrees/igvc-t0085-reference-map/IGVC SIM/artifacts/agents/T-0089/inputs/reference.png. Read this ignored worktree reference artifact as an authorized input: C:/Users/brand/.codex/worktrees/igvc-t0085-reference-map/IGVC SIM/artifacts/agents/T-0089/inputs/image-trace.json. It contains explicit pixel contours and every visible circle/waypoint/ramp/marker position prepared by root. Embed those literal coordinates in generator source; no runtime file dependency. Trace BOTH independent boundaries, variable width, shallow north/south waves, straight left open No Man's Land arrangement. Avoid any analytic cosine replacement, NML bulge or blue reference route. Preserve original relative proportions and all marker colors/positions, including dense yellow clusters and red/green/black left objects. Four blue star annotations should be visible in portrait preview at traced locations and tagged EditorOnly/colliderless. Black marker semantics unknown: editable black drums, reported interpretation; no invented white disks. Image pixels are approximate visually traced points, not pixel-exact extraction.
 
@@ -181,3 +183,10 @@ Executed (by prior executor): Unity 6000.3.23f1 -batchmode -quit -projectPath �
 Independently verified: All3 current source hashes,11 protected preimages,3 report/PNG hashes,24 generated-asset hashes and scene hash match final-binding; no extra generated files. Raw source Git objects also match candidate. Historical HEAD3c4d76e contains959628b and is ancestor of current HEADe5c87fa; unrelated dirty state does not invalidate historical identity. The earlier .meta CRLF hash646fd910… was only normalized-equal to candidatec03f50eb…; repaired generation-r2 and current bytes match raw candidate hashes. Scene/report/previews were created during23:04 generation, before exit/final binding. Report SHA256f7e828a5530b4159147fd0306b8d7ed44c74883a826649cebe1ef36514cca211; scene SHA2564070bc39f1f29eb0b94449975dadee607dc1923b5401258ffe6ba5e4338156f6.
 
 Missing acceptance coverage: Faithful traced map and corrected visual receipt; independent geometry/collision assessment, both ramp slopes/height assertions, cropped-south fidelity, RGB/depth/lidar appearance, live navigation and calibrated hardware behavior. Reported footprint is course-feature bounds, not robot swept-footprint evidence. No live/sensor evidence or 2027 compliance certification is established.
+
+
+### 2026-10-13T00:04:48.714488-07:00 · user → gpt-6-astra · ANSWER
+Direct human message: "ok lets keep going, build the new map according to the image of the new 2027 igvc course for autonav". Approves this pending image-first T0089 continuation and required reviews/Unity map generation. No T0084 retry or live mission. Timestamp records relay preparation.
+
+### 2026-10-13T00:04:48.714488-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+Dispatch identity map-image-continuation-r1. Old named headless trace assignment ended/revoked; transfer the three map source paths to existing linked interactive session cd916c5d-b081-45dc-8f01-c4d90eab0446. Worker clean at e6d0b35. Follow updated Packet: full faithful two-boundary, 95-circle, four-star, ramp and marker source reconstruction, 15-minute active bound, source-only, no delegation/Unity/other tasks. Literal trace and original PNG are authorized local inputs. Append ACK then commit/handback in this log. Root prepares validation independently. Posting/queued delivery is not ACK; exact nonce igvc-map-8cfb3c4c312c will bind delivery.
