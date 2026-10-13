@@ -7,10 +7,26 @@ The accepted image-traced map (`ReferenceAutoNav2027`, [REFERENCE_AUTONAV_MAP.md
 powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action build
 powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action start -Conditions clear-noon
 powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action smoke -Conditions low-sun -Seconds 60
+powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action trial -Conditions clear-noon -MaxSpeed 0.6 -TrialTimeout 180
 ```
 - **build** runs `ReferenceDriveBuild.Build`, which writes the scene `Assets/IGVC/Scenes/ReferenceAutoNav2027Drive.unity`, validates it, and builds `artifacts/build-reference-drive/IGVCReferenceDrive.exe`. Validation and captures go to `artifacts/agents/T-0090/drive-validation.json` and `drive-<preset>-*.png`.
-- **start** and **smoke** export the mission, verify the ROS overlay, start the managed `r3a` ROS session (domain 42) and launch the visible player. A smoke run stops after `-Seconds` (at most 180). No mission is driven by this script.
-- **Locks:** every action holds all three simulator locks. It refuses to run if any Unity editor or player, or ports 10000-10002, are in use. It only stops what it started.
+- **build** is bounded to 45 minutes.
+- **start**, **smoke** and **trial** export the mission, verify the ROS overlay, start the launcher's **own** managed `r3a` ROS session (domain 42) and launch the visible player.
+  - **smoke** fails if the player exits early. It shows only that the process survived; it is not a sensor check.
+  - **trial** runs `tools/reference_map_trial.py` once, with no retry:
+    1. autonomy gate off and pose reset;
+    2. sensor smoke: `/clock`, RGB, depth, `/scan` and `/odom` must be received and the clock must be positive, and the first RGB frame is saved;
+    3. navigation profile and its own managed nav session;
+    4. clock admission (`use_sim_time` true on the perception nodes);
+    5. the unchanged `sensor_course.py`, at speed <= 0.6 m/s and timeout <= 180 s;
+    6. gate off, then nav stop.
+
+    It writes `trial-report.json`, `sensor-smoke.json`, `clock-admission.json`, `first-rgb.png`, `profile.yaml`, `mission.log` and the mission's own `run.json`.
+- **Ownership:**
+  - Every action holds all three simulator locks.
+  - It refuses to run if any Unity, IGVC or R3a player, port 10000-10002 (Windows or WSL), or **any managed ROS group** (r3a, nav, perception) is active. Port or process query errors stop it.
+  - A ROS session counts as owned only when `ros_session.py start` reports that it newly started it.
+  - Cleanup stops only owned processes and sessions and confirms their exit. If it cannot confirm, it writes `artifacts/iterations/reference-drive-ownership-retained.json` and exits non-zero.
 - **Run directory:** each run writes a new `artifacts/reference-drive/runs/<utc>-<id>/`, containing `launcher.log`, `autonomy.json`, `reference-conditions.json` and `unity.log`. Failed runs are kept.
 
 ## Scene
