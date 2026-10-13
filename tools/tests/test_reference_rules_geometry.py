@@ -98,7 +98,17 @@ class ReferenceRulesGeometryTests(unittest.TestCase):
 
     def test_drum_inventory(self):
         colours = {c: sum(d['colour'] == c for d in self.drums) for c in ('Yellow', 'Red', 'Green', 'Black')}
-        self.assertEqual(colours, {'Yellow': 77-len(G.NML_OMITTED), 'Red': 6, 'Green': 6, 'Black': 6})
+        self.assertEqual(colours, {'Yellow': 77, 'Red': 6, 'Green': 6, 'Black': 6})
+        self.assertEqual(len(self.drums), 95); self.assertEqual(G.NML_OMITTED, ())
+        self.assertEqual(G.inventory_issues(self.drums), [])
+        self.assertTrue({'nml09-0', 'nml10-0'} <= {d['id'] for d in self.drums})
+
+    def test_negative_control_omitted_or_duplicated_marker_is_rejected(self):
+        missing = [d for d in self.drums if d['id'] != 'nml09-0']
+        self.assertTrue(G.inventory_issues(missing))
+        duplicated = missing+[dict(self.drums[0])]          # count restored by duplication, identity still missing
+        self.assertEqual(len(duplicated), 95)
+        self.assertTrue(any('identities' in i or 'duplicate' in i for i in G.inventory_issues(duplicated)))
 
 
 if __name__ == '__main__':

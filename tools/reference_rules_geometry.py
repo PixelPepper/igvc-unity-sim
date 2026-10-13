@@ -289,9 +289,50 @@ NML_EAST = [(265, 'Yellow'), (311, 'Black'), (363, 'Green'), (421, 'Red'), (472,
             (656, 'Red'), (715, 'Yellow'), (775, 'Black'), (837, 'Green'), (889, 'Red')]
 NML_INNER = [(357, 'side', 'outer', 1), (362, 'side', 'inner', 1), (406, 'centre', None, 1), (504, 'centre', None, ROW_ACROSS),
              (585, 'centre', None, ROW_ACROSS), (675, 'centre', None, ROW_ACROSS), (727, 'centre', None, 1),
-             (786, 'side', 'outer', 1), (788, 'side', 'inner', 1)]
-NML_OMITTED = (311, 861)
+             (786, 'side', 'outer', 1), (788, 'side', 'inner', 1),
+             (311, 'centre', None, 1), (861, 'centre', None, 1)]   # r6: restored (ids nml09/nml10; earlier ids kept)
+NML_OMITTED = ()
 NML_STATIONS = (357, 406, 504, 585, 675, 727, 786)
+# r6: the restored singles sit 0.35 of a station gap from each NML end (0.5 = midway passed only the 5 cm raster;
+# the conservative 10 cm raster closed there), so the other 93
+# drums keep their r4 stations exactly.
+NML_END_SINGLES = {311: .35/(len(NML_STATIONS)+1), 861: 1-.35/(len(NML_STATIONS)+1)}
+
+
+EXPECTED_COLOURS = {'Yellow': 77, 'Red': 6, 'Green': 6, 'Black': 6}   # all 95 reference markers
+
+
+def expected_groups():
+    """Every reference marker's group identity (95 drums incl. cluster members); counts alone are not enough."""
+    groups = {}
+    for name, table in (('top', TOP), ('bottom', BOTTOM)):
+        for n, (_, _, _, pattern) in enumerate(table):
+            groups[f'{name}{n:02d}'] = 1 if pattern == 1 else len(pattern)
+    for n, (_, _, _, pattern) in enumerate(NML_INNER):
+        groups[f'nml{n:02d}'] = 1 if pattern == 1 else len(pattern)
+    for side, column in (('outer', NML_WEST), ('inner', NML_EAST)):
+        for n, _ in enumerate(column):
+            groups[f'col-{side}{n:02d}'] = 1
+    for tag in ('gate-top-o', 'gate-top-i', 'gate-bot-o', 'gate-bot-i', 'corner-ne-o', 'corner-ne-i', 'corner-se-i', 'corner-se-o'):
+        groups[tag] = 1
+    for tag in ('flank-n', 'flank-s'):
+        for side in ('inner', 'outer'):
+            groups[f'{tag}-{side}'] = 1
+    return groups
+
+
+def inventory_issues(drums):
+    issues = []
+    # Ramp-flank drums carry their group name as id; every other group numbers its members -0, -1, ...
+    want = {g if g.startswith('flank-') else f'{g}-{j}' for g, n in expected_groups().items() for j in range(n)}
+    have = [d['id'] for d in drums]
+    if len(have) != len(set(have)): issues.append('duplicate drum ids')
+    if set(have) != want:
+        issues.append(f'drum identities differ: missing {sorted(want-set(have))[:6]} extra {sorted(set(have)-want)[:6]}')
+    colours = {c: sum(d['colour'] == c for d in drums) for c in EXPECTED_COLOURS}
+    if colours != EXPECTED_COLOURS or len(drums) != sum(EXPECTED_COLOURS.values()):
+        issues.append(f'drum inventory {len(drums)} {colours} != 95 {EXPECTED_COLOURS}')
+    return issues
 
 
 def nml_t(py):
@@ -299,6 +340,8 @@ def nml_t(py):
 
 
 def nml_station_t(py):
+    if py in NML_END_SINGLES:
+        return NML_END_SINGLES[py]
     return (NML_STATIONS.index({362: 357, 788: 786}.get(py, py))+1)/(len(NML_STATIONS)+1)
 
 
@@ -546,6 +589,7 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     rep['drum_count'] = len(drums)
     rep['drum_colours'] = {c: sum(d['colour'] == c for d in drums) for c in ('Yellow', 'Red', 'Green', 'Black')}
     rep['drums_omitted'] = [dict(diagram_py=py, colour='Yellow', region='NML interior centre single') for py in NML_OMITTED]
+    issues += inventory_issues(drums)
     rep['issues'] = issues
     rep['reported_not_gated'] = ['witness length is an 8-connected inflated-raster grid estimate, not a bound',
                                  'witness is not curvature-limited', 'inner tape-edge radius below 5 ft is reported only',

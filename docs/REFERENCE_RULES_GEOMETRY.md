@@ -15,7 +15,7 @@ python3 tools/reference_rules_geometry.py --out artifacts/agents/T-0091/prototyp
    - **`length-500ft`:** the same fit, scaled uniformly until the nominal lap is 500 ft. The required footprint is reported as an issue, never accepted silently.
 3. **Widths.** The right straight is 3.048 m, the corridors 4.4 m and NML 6.0 m. NML width is an authoring assumption between the drum columns. Width changes taper over 3 m.
 4. **Fixed physical sizes.** Drums, tape (0.1016 m) and ramp (0.30 m over 2.145 m, 14 %) are never scaled.
-5. **Drums.** Top and bottom drums sit at the diagram's x stations. Each drum's intended class is fixed before any measurement. NML interior obstacles are spaced evenly in diagram order, and two NML centre singles are omitted (93 drums).
+5. **Drums.** Top and bottom drums sit at the diagram's x stations. Each drum's intended class is fixed before any measurement. NML interior obstacles are spaced evenly in diagram order. r2–r5 omitted two NML centre singles (93 drums); r6 restores them 0.35 of a station gap from each NML end, giving all 95 reference markers, enforced by identity, not only by count.
 
 ## Measurements
 - **Lap:**

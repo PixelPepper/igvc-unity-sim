@@ -15,7 +15,7 @@ Then copy two of its outputs to the pinned paths:
 - **`rules-485/unity-input.json` → `artifacts/agents/T-0091/unity-input.json`.** This is the build-time authoring input. It is never copied into Resources, StreamingAssets or player data, and never given to autonomy.
 - **`rules-485/metadata.json` → `artifacts/agents/T-0091/mission-metadata.json`.** This holds only the spawn and the six goals.
 
-The build fails closed if the input is missing or malformed, names the wrong task or variant, has the wrong drum count (93), has changed physical sizes (drum, tape or ramp), contains non-finite values, or has a spawn heading more than 2° off north.
+The build fails closed if the input is missing or malformed, names the wrong task or variant, has the wrong drum count (95), has changed physical sizes (drum, tape or ramp), contains non-finite values, or has a spawn heading more than 2° off north.
 
 ## Commands (PowerShell, repository root; root runs these under the simulator locks)
 ```powershell
@@ -31,7 +31,7 @@ powershell -ExecutionPolicy Bypass -File tools/reference-rules-map.ps1 -Action s
 - **Robot:** the R3-a robot, sensors and TransportProbe come from `R3aDriveBuild.CreateScene`. Only the probe's test props are removed.
 - **Origin:** the course root is translated so the north start-line centre is odom (0, 0), heading north (Unity +z, ROS +x). The lane heading at the start is 0.28° off north; this is reported.
 - **Physical sizes:**
-  - 93 drums: Unity Cylinder primitives scaled to 0.597 × 1.008 m, each with a `RealisticObstacles.DrumMesh` visual. Their physics uses the primitive's default **CapsuleCollider** (rounded ends), the same as T-0089/T-0090, not an exact cylinder.
+  - 95 drums (all reference markers): Unity Cylinder primitives scaled to 0.597 × 1.008 m, each with a `RealisticObstacles.DrumMesh` visual. Their physics uses the primitive's default **CapsuleCollider** (rounded ends), the same as T-0089/T-0090, not an exact cylinder.
   - Two 4 in tape ribbons.
   - Ramp: 0.30 m rise, 14 % grade, three support colliders.
   - Asphalt ground the size of the footprint.

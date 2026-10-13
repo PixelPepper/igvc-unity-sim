@@ -14,7 +14,7 @@ using UnityEngine.SceneManagement;
 // copied into Resources/StreamingAssets or player data, and never given to autonomy. The existing R3-a robot
 // scene (R3aDriveBuild.CreateScene) provides the robot, sensors and TransportProbe; the course root is
 // translated so the north start-line centre is the odom origin with the robot heading north (Unity +z, ROS +x).
-// Physical sizes (93 drums 0.597 x 1.008 m, 4 in tape, 0.30 m ramp) are taken from the input and checked.
+// Physical sizes (95 drums 0.597 x 1.008 m, 4 in tape, 0.30 m ramp) are taken from the input and checked.
 // T-0089/T-0090 sources, scenes, players and their materials are never modified: materials are created or
 // cloned into GeneratedReferenceRules; textures are shared read-only.
 //   Build:   -executeMethod ReferenceRulesDriveBuild.Build   (scene + checks + artifacts/build-reference-rules)
@@ -27,7 +27,7 @@ public static class ReferenceRulesDriveBuild
     public const string Variant = "rules-485";
     public const string Generated = "Assets/IGVC/GeneratedReferenceRules";
     public const string MapRootName = "Reference rules course 2027 (PROPOSED, larger footprint, uncertified)";
-    public const int ExpectedDrums = 93;
+    public const int ExpectedDrums = 95;   // all reference markers (r6 restored the two NML centre singles)
     public const float Tape = .1016f, DrumDiameter = .597f, DrumHeight = 1.008f, RampRise = .30f;
     public static string Repository => Path.GetFullPath(Path.Combine(Application.dataPath, "../../.."));
 
