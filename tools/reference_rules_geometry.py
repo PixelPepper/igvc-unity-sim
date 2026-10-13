@@ -41,7 +41,10 @@ R_DRUM = DRUM_D/2
 PASS = 5*FT
 LANE_MIN, LANE_MAX = 10*FT, 20*FT
 W_RIGHT, W_CORRIDOR, W_NML = LANE_MIN+.01, 4.4, 6.0   # right +1 cm so measured width clears 10 ft with no waiver
-NS_TARGET, CLOSED_MAX = 485*FT, 520*FT
+NS_TARGET, CLOSED_MAX = 484*FT, 520*FT
+CLOSED_SELECT = 519*FT                            # selected variant keeps >= 1 ft margin under 520
+START_END_GAP = 2.                                # physical ramp-end to start-line gap when repositioned
+CLUSTER_PITCH = 3.6                               # min along-route spacing between side-switching cluster groups (m)
 OSC_HALF = .5
 # Shallow-shape limits relative to the fitted source trace (r2 measured +2 deg / 0.94x / 0.95 m on this family;
 # r1-style hairpins measured ~83 deg swings and would fail every limit).
@@ -128,13 +131,16 @@ def allowances():
                 top=MARGIN+TAPE+W_CORRIDOR/2, bottom=MARGIN+TAPE+W_CORRIDOR/2)
 
 
-def fit(scale=1.):
-    """Fit the reference midline into the field box (scale 1) or a uniformly enlarged box (scale > 1)."""
+def fit(scale=1., iso=False, physical_starts=False):
+    """Fit the reference midline into the field box (scale 1) or a uniformly enlarged box (scale > 1).
+    iso=True keeps the source image aspect (one m/px scale); the footprint then follows from the shape."""
     pts_px, flag = trace_midline()
     a = allowances()
     lo, hi = pts_px.min(0), pts_px.max(0)
     sx = (FIELD_W-a['left']-a['right'])/(hi[0]-lo[0])*scale
     sy = (FIELD_H-a['top']-a['bottom'])/(hi[1]-lo[1])*scale
+    if iso:
+        sx = sy
     field = (a['left']+a['right']+(hi[0]-lo[0])*sx, a['top']+a['bottom']+(hi[1]-lo[1])*sy)
 
     def to_field(px, py):
@@ -164,7 +170,7 @@ def fit(scale=1.):
     win = int(round(TAPER/DS)); w = np.convolve(np.r_[base[-win:], base, base[:win]], np.ones(2*win+1)/(2*win+1), 'valid')
     s = np.concatenate([[0], np.cumsum(seg[:-1])])
     return dict(p=p, px=pxy, h=h, k=k_curv, w=w, sec=sec, s=s, length=float(seg.sum()), raw=raw,
-                field=field, scale=scale, sx=sx, sy=sy, to_field=to_field)
+                field=field, scale=scale, sx=sx, sy=sy, to_field=to_field, iso=iso, physical_starts=physical_starts)
 
 
 def build(variant='field-120x100'):
@@ -176,15 +182,20 @@ def build(variant='field-120x100'):
             k *= TARGET_LAP/fit(k)['length']
         geo = fit(k)
     elif variant == 'rules-485':
-        # The exported mission runs north start -> south start. Scale uniformly (bounded, 3 steps) so that run is
-        # ~485 ft, then shrink only if the closed loop would exceed CLOSED_MAX.
-        k = 1.
-        for _ in range(3):
-            g = fit(k); k *= NS_TARGET/north_to_south(g)
-        g = fit(k)
-        if g['length'] > CLOSED_MAX:
-            k *= CLOSED_MAX/g['length']
-        geo = fit(k)
+        # Selected variant (legacy name; r4 target 484 ft). ISOTROPIC source aspect. The exported mission runs north
+        # start -> south start: scale uniformly (bounded, 3 steps) so that run is ~484 ft. If the image-scaled start
+        # spacing would push the closed loop past CLOSED_SELECT, the start lines are repositioned to the physical
+        # ramp ends +- START_END_GAP (disclosed in the report) and the scale is recalibrated (3 steps).
+        def calibrate(physical):
+            k = 1.
+            for _ in range(3):
+                g = fit(k, True, physical); k *= NS_TARGET/north_to_south(g)
+            return fit(k, True, physical)
+        geo = calibrate(False)
+        if geo['length'] > CLOSED_SELECT:
+            geo = calibrate(True)
+        if geo['length'] > CLOSED_SELECT:
+            geo = fit(geo['scale']*CLOSED_SELECT/geo['length'], True, True)
     else:
         raise ValueError(variant)
     ramp, starts = ramp_and_starts(geo)
@@ -244,6 +255,10 @@ def ramp_and_starts(geo):
     ramp = dict(x0=x-W_RIGHT/2-RAMP_SIDE, x1=x+W_RIGHT/2+RAMP_SIDE, y0=y-half, y1=y+half,
                 rise=RAMP_RISE, run=RAMP_RUN, deck=RAMP_DECK, grade=RAMP_RISE/RAMP_RUN)
     north, south = at(NORTH_START_PY), at(SOUTH_START_PY)
+    if geo.get('physical_starts'):
+        idx = np.flatnonzero(geo['sec'] == 'right')
+        north = int(idx[np.argmin(np.abs(geo['p'][idx, 1]-(ramp['y1']+START_END_GAP)))])
+        south = int(idx[np.argmin(np.abs(geo['p'][idx, 1]-(ramp['y0']-START_END_GAP)))])
     return ramp, dict(north=north, south=south)
 
 
@@ -314,10 +329,23 @@ def build_drums(geo, ramp):
             return reach if side == 'inner' else -reach
         return fn
     for name, table in (('top', TOP), ('bottom', BOTTOM)):
+        # Diagram x stations; r4 enforces CLUSTER_PITCH along the route between consecutive groups that switch
+        # sides when either is a cluster (isotropic scale compressed them into a 5 ft choke). Shifts are recorded.
+        idx = np.flatnonzero(geo['sec'] == name)
+        prev = None
         for n, (x, kind, side, pattern) in enumerate(table):
             i = nearest_in(geo, name, lambda q, x=x: q[:, 0]-x)
+            if prev is not None and (pattern != 1 or prev[1] != 1) and side != prev[2]:
+                want = prev[0]+CLUSTER_PITCH
+                if geo['s'][i] < want:
+                    i = int(idx[np.argmin(np.abs(geo['s'][idx]-want))])
+            shift = float(geo['s'][i]-geo['s'][nearest_in(geo, name, lambda q, x=x: q[:, 0]-x)])
+            first = len(drums)
             put(i, kind, side, 'Yellow', f'{name}{n:02d}', pattern, in_lane(side),
                 None if kind == 'centre' else ('inner' if side == 'outer' else 'outer'))
+            for d in drums[first:]:
+                d['station_shift_m'] = round(shift, 3)
+            prev = (geo['s'][i], pattern, side)
     for n, (py, kind, side, pattern) in enumerate(NML_INNER):
         put(frac_index(geo, 'nml', nml_station_t(py)), kind, side, 'Yellow', f'nml{n:02d}', pattern,
             lambda w, _p, s=side: 0. if s is None else (1 if s == 'inner' else -1)*(R_DRUM+PASS/2+.15),
@@ -376,6 +404,9 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     # Start-to-finish (north start, counter-clockwise, to the south start) vs the closed loop.
     rep['north_to_south_start_m'] = float((geo['s'][starts['south']]-geo['s'][starts['north']]) % geo['length'])
     rep['north_to_south_start_ft'] = rep['north_to_south_start_m']/FT
+    rep['closed_margin_to_520_ft'] = (CLOSED_MAX-geo['length'])/FT
+    rep['fit_isotropic'] = bool(geo.get('iso'))
+    rep['start_lines'] = ('repositioned to the physical ramp ends +- %.1f m (image pixel spacing would exceed the closed-loop limit)' % START_END_GAP) if geo.get('physical_starts') else 'image pixel stations (py 439 / 711)'
     rep['lap_definitions'] = dict(closed_loop='closed nominal centreline, includes the ramp stretch between the starts',
                                   north_to_south='nominal centreline from the north start counter-clockwise to the south start '
                                                  '(the exported mission run)')
@@ -659,7 +690,7 @@ def main(argv=None):
     summary = {}
     for v in variants:
         rep = run(v, args.out/v, args.reference)
-        summary[v] = {k: rep[k] for k in ('lap_length_ft', 'north_to_south_start_ft', 'connector_shape', 'field_ft', 'fit_scale_m_per_px', 'usable_width_taped_m', 'radius',
+        summary[v] = {k: rep[k] for k in ('lap_length_ft', 'north_to_south_start_ft', 'closed_margin_to_520_ft', 'fit_isotropic', 'start_lines', 'connector_shape', 'field_ft', 'fit_scale_m_per_px', 'usable_width_taped_m', 'radius',
                                           'silhouette_max_deviation_m', 'inside_field', 'min_lane_to_lane_clearance_m',
                                           'min_drum_edge_gap_m', 'drum_intended_passage_min_m', 'corridor_loop_connected',
                                           'marker_44ft', 'drum_count', 'issues', 'authorized_deviations', 'authorized_geometry_met', 'full_rule_compliance')}
