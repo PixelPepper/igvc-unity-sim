@@ -1,14 +1,14 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: in-progress
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0091-rule-map-opus
 base: cf3fc673bb127cac61283cb4e1e4b5986cfebdb3
-candidate: 040342ddc6c66445c38d61d55e1f2a929c0b88b0
+candidate: a88b2031588314c7fdf538c1f91f0f4b70206544
 claim: none
 lease: none
 updated: 2026-10-13
@@ -192,4 +192,34 @@ R5 candidate040342ddc6c66445c38d61d55e1f2a929c0b88b0 received, actual ACK/handba
 
 ### 2026-10-13T03:10:37.411181-07:00 · gpt-6-astra → team · DECISION
 Human explicitly requests restoration of both omitted barrels: all95 fromreference. This supersedes93-barrel final acceptance, not length/shallowshape/physicalsize/clearance constraints. Prior93 scene/player build unity-build-r1 succeeds32.891s/93savedposition/126rendercontrols; frozenproof andprotected94 unchanged retained. Final priorbuildSolreview may finish onlyas93evidence, no taskcompletion. Root will dispatch sameClaudeowner bounded restoration. No sourcechanges duringauthorhandoff yet. No navigation/live. Largerfootprint approval remains, allmeasurements muststay480–520ft nominalnorth-south/closed withshallowisotropicshape. RestoreyellowNMLsingles imagey311/861 withclearance, no omission/guardweakening. NoT84retry/otherownerchanges.
+
+
+### 2026-10-13T03:10:51.618547-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-restore95-r6. T0091 human now explicitly says add the2missingbarrels, all95like reference. Sameowner/worktree, successor to040342dd (r5ended), bounded8active minutes source+small geometrycalculations, noUnity/live/providers/delegation. Restore yellow NMLcenter singles sourceimagepy311 and861; preserve allother93drums andoriginalcolors/groupintent, allow minimalNMLstation adjustments for5ftpassages/globalorderedconnectivity, report everyadjustment. No disappearing/drumresizing/guardweakening. Keep selectedisotropicshallowboundary/field/ramp/startlines/nominal484.247/512.725ft unchanged ifpossible. No need changeboundarytoadd2singles unless evidencednecessity, neverdeepenbends. Own tools/reference_rules_geometry.py + relevant test/docs, ReferenceRulesDriveBuild.cs ExpectedDrums95/comment pluscheckonlyifhardcodedcount, no unrelatedsource/launchermountchanges. Enforce all95 marker identities restored not merelycountduplicated; test omission wouldberejected ifapplicable and preserve existingnegativeclearancecontrols. Exportfresh prototype-r6/selected/rules-485 withreport,metadata,unity-input,plan; preserve failedattempts. Update docs93→95andnoomissions. Root alreadyintegratedprevious040through86405e4 and builtprevious93, sourceworkerremains040; commitONLYdelta. Rootownsnewtests/review/integration/Unitybuild. Return<=200wordhandback exactcandidate, count/colors,nominaldimensions,passage/connectivity,displacements and UNRUNUnity. Original93buildfrozen, no needreview/rebuildit. Humanapproval directlyauthorizes thisrevision; noautomaticproviderretry. Ifunablecompletewithin8active minutes commitcoherentsourcewithremainingblocker, noautoscopeextension.
+
+
+### 2026-10-13T03:11:08.818081-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-c5d6e59d04. restore95-r6: restore NML singles py311/861 to 95 drums, 8 active minutes, outputs to prototype-r6. No Unity, live sessions, providers or delegation.
+
+### 2026-10-13T03:13:43.148368-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-restore95-r6 [igvc-t91-c5d6e59d04]. Candidate 9e04317b (a delta on 040342dd; 5 owned paths). Evidence: prototype-r6/selected/rules-485 (unity-input b8a42b98…, metadata 454e8650…, unchanged).
+- **Count:** 95 drums: Yellow 77, Red 6, Green 6, Black 6. The restored NML centre singles are py 311 → nml09-0 (3.868, 41.086) and py 861 → nml10-0 (3.893, 12.086). The other 93 ids and coordinates are byte-identical to r4.
+- **Placement:** 0.35 of a station gap from each NML end, which is nearer the ends than the diagram (diagram t 0.093 → 0.044). Attempt-2 (midway) is preserved: it passed only the 5 cm raster, and the conservative 10 cm raster closed.
+- **Measured:** nominal 484.247/512.725 ft and the boundary, field, ramp and start lines are unchanged. Minimum drum passage 1.82 m; corridor connected. The witness reaches all goals in order (a grid estimate). No issues.
+- **Gate:** a new inventory gate checks all 95 identities and colours. Negative controls show an omission, and an omission re-padded by a duplicate, are both rejected.
+- **Tests:** 19 PASS. Unity ExpectedDrums is 95; the docs say 95 with no omissions.
+- **Unrun:** the Unity compile, build, checks and captures.
+
+### 2026-10-13T03:15:34.562417-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-textfix-r7. T0091 r6source review completed BLOCKING only stale generated interpretation: tools/reference_rules_geometry.py still says twoNMLcentresinglesomitted in geometry.json despite95. Sameowner/worktree2active-minute fix, sourceonly noUnity/tests/providers/delegation. Correct that serialized sentence and stalecommentline276, accurately disclose all95 present/end-singleplacement. No geometry/constants/runtime/testchanges. Preserve r6selected outputs, exportfresh prototype-r7/selected/rules-485 (smallgeneration allowed tocorrecttext); do not reruntests alreadyroot19PASS. Reportedr6source19testrootPASS, independentroot alloriginal93objects+boundary/field/ramp/starts/goalsunchanged confirmed,2newyellowcenterdrums. Sonnetfile source-review-r6/review.md. Commit only geometry.py and necessarydocwordingifany. Return<=100words candidate and byte-equivalent coordinates/input; rootfocused textualdelta review thenSol/build. This fixes newreviewbug, notproviderretry. Assignment endsuponhandback.
+
+
+### 2026-10-13T03:15:49.620769-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-f025dc3bf5. textfix-r7: stale omission text only; no geometry changes, no tests.
+
+### 2026-10-13T03:16:12.595050-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-textfix-r7 [igvc-t91-f025dc3bf5]. Candidate a88b2031588314c7fdf538c1f91f0f4b70206544 changes geometry.py text only: the line-276 comment and the serialized interpretation now read "all 95 present", with the two end singles 0.35 of a station gap from each NML end. prototype-r7/selected: unity-input b8a42b98… and metadata 454e8650… are byte-identical to r6. geometry.json differs only in its interpretations; every other field is equal. No tests rerun; no Unity.
+
+### 2026-10-13T03:17:46.875576-07:00 · gpt-6-astra → team · DECISION
+Human95-barrel revision implemented by linkedClaude, actualACKs/handbacks forr6/r7, candidatea88b2031588314c7fdf538c1f91f0f4b70206544; authorassignmentended. Root19focusedPASS/no skips at9e04317b, all3released. Independent restoration binding proves alloriginal93drumobjects plusboundaries/field/ramp/starts/goalsunchanged andexactly2newyellowcenters nml09-0/nml10-0. Same484.247/512.725ft nominal length and143.815x171.022ftfield. SinglesnearNMLends t.04375/.95625 ratherthanreference~.093/.904 tokeep5ftcorridor; no5ftgateweakening. R6Sonnet47.797s/USD.2713406 foundonlystalegeneratedomissiontext; r7text-only corrected, exactSonnetPASS12.453s/USD.029683. Rootr7generation reproducedworker geometry/report; allgeometryexceptinterpretation andmetadata/input unchangedfrom19PASSr6, no unnecessarytestrepeat. NativeSol prebuild95pending. Prior93Unitybuild evidenceacceptedhistoricallybutnotfinaluserresult. Need delta integration/95build/actualrender+Solfinal afterprebuildacceptance. No navigation/live/retry/otherownerchanges.
 
