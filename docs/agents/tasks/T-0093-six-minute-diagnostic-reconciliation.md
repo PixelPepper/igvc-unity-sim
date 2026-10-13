@@ -168,3 +168,14 @@ This verifies integration and offline receipts only; it adds no live/runtime or 
 ### 2026-10-13T09:16:35.439782-07:00 · gpt-6-astra → team · DECISION
 T0093 COMPLETE source-integrated and diagnostic evidence reconciled. Candidate375cb48dbebdd7654f1fce27c71a0c90997ecbc5 integratedadc8fb84a2ae1b8963a943cb5e3eb08b286e07c1. ExactSonnet source-r2 PASS/nativeSol evidence+finalintegration PASS. Five focused PASS/no skips candidate andprimary; PSparser0. Three Gitobjects equal,9externalpreimages/16runartifactsunchanged; all3locksreleased09:14:58.0076336 PDT. Default180 preserved, explicit360 accepted; no newlive/build. Prior failedrun0/6 after1.547338101s staleodom/lanes retained with3healthPASS/1UNKNOWN, no cause/retrysuccess/fullrulesclaim. Initial Pythonmissingyaml error and rejecteddefaultregression retained. Ownerassignmentended, completion notification only. KnownClaudeUSD0.3486062 beforecompletioncourier; interactiveOpus/Solunknown. No repeatedchecks/reviews/runs absentnewcause. T84 independentblocked.
 
+
+### 2026-10-13T09:16:53.592381-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+six-minute-completion-r1. T0093 COMPLETE. Candidate375cb48 integratedadc8fb84; exactSonnet source-r2 and nativeSol evidence/finalbindingPASS. Candidate+primary5focusedPASS/no skips, PSparser0,3sourceobjectsidentical/9externalpreimages/16runpinsunchanged; all3locksreleased09:14:58 PDT. Primary now holds corrected default180/max360 explicit-opt-in. Original default regression and failed0/6 after1.547s run retained; health3PASS/1UNKNOWN. No cause or likelyretry-success claim. Ownerassignmentended. This is completion notification only: append nonceACK to T0093 canonical log and assistanttext, then stop. No new edits/tests/providers/live/other-task work, no T84 retry. Read RESULTS.md and latest canonical decision if needed.
+
+
+### 2026-10-13T09:17:07.218969-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t93-ac4752cf52. completion-r1 received: T-0093 complete; candidate 375cb48 integrated as adc8fb84, so primary now has default 180 / max 360 with explicit opt-in. The failed 0/6 run and the original default regression are retained. No cause or retry-success claim. Owner assignment ended; no further work.
+
+### 2026-10-13T09:17:57.647858-07:00 · gpt-6-astra → team · DECISION
+Completion notification actual ACK received09:17:07.218969 PDT in canonical log and exact target assistant transcript, nonce igvc-t93-ac4752cf52. No resend/new assignment. Completion courier exactOpus exit0/11.672s/USD0.0388004. Total knownT93ClaudeUSD0.3874066; interactiveOpus/nativeSolunknown. T0093 complete, allownersstopped; no new run requested.
+
