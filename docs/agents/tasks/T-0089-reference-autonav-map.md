@@ -1,7 +1,7 @@
 ---
 id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: blocked
+status: in-progress
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -40,7 +40,7 @@ No other primary worktree reads/edits; no credentials, whole logs, providers or 
 Rules page 10: approximately 500 ft course in 120 x 100 ft area (36.576 x 30.48 m);
 10-20 ft lane width (3.048-6.096 m), turning radius at least 5 ft (1.524 m);
 white tape approximately 3-4 inches (use 0.1016 m); ramp gradient <=15% (not 15 degrees);
-at least 5 ft clear passage to one side of obstacles; highway/construction drums;
+centred obstacles need 5 ft clear on BOTH sides; off-centre obstacles need 5 ft on the open side; highway/construction drums;
 optional simulated potholes 2 ft diameter, solid WHITE circles, not physical holes.
 Two waypoint pairs: entrance/exit of No Man's Land and two within it, cross either direction.
 44 ft speed-check stretch from each start; 1 mph minimum, 5 mph maximum, six minutes.
@@ -75,15 +75,15 @@ Keep geometry inside 36.576 x30.48 m, preserve topology/layout. Plan a represent
 actual authoring reference path length and footprint; never label a shorter path 500 ft.
 If diagram/area/turn radii prevent exact target, report measured value/limitation honestly.
 Authoring reference path must stay editor-only, no runtime autonomy route export.
-Use conservative realistic drum size assumption ~0.55m diameter/0.9m height and document.
+Use 0.597 m drum diameter and 1.008 m height, as reported by the interactive author from user measurements; document that provenance as reported, not independently confirmed here.
 Use 0.45m ramp height with 3m ascent/3m descent (15% grade), >=3.048m width.
 White edge tapes follow ramp surface rather than floating through it.
-At least5ft unobstructed bypass on one side of each barrel cluster: place near lane sides,
+Off-centre clusters need at least 5 ft unobstructed bypass on their open side; centred obstacles need 5 ft on BOTH sides: place near lane sides,
 not full-width barriers. Keep waypoint regions clear and no barrels on tape/ramp.
 
 GenerateAndValidate saves assets and scene, reopens it to check durable mesh/material
 references and colliders. Write bounded geometry metrics/report under repository-root
-artifacts/agents/T-0085/unity-validation.json and render actual overview and oblique
+artifacts/agents/T-0089/unity-validation.json and render actual overview and oblique
 PNG previews there (Camera.Render, RenderTexture cleanup). Verify tape width, footprint,
 ramp grade, positive reference path length, speed-check placement distance; include
 measured minimum turn radius/clearance if reliably checked, otherwise explicitly UNVERIFIED.
@@ -92,6 +92,10 @@ Do not run Unity/tests/imports. Commit ONLY3 owned files and report <=300 words
 with candidate SHA, changed paths, geometry choices, assumptions and UNRUN checks.
 Stop after clean committed handback or provider/local error. No automatic retries.
 Exact Claude Opus5.5 high, max360s/USD5. Reviewer exact Sonnet5.5 high240s/USD3.
+
+### Approved smaller continuation
+
+The human now said "keep going" in direct chat. Resume ONLY this map task from the preserved draft. Existing timeout output is immutable. Named owner is opus-t0089-map-continuation-20261012, old worker branch/worktree preserved. Complete the existing generator, its .meta and concise documentation; no rewrite or new features. Correct EVERY output/report task namespace to T-0089. Review the current draft for compilation and geometric invariants, especially offsets, self-intersecting connectors, conservative turn-radius validation and durable asset references. If length target is incompatible, state actual length honestly. Root will run Unity; all compilation/render checks are UNRUN by you. Commit only the three owned files and stop. This is one bounded Opus5.5 call, max360s/USD5, no automatic provider/timeout retry. T0084 is still independently blocked. T0070's interactive source work has ACKed and retains its reservation; no shared file edits.
 
 ## Handback
 
@@ -131,3 +135,6 @@ The implementation wrapper reached its 360 s local timeout. No stdout/stderr han
 
 ### 2026-10-12T18:14:41.612195-07:00 · gpt-6-astra → team · DECISION
 Concurrent creation of separate course-profile tasks allocated T0085-T0088. This isolated map task is renumbered T0089; those other tasks and source owners are unchanged. Preserve the historical codex/t0085-reference-map-opus branch/worktree and artifacts/agents/T-0085/ outputs as immutable timeout evidence. Mirrored map evidence is now artifacts/agents/T-0089/. Any approved continuation must correct its output namespace before execution. No new worker dispatched.
+
+### 2026-10-12T22:51:49.463436-07:00 · user → gpt-6-astra · ANSWER
+Direct human message: "keep going". This authorizes the pending smaller same-model T0089 continuation and its required reviews/Unity map validation. It does not authorize T0084 retry, other profile-task dispatch, or a live mission. Timestamp records relay preparation, not original message delivery.
