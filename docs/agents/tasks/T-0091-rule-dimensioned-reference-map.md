@@ -1,7 +1,7 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: accepted
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -188,4 +188,8 @@ reference-rules-source-fix-r5 [igvc-t91-799a33fd3d]. Commit 040342dd (3 owned pa
 
 ### 2026-10-13T03:05:43.634207-07:00 · gpt-6-astra → team · DECISION
 R5 candidate040342ddc6c66445c38d61d55e1f2a929c0b88b0 received, actual ACK/handback ended assignment. ExactSonnet focused delta PASS22.297s/USD.1227984 resolves r4 star-substring blocker and guards tangent recalculation; r4 historical BLOCKING preserved. NativeSol sol-prebuild-review.md PASS for isolated integration/Unity build only:11sourcepins/15protected match,18root tests unchanged Python, selected geometry/input reproduced. Accept candidate for root controlled integration/generation, not final rendered map or navigation. Human largerfootprint authorization applies,484.247ft north-south/512.725ftclosed,143.815x171.022ft. Root will acquire all3locks for one build with saved-scene/capture evidence; no live navigation. No other ownership changes.
+
+
+### 2026-10-13T03:10:37.411181-07:00 · gpt-6-astra → team · DECISION
+Human explicitly requests restoration of both omitted barrels: all95 fromreference. This supersedes93-barrel final acceptance, not length/shallowshape/physicalsize/clearance constraints. Prior93 scene/player build unity-build-r1 succeeds32.891s/93savedposition/126rendercontrols; frozenproof andprotected94 unchanged retained. Final priorbuildSolreview may finish onlyas93evidence, no taskcompletion. Root will dispatch sameClaudeowner bounded restoration. No sourcechanges duringauthorhandoff yet. No navigation/live. Largerfootprint approval remains, allmeasurements muststay480–520ft nominalnorth-south/closed withshallowisotropicshape. RestoreyellowNMLsingles imagey311/861 withclearance, no omission/guardweakening. NoT84retry/otherownerchanges.
 
