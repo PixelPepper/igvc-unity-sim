@@ -1,44 +1,42 @@
-# Rule-dimensioned reference course: PROPOSED geometry (T-0091 prototype)
+# Rule-dimensioned reference course: PROPOSED geometry (T-0091, r2)
 
-`tools/reference_rules_geometry.py` produces a deterministic course, in metres, for the AutoNav II.2 dimensions. It is a geometry proposal only. It has no Unity integration, sets no navigation policy and certifies nothing.
+`tools/reference_rules_geometry.py` produces deterministic course geometry in metres. It is a **proposal only**: no Unity, no navigation policy and no certification.
+
+r1 (commit `6761c726`) reached 500 ft with deep arc meanders and was rejected as unlike the reference image. r2 instead builds the centreline from the reference trace itself. That gives shallow connector waves, a straight right side and an open No Man's Land (NML) with four stars.
 
 ```bash
-python3 tools/reference_rules_geometry.py --out artifacts/agents/T-0091/prototype-r1 --reference artifacts/agents/T-0089/trace-plan.png
+python3 tools/reference_rules_geometry.py --out artifacts/agents/T-0091/prototype-r2/attempt-2 --reference artifacts/agents/T-0089/trace-plan.png
 ```
 
-**Outputs:**
-- `geometry.json`: authoring and render world geometry.
-- `metadata.json`: spawn and six goals only. This is the only file a mission exporter may read.
-- `report.json`: measurements and issues.
-- `plan.svg` and `plan.png`: the plan marked PROPOSED, next to the reference trace.
-
 ## Construction
-- **Field:** 36.576 m east–west × 30.48 m north–south; x points east, y north, and the origin is the south-west corner.
-- **Loop:** the course is driven counter-clockwise from the north start, heading north. It keeps the diagram's topology: a right straight with the ramp and start pair, wavy upper and lower corridors, and the open left No Man's Land with four star regions.
-- **Centreline:** an exact chain of straights and arcs.
-  - The corners have a 4 m radius.
-  - Each corridor has two arc–straight–arc waves of radius 2.5 m.
-  - The wave swing angle is solved by bisection so the nominal centreline is exactly 500 ft.
-- **Lane widths (clear interior):**
-  - right straight: 3.048 m;
-  - corridors: 4.4 m;
-  - No Man's Land: 6.0 m. This is an authoring assumption, measured between the inner edges of the coloured drum columns.
-  - Widths taper along the corners.
-- **Tape:** 0.1016 m wide, with no tape across No Man's Land.
-- **Ramp:** 0.30 m rise over 2.145 m runs (14 %). It is 0.3 m wider than the lane on each side.
-- **Drums:** 0.597 × 1.008 m, physical size. Each drum's intended class (centre, side, boundary or flank) is set *before* any measurement. Stations follow the diagram's order.
+1. **Midline.** The traced outer and inner tapes (Catmull-Rom, the same as `ReferenceMapBuild.Curve`) are paired by nearest point, and the midpoint of each pair is taken. A straight NML segment closes the loop, which runs counter-clockwise starting from the right straight.
+2. **Fit.** The midline is fitted into a box that leaves room for the physical lane, tape and drum allowances. It is then smoothed with a fixed periodic Gaussian (σ = 1.5 m) and resampled every 0.02 m. There are two variants:
+   - **`field-120x100`:** fitted into 120 ft east–west × 100 ft north–south. The fit is anisotropic (1.49×, reported).
+   - **`length-500ft`:** the same fit, scaled uniformly until the nominal lap is 500 ft. The required footprint is reported as an issue, never accepted silently.
+3. **Widths.** The right straight is 3.048 m, the corridors 4.4 m and NML 6.0 m. NML width is an authoring assumption between the drum columns. Width changes taper over 3 m.
+4. **Fixed physical sizes.** Drums, tape (0.1016 m) and ramp (0.30 m over 2.145 m, 14 %) are never scaled.
+5. **Drums.** Top and bottom drums sit at the diagram's x stations. Each drum's intended class is fixed before any measurement. NML interior obstacles are spaced evenly in diagram order, and two NML centre singles are omitted (93 drums).
 
-## Measurement conventions
-- **Usable width:** the distance between the lane's own paired inner tape edges, along the local normal, sampled every 0.02 m.
-- **Turn radius:** the nominal radius is the centreline radius. The inner-edge radius and fold detection are reported separately.
-- **Drum gaps:** each drum gets a cross-section along its local normal (1 cm steps) that considers every drum jointly. Blocked runs closer than 5 ft are merged.
-- **Global passage:**
-  - The raster (5 cm) holds the free positions for the centre of a 5 ft disc. It is inflated by half a cell diagonal, and diagonal moves are allowed only when both orthogonal neighbours are free.
-  - The loop is cut at the north start line.
-  - The **ordered route witness** is the shortest free path all the way around the cut. It must enter all six goal regions in order.
-- **Nominal centreline vs proven route:** the nominal centreline is a measuring convention and passes through centred drums. The witness proves that a collision-free lap exists. Because it is the shortest path, its length is a lower bound on any driven lap.
+## Measurements
+- **Lap:**
+  - The nominal closed-centreline length is a measuring convention: it passes through centred drums.
+  - The north start → south start length is reported separately.
+- **Usable width:** the nearest distance from the centreline to each of the lane's own two inner tape edges, summed. It is not the construction offset.
+- **Radius:**
+  - The II.2 five-foot rule is applied to the nominal centreline.
+  - The inner tape-edge radius, the fraction of it below 5 ft, and any fold are reported separately.
+- **Drum gaps:** cross-sections in 1 cm steps that consider all drums jointly. Each gap is reduced by two steps to stay conservative.
+- **5 ft corridor raster:**
+  - Inflated by half a cell diagonal, with diagonal moves allowed only when both orthogonal neighbours are free.
+  - The loop is cut at the north start.
+  - The ordered witness must reach the six goals in order. Its length is a **grid estimate, not a bound and not a gate**, and the path is not curvature-limited; an indicative radius is reported.
+- **Silhouette:**
+  - the maximum deviation from the fitted trace;
+  - for each connector: vertical excursion, maximum tangent angle and number of direction reversals, compared with the source trace.
+- **44 ft marker:** placed along the route and allowed to fall on a curve.
+- **Negative controls in the tests:** a blocked lane and a wrong goal order.
 
 ## Exclusions
-- Optional 2 ft potholes are omitted.
-- The black circles are drums.
-- Timing behaviour is not enforced or claimed: 44 ft in 30 s, an average above 1 mph, and the six-minute cap.
+- Optional potholes are omitted.
+- Black circles are drums.
+- Timing behaviours are not enforced.
