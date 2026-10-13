@@ -1,15 +1,15 @@
 ---
 id: T-0090
 title: Drive the traced AutoNav map with realistic visual conditions
-status: changes-requested
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0090-reference-drive-opus
 base: 12e84df8c967b4b3d8cb217a51ec5d20d9619e5f
-candidate: 2d98b4476371eeec93e99fd94537d0f4cd648f42
-claim: implemented
+candidate: 7a1db3c77ca6f3e244aa79697391ff1f1192cee6
+claim: tested
 lease: none
 updated: 2026-10-13
 ---
@@ -129,3 +129,74 @@ Collected candidate2d98b4476371eeec93e99fd94537d0f4cd648f42, clean45newpaths/11p
 
 ### 2026-10-13T00:55:11.471347-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 reference-driving-launcher-fix-r1, existing linked owner/worktree only, 12-minute active source bound. Read root-source-notes-r1.md and fix launcher ownership/bounded cleanup before handback. No other files/owners/providers/Unity/live/tests. User wants runs, so complete a reusable `trial` action as part of launcher instead of leaving it entirely to an unreviewed root harness. Additional owned NEW paths tools/reference_map_trial.py and tools/tests/test_reference_map_trial.py. This Python trial driver may reuse sandbox_session.RosControl.verify_sim_time (strict GetParameters/cleanup), capture_rgb and record_sensor_health, then the UNCHANGED sensor_course.py with sanitized mission and known profile. Save clock admission, sensor smoke (RGB, depth, lidar, odom actually received), first RGB PNG, applied conditions, run report/capture paths. Refuse motion without positive clocks and streams. Fixed speed<=.6 and timeout<=180. No automatic retry. Launcher starts its own managed nav session only after confirmed idle all managed ROS groups; verifies WSL checks exit0, clears IGVC_INSTANCE for domain42, refuses R3aDrive/R3aInspection/IGVC/Unity. Cleanup only recorded newly-owned sessions/PIDs; confirm exits, don't quietly release on cleanup failure. Trial mission child should be reaped/cancelled with SIGINT and bounded escalation only ownedgroup; always gate autonomy off before nav stop. Root will independently inspect and approve source after required reviews; no actual trial by worker. Tests source only until root locks. Root notes include earlyplayerexitsmustfail, finitebuilddeadline, preserveallfailedruns. Hand back <=300words with newcommit and limitations. Do not request provider review yourself or retry timed-out review.
+
+### 2026-10-13T00:55:33-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK reference-driving-launcher-fix-r1 (nonce igvc-drive-fix-2443f8b74d). 12-minute source-only bound in the same worktree; new owned paths include reference_map_trial.py and its test.
+
+### 2026-10-13T00:58:45-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+reference-driving-launcher-fix-r1 (nonce igvc-drive-fix-2443f8b74d). About 4 minutes active, source only.
+Candidate: 2d9c802122ee6aa812c0de06a19ab728eaf74e8a (parent 2d98b44). Files: tools/reference-map.ps1 (rewritten),
+  docs/REFERENCE_MAP_DRIVING.md, NEW tools/reference_map_trial.py and NEW tools/tests/test_reference_map_trial.py.
+Root notes addressed:
+  - Busy predicate covers Unity, IGVC*, R3a*, *Terrain* and *Inspection* (incl. R3aDrive and R3aInspection).
+    Get-CimInstance/Get-NetTCPConnection use -ErrorAction Stop; a WSL ss failure stops the run.
+  - Before starting, ros_session status r3a/nav/perception must all report stopped. The r3a session counts as
+    owned ONLY if start prints "ROS started: PID n"; "already running" is refused, never claimed or stopped.
+    IGVC_INSTANCE is cleared for domain 42, and every WSL step is exit-checked.
+  - Cleanup stops only the owned player/build and waits for exit; r3a stop is exit-checked. On any unconfirmed
+    step it writes artifacts/iterations/reference-drive-ownership-retained.json and the script exits non-zero.
+    Locks are disposed only in finally. Process exit would release them anyway; this is noted honestly.
+  - Smoke: an early player exit is a failure, and it is labelled process survival, not a sensor check.
+    The build is bounded to 45 minutes and kills only its own child. Failed runs are kept.
+Trial action: player and owned r3a session, then reference_map_trial.py:
+  1. refuse an existing nav.json;
+  2. gate off and pose reset;
+  3. sensor smoke (clock>0, RGB, depth, /scan, /odom received; first-rgb.png);
+  4. profile and its own nav start;
+  5. clock admission with the same rule as sandbox_session;
+  6. the unchanged sensor_course.py at --timeout <=180 and speed <=0.6.
+  The mission group gets SIGINT, then bounded SIGTERM/SIGKILL; gate off before nav stop. Exit 3 means cleanup
+  was not confirmed. trial-report.json records everything. No retry.
+Checks: PowerShell parses with 0 errors; py_compile OK. UNRUN: all tests, Unity, live runs.
+Limits:
+  - capture_rgb/record_sensor_health do not exist under those names; I wrote a minimal read-only smoke
+    subscriber instead.
+  - The 10 s bridge wait is fixed; the trial gates on streams.
+  - sensor_course still prints its own diagnostics; there is no full-lap audit.
+Usage: unavailable.
+```
+
+### 2026-10-13T01:05:08.131442-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-driving-cleanup-fix-r2. Human explicitly approved one focused exact Sonnet review up to480s/USD3, then build and two diagnostic runs. Approval is recorded; no other timeout retry authorized. Candidate2d9c802 bound47newpaths/11protected/31parked unchanged. Before review, fix remaining concrete cleanup defect: reference-map.ps1 writes an ownership-retained marker then unconditionally disposes all process-held locks on unconfirmed cleanup. A file is not a lease. On cleanup uncertainty keep the launcher alive with actual handles held, periodic bounded read-only confirmation of only owned groups/PIDs, status artifact and clear root-recovery instruction; release only after verified gone (or explicit root recovery). Avoid claiming marker retains ownership. Also perform managed ROS idle checks before BUILD as well as start, and handle nav start timeout/exception after a group may have started: record ownership from new state PID and conservatively flag cleanup uncertainty without stopping a pre-existing group. Preserve all source paths and guards. Existing capture_rgb.py and record_sensor_health.py DO exist; correct prior handback limitation. Existing owner only, 8-minute source-only fix bound, no tests/Unity/live/providers/delegation. Commit scoped source, append <=300word handback. No more source work once handed back; root reviews.
+
+### 2026-10-13T01:07:07-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+reference-driving-cleanup-fix-r2 (nonce igvc-drive-cleanup-f3201ffc91). ACK. About 2 minutes active, source only.
+Candidate: 7a1db3c77ca6f3e244aa79697391ff1f1192cee6 (parent 2d9c802). Changed: tools/reference-map.ps1,
+  tools/reference_map_trial.py, docs/REFERENCE_MAP_DRIVING.md. No other paths.
+Fixes:
+  1. Unconfirmed cleanup no longer disposes the locks. The launcher stays alive holding the real FileShare.None
+     handles. Every 30 s it re-checks, read-only, only its owned player/build PIDs and (if owned) the r3a group
+     via ros_session status. It rewrites <run>/ownership-retained.json with launcher_pid, locks_held, the alive
+     owned items, the problems and root-recovery instructions. It releases only when everything is verified
+     gone, or when root creates <run>/root-recovery-release; in that case it still exits non-zero.
+     The old artifacts/iterations marker is removed, and nothing claims a file retains ownership.
+  2. The managed ROS idle check (r3a/nav/perception must report stopped) and the domain-42 environment now
+     run before BUILD as well as before start, smoke and trial.
+  3. Start failures:
+     - If r3a start exits non-zero or lacks "ROS started", a running group is treated as owned (the preflight
+       proved none existed) and is stopped and confirmed in cleanup.
+     - In the trial driver, a nav start TimeoutExpired/OSError or non-zero exit that leaves a new nav.json is
+       recorded as owned (nav_owned_state = new state PID), and cleanup_ok is set false, giving exit 3.
+     - nav stop timeouts are caught. A pre-existing nav.json is still refused and never stopped.
+Correction to my r2 handback: tools/capture_rgb.py and tools/record_sensor_health.py DO exist. I searched for
+  functions and missed the scripts. The trial driver still uses its own minimal read-only smoke subscriber;
+  reusing those scripts is a possible follow-up.
+Checks: PowerShell parses with 0 errors; py_compile OK. UNRUN: tests, Unity, live runs.
+Usage: unavailable. No further source work from me unless dispatched.
+```
+
+### 2026-10-13T01:09:26.563366-07:00 · gpt-6-astra → team · DECISION
+Human explicitly approved focused exact Sonnet review continuation <=480s/USD3, then build and two diagnostic runs. Latest source-only handback7a1db3c77ca6f3e244aa79697391ff1f1192cee6 bound47newpaths/11protected/31parked unchanged, worker clean. Cleanup-fix-r2 courier exit0/exactOpus/12.890s/USD.0441116; target nonce ACK08:05:19.877Z and canonicalhandback01:07:07. Interactive assignment ended. Root10focusedPythonPASS/no skips in focused-tests-r1 underall3locks released; tests do not establish live cleanup/Unity behavior. Approved source-review-r2-approved now running; first empty240s timeout preserved, no automatic retry. All Unity/build/live and review acceptance pending. NativeSol follows source review. Other task owners/blocks unchanged.
+
