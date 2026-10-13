@@ -1,7 +1,7 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: review
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -222,4 +222,12 @@ reference-rules-textfix-r7 [igvc-t91-f025dc3bf5]. Candidate a88b2031588314c7fdf5
 
 ### 2026-10-13T03:17:46.875576-07:00 · gpt-6-astra → team · DECISION
 Human95-barrel revision implemented by linkedClaude, actualACKs/handbacks forr6/r7, candidatea88b2031588314c7fdf538c1f91f0f4b70206544; authorassignmentended. Root19focusedPASS/no skips at9e04317b, all3released. Independent restoration binding proves alloriginal93drumobjects plusboundaries/field/ramp/starts/goalsunchanged andexactly2newyellowcenters nml09-0/nml10-0. Same484.247/512.725ft nominal length and143.815x171.022ftfield. SinglesnearNMLends t.04375/.95625 ratherthanreference~.093/.904 tokeep5ftcorridor; no5ftgateweakening. R6Sonnet47.797s/USD.2713406 foundonlystalegeneratedomissiontext; r7text-only corrected, exactSonnetPASS12.453s/USD.029683. Rootr7generation reproducedworker geometry/report; allgeometryexceptinterpretation andmetadata/input unchangedfrom19PASSr6, no unnecessarytestrepeat. NativeSol prebuild95pending. Prior93Unitybuild evidenceacceptedhistoricallybutnotfinaluserresult. Need delta integration/95build/actualrender+Solfinal afterprebuildacceptance. No navigation/live/retry/otherownerchanges.
+
+
+### 2026-10-13T03:22:11.119998-07:00 · gpt-6-astra → team · DECISION
+T0091 COMPLETE for the human-authorized shallowlarger-footprint95-barrelmap. Candidatea88b2031588314c7fdf538c1f91f0f4b70206544 integratedthrough209e6ee; reportingdoccommit separate. ExactSonnetr7PASS/nativeSolprebuild95PASS andFINAL sol-final95-review.mdPASS accepted. Actual Unityunity-build-r2 exit0/10.031s,95savedpositions0error,4976guardsegments,4realPNGs,126/126independentrendercontrols. Root19focusedPASS/no skips atgeometrylogicr6; r7textonly independentlyboundwithoutretesting. Original93drumobjects unchanged,2distinctyellowNMLsingles restorednearends (displacedfrompixelpositions), all95visible. Boundaries/field/ramp/starts/goalsunchanged;484.247ftnorth-south/512.725ftclosednominal,143.815x171.022ftfield,lanes10.03–16.87ft,minintendedpassage5.97ft. Thesearegeometrymeasuresnotdriventrajectory; inneredge/rastercurvaturelimits/full_rule_compliancefalse.94protectedrawpreimages/28generatedassets/234playerfiles verified. Finalall3lockedpostflightidle/released03:20:11.596892Oct13PDT. Prior93scene/PNGs/player/assetsarchived; allfailuresretained. No newnavigation/run/rules/hardwareclaim. Managedlauncher/source/scenenewseparateT91. Ownerassignmentended; no rebuild/retest/review absentnewcause. RESULTS.md/known-usage.json authoritative; knownCLIClaudeUSD2.1134418 beforecompletioncourier,interactiveOpus/Solunknown. NotifylinkedClaude completiononly, no newwork/retries. T84independentlyblocked/otherownersunchanged.
+
+
+### 2026-10-13T03:22:34.778143-07:00 · gpt-6-astra → team · DECISION
+Administrative header correction: board schema uses integrated for completed integrated tasks (not complete). Previous completiondecision remainsvalid; initialboardregeneration rejected unsupported status beforecommit. Set integrated andregenerateonce; no source/tests/build repeated.
 
