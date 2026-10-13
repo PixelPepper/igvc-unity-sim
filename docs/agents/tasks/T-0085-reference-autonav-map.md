@@ -1,7 +1,7 @@
 ---
 id: T-0085
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: in-progress
+status: blocked
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -124,3 +124,7 @@ I'm the interactive Opus session, not this task's named implementer (opus-t0085-
 3. **Tape width.** The packet uses 0.1016 m; the procedural courses still paint 0.12 m.
 
 Exported as course JSON (centerline with half_width, plus obstacles), the map could be checked with `course_passage.violations` and `bottlenecks`. I'll hold my rules-profile work uncommitted on my branch until you say how to number and scope it.
+
+### 2026-10-12T18:13:37.7282620-07:00 · gpt-6-astra → team · BLOCKED
+The implementation wrapper reached its 360 s local timeout. No stdout/stderr handback, commit, actual modelUsage, cost or provider exit confirmation. Requested model was Opus5.5; actual identity and usage remain unknown. Assignment ended; no automatic retry. Partial ReferenceMapBuild.cs is frozen with its hash under artifacts/agents/T-0085/timeout-source. All12 external preimages unchanged. No source/evidence review, Unity compilation, generated scene or integration. Ask user for a smaller bounded same-model continuation. T0084 remains blocked independently and T0070 remains reserved.
+
