@@ -1,14 +1,14 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: review
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0091-rule-map-opus
 base: cf3fc673bb127cac61283cb4e1e4b5986cfebdb3
-candidate: 1bda7c6a
+candidate: 25941d12
 claim: none
 lease: none
 updated: 2026-10-13
@@ -112,4 +112,32 @@ reference-rules-shallow-r2 [igvc-t91-3f1bc7f6d9, steer igvc-t91-b14c6fcbe5]. Com
 
 ### 2026-10-13T02:35:40.850329-07:00 · gpt-6-astra → team · DECISION
 Direct human decision: "Keep 480–520 ft and image resemblance; allow a larger footprint". Larger footprint is explicitly authorized for T0091;120x100ft remains reference deviation to disclose, not blocking against this user-selected variant. Do not label full2027compliance. R2candidate1bda7c6a received, assignment ended; root independent lockedchecks ninePASS, bothgenerated variants reproduced byte-exact geometry, lengthvariant499.9994ft, field167.811x140.432ft,93drums,15protectedrawunchanged. Fieldvariant333.172ft and geometric failures preserved; notselected. Source Sonnetr2 currentlyactive; waitresult beforeUnity source successor. User priority shallowshape+480-520; no live runs. Root plans reviewed separate generatedscene/player, keeping originalT89/T90source/scenes unchanged. Preserve two omittedyellow singles and nominal-vs-drivenpath/radius limitations explicitly.
+
+
+### 2026-10-13T02:39:14.745412-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-geometry-r3. Same T0091 owner, authorized geometry correction r3 (8 active minutes) after human larger-footprint approval. Read latest decision and source-review-r2/review.md. Keep shallow reference-like geometry; FIELD SIZE MAY INCREASE explicitly. Own same3prototype files; no Unity/live/providers/delegation yet. Fix actionable Sonnet findings: automatic shallow-shape regressions with limits derived/stated vsreference and negativecontrol; explicit osculatingradius calculation/nominal interpretation and negativecontrol; meaningful issue-specific tests and conservative minwidth >=3.048 without 5mm waiver; correct middle-gap summary. Most importantly actual exported mission ends SOUTH, current start-to-finish466ft is outside user480-520. Choose a smooth scale so NORTH-to-SOUTH nominal course length is approximately485ft AND full closed nominal loop stays<=520ft if feasible (expected518-520). Report both clearly, no obstacleweave or boundarysumming. Do not call nominal curve a collisionfree driven path; retain independent ordered clearance witness estimate and unverified routecurvature. Largerfield deviation is explicitly authorized, still disclose original120x100 mismatch; verdicts separate authorized geometry vs fullrulecompliance. Preserve priorattempts immutably, new prototype-r3 only. Use actual sourcePNG for side-by-side if accessible (path in original image-trace.json); do not label trace-plan as originalimage. Do not add arbitrary extra bends tofixdistance. Return exactsourcecommit + measured preview + <=250wordhandback. Additionally outline minimal subsequent Unity adapter ownedpaths using existing RealismAssets/RealisticObstacles and R3aDriveBuild, preserving T89/T90originalscenes and runtimeguards. Root will separately assign adapter once dimensions resolved. No newlaunchers/sourceoutside3paths this slice. Stopatbound with actualstatus.
+
+
+### 2026-10-13T02:39:32.088897-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-b9b8f77f94. Geometry r3: same 3 owned files, outputs to prototype-r3 only, 8 active minutes. No Unity, live sessions, providers or delegation.
+
+### 2026-10-13T02:42:08.855993-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-geometry-r3 [igvc-t91-b9b8f77f94]. Commit 25941d12 (3 owned files; source sha256 0abd3d95f72df8e1…). Twelve tests PASS; the negative controls cover a hairpin shape, a radius kink, a blocked lane and goal order. Evidence: prototype-r3/attempt-1/{rules-485,field-120x100}. The side-by-side uses the original source PNG.
+
+**rules-485 (larger footprint authorized):**
+- **Length:** north→south nominal run 485.0 ft; closed nominal loop 520.0 ft (≤ 520). Footprint 173.6 × 145.3 ft, disclosed as a deviation from II.2's 120 × 100 ft.
+- **Width:** paired lane width 3.058–5.116 m, with no tolerance.
+- **Radius:** the osculating radius of the nominal centreline is at least 2.95 m. The inner edge is at least 0.51 m with no fold; 3.5 % of it is below 5 ft.
+- **Shape:** the shape gate passes. Connectors have 2 reversals each, like the source. The maximum tangent is 19.3/20.7° (source 18.9/19.7°), and excursion is 0.95/0.98 of the source's. Silhouette deviation is at most 0.99 m.
+- **Clearance:** minimum drum passage 1.82 m; the corridor is connected. The witness, a grid estimate only (not a driven or curvature-limited route), is 521.2 ft and reaches the goals in order.
+- **Result:** no issues; authorized_geometry_met is true and full_rule_compliance is false. 93 drums. The 44 ft marker falls on the NE corner.
+
+**field-120x100:** a 310 ft run. Its failures are kept.
+
+**Note:** the 1.49 anisotropy from the 120 × 100 fit remains. With a larger footprint now allowed, an isotropic fit would match the portrait source more closely. I did not run it.
+
+**Unity adapter outline** (docs/REFERENCE_RULES_GEOMETRY.md): ReferenceRulesMapBuild, DriveBuild and DriveChecks.cs, plus reference_rules_mission.py. All are new. They reuse DrumMesh, RealismAssets, R3aDriveBuild and the guard; the T-0089/T-0090 scenes stay unchanged.
+
+### 2026-10-13T02:43:36.867923-07:00 · gpt-6-astra → team · DECISION
+T0091 r3 candidate25941d12 received, source-only worker report12PASS, no root repeat yet. It reports north-to-south484.9604ft andclosed519.9989ft, authorized largerfield173.558x145.300ft,93drums, no reportedgeometryissues. R2Sonnet blockers retained; r3 adds shape/radius/length controls. Root will not claim accepted before finalreviews. Human prioritized resemblance with largerfootprint, so the unnecessary1.49 horizontalstretch inherited from120x100 fit should be removed before Unity; root requests isotropic source shape and approximately484ft north-to-south withmargin below520closed. Keep start markers either side ofphysicalramp; their separation may be local design adjustment rather than scaledimagegap. Next source successor may implement separate Unityadapter afterthismeasuredbasis, no Unitygeneration/live byauthor. Otherownership/protectedpaths unchanged.
 
