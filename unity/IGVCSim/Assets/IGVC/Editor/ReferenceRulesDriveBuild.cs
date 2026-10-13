@@ -119,10 +119,13 @@ public static class ReferenceRulesDriveBuild
         var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
         if (existing == null) { mesh.UploadMeshData(false); AssetDatabase.CreateAsset(mesh, path); return mesh; }
         existing.Clear(); existing.indexFormat = mesh.indexFormat;
-        existing.SetVertices(mesh.vertices); existing.SetNormals(mesh.normals); existing.SetUVs(0, mesh.uv);
+        existing.SetVertices(mesh.vertices); existing.SetNormals(mesh.normals);
+        if (mesh.uv != null && mesh.uv.Length == mesh.vertexCount) existing.SetUVs(0, mesh.uv);
         existing.subMeshCount = mesh.subMeshCount;
         for (int i = 0; i < mesh.subMeshCount; i++) existing.SetTriangles(mesh.GetTriangles(i), i);
-        existing.RecalculateTangents(); existing.RecalculateBounds(); existing.UploadMeshData(false);
+        // Tangents only when UVs and normals exist (ribbons have no UVs); same result on first build and rebuild.
+        if (existing.uv != null && existing.uv.Length == existing.vertexCount && existing.normals != null && existing.normals.Length == existing.vertexCount) existing.RecalculateTangents();
+        existing.RecalculateBounds(); existing.UploadMeshData(false);
         EditorUtility.SetDirty(existing); UnityEngine.Object.DestroyImmediate(mesh);
         return existing;
     }

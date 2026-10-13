@@ -31,7 +31,7 @@ powershell -ExecutionPolicy Bypass -File tools/reference-rules-map.ps1 -Action s
 - **Robot:** the R3-a robot, sensors and TransportProbe come from `R3aDriveBuild.CreateScene`. Only the probe's test props are removed.
 - **Origin:** the course root is translated so the north start-line centre is odom (0, 0), heading north (Unity +z, ROS +x). The lane heading at the start is 0.28° off north; this is reported.
 - **Physical sizes:**
-  - 93 drums: 0.597 × 1.008 m cylinder colliders, each with a `RealisticObstacles.DrumMesh` visual.
+  - 93 drums: Unity Cylinder primitives scaled to 0.597 × 1.008 m, each with a `RealisticObstacles.DrumMesh` visual. Their physics uses the primitive's default **CapsuleCollider** (rounded ends), the same as T-0089/T-0090, not an exact cylinder.
   - Two 4 in tape ribbons.
   - Ramp: 0.30 m rise, 14 % grade, three support colliders.
   - Asphalt ground the size of the footprint.

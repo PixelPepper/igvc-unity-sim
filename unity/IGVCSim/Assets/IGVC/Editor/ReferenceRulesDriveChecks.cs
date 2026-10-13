@@ -57,7 +57,7 @@ public static class ReferenceRulesDriveChecks
         // Nothing from authoring annotations reaches the sensors; one soft sun; conditions present.
         Check(all.All(t => !t.CompareTag("EditorOnly")), "EditorOnly object present in drive scene");
         Check(all.All(t => t.GetComponent<TextMesh>() == null), "Text label present in drive scene");
-        Check(!all.Any(t => t.name.ToLowerInvariant().Contains("star")), "Waypoint marker present");
+        Check(!all.Any(t => t.name.StartsWith("Waypoint star", StringComparison.OrdinalIgnoreCase) || t.name.StartsWith("Waypoint marker", StringComparison.OrdinalIgnoreCase)), "Waypoint marker present");
         var lights = UnityEngine.Object.FindObjectsByType<Light>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         Check(lights.Count(l => l.type == LightType.Directional) == 1 && lights.All(l => l.shadows == LightShadows.Soft), "Expected exactly one soft-shadow sun");
         var conditions = UnityEngine.Object.FindFirstObjectByType<ReferenceDriveConditions>();
