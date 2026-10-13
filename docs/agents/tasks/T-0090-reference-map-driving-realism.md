@@ -1,15 +1,15 @@
 ---
 id: T-0090
 title: Drive the traced AutoNav map with realistic visual conditions
-status: in-progress
+status: changes-requested
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0090-reference-drive-opus
 base: 12e84df8c967b4b3d8cb217a51ec5d20d9619e5f
-candidate: none
-claim: none
+candidate: 2d98b4476371eeec93e99fd94537d0f4cd648f42
+claim: implemented
 lease: none
 updated: 2026-10-13
 ---
@@ -84,3 +84,48 @@ ACK reference-driving-implementation-r1 (nonce igvc-drive-impl-595dd6e8e4). New-
 
 ### 2026-10-13T00:45:13.699053-07:00 · gpt-6-astra → team · NOTE
 Actual linked exact-Opus implementation ACK at07:41:02.336Z and canonical00:41:17 collected; no duplicate. Discovery courier exit0/11.640s/USD.036141; implementation courier exit0/23.016s/USD.0438198; target-session usage unavailable. Root prepared immutable source/parked preimages and new-only binding/review harness. Initial availability all3locks found no Unity/player/ROS but overlay command had shell-space quoting error; preserved initial-availability failure, not evidence of stale overlay. Corrected invocation with script path verified three installed perception modules exactly match source, all3locks released00:41:53.722. No Unity/build/live attempted yet.
+
+### 2026-10-13T00:48:47-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+reference-driving-implementation-r1 (nonce igvc-drive-impl-595dd6e8e4). About 8 minutes active, source only.
+Candidate: 2d98b4476371eeec93e99fd94537d0f4cd648f42 on the worktree branch (base 12e84df). 45 NEW files; no
+  existing file changed. Worktree clean.
+Files:
+  - Editor: ReferenceDriveBuild, ReferenceDriveChecks, RealismAssets (.cs + .meta)
+  - Runtime: ReferenceDriveConditions, RealisticObstacles (.cs + .meta)
+  - Assets/IGVC/Realism/** and Realism.meta: exact git-archive copy of e8a5f02's CC0 textures and LICENSE
+  - tools/reference_map_mission.py, tools/tests/test_reference_map_mission.py, tools/reference-map.ps1
+  - docs/REFERENCE_MAP_DRIVING.md
+Entry points:
+  - Unity: -executeMethod ReferenceDriveBuild.Build (scene, checks, player) or .CreateSceneOnly
+  - tools/reference-map.ps1 -Action build|start|smoke [-Conditions clear-noon|overcast|low-sun] [-Seconds <=180]
+Design:
+  - R3aDriveBuild.CreateScene, then the probe props are removed and ReferenceAutoNav2027 is merged in
+    additively, with geometry unchanged and the map root translated by -World(960.5, 439).
+  - Robot at odom 0 heading north (Unity +z). Annotations, TextMesh, the map camera and the map lights are
+    stripped.
+  - Lane guard from both edges of the saved tape meshes (odom = (z, -x)), with CanOccupy(0,0,0) asserted.
+    Terrain support is the ground plus 3 ramp colliders, serialized via ConfigureLaneGuard/ConfigureTerrain.
+  - Drums keep their colliders. The primitive renderer is hidden, and a persistent 3-submesh drum visual sits
+    inside the envelope.
+  - One soft sun plus a procedural sky; presets are applied in Awake, with no fog.
+  - Protected files (TransportProbe.unity; EditorBuildSettings, ProjectSettings, Editor, Quality and Graphics
+    settings; R3aDrive.unity; lidar evidence) are byte-restored in a finally block and reported in
+    protected-restore.json.
+  - Mission: six sanitized goals (gate, 4 stars, south finish), validated against sensor_course.destinations.
+Checks: static only. Balanced C#; py_compile OK; PowerShell parses with 0 errors. UNRUN: Unity compile,
+  generation, checks, captures, the build, the Python tests and any trial.
+Risks:
+  - MergeScenes/Find path assumptions and robot.forward orientation are untested.
+  - Editor captures use Apply() and modify RenderSettings, but the scene is not resaved.
+  - The launcher drives no mission (the trial is your root harness).
+  - SimConditions.cs is not created; the presets live in ReferenceDriveConditions.
+  - Possibly impassable traced passages.
+Usage: unavailable.
+```
+
+### 2026-10-13T00:55:11.471347-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+Collected candidate2d98b4476371eeec93e99fd94537d0f4cd648f42, clean45newpaths/11protected/31parkedpreimages bound in source-binding-r1.json. Exact requested Sonnet review source-review-r1 hit240s localtimeout with EMPTYstdout/stderr: no result/modelUsage/cost/provider-exit confirmation. Review assignment ended; no automatic retry/substitution. No review acceptance or Unity/build/live yet. Preserve failure. Separate actionable root source findings in artifacts/agents/T-0090/root-source-notes-r1.md require revision. Source fixes are authorized independently; further Sonnet call awaits direct approval, not inferred from this fix.
+
+### 2026-10-13T00:55:11.471347-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-driving-launcher-fix-r1, existing linked owner/worktree only, 12-minute active source bound. Read root-source-notes-r1.md and fix launcher ownership/bounded cleanup before handback. No other files/owners/providers/Unity/live/tests. User wants runs, so complete a reusable `trial` action as part of launcher instead of leaving it entirely to an unreviewed root harness. Additional owned NEW paths tools/reference_map_trial.py and tools/tests/test_reference_map_trial.py. This Python trial driver may reuse sandbox_session.RosControl.verify_sim_time (strict GetParameters/cleanup), capture_rgb and record_sensor_health, then the UNCHANGED sensor_course.py with sanitized mission and known profile. Save clock admission, sensor smoke (RGB, depth, lidar, odom actually received), first RGB PNG, applied conditions, run report/capture paths. Refuse motion without positive clocks and streams. Fixed speed<=.6 and timeout<=180. No automatic retry. Launcher starts its own managed nav session only after confirmed idle all managed ROS groups; verifies WSL checks exit0, clears IGVC_INSTANCE for domain42, refuses R3aDrive/R3aInspection/IGVC/Unity. Cleanup only recorded newly-owned sessions/PIDs; confirm exits, don't quietly release on cleanup failure. Trial mission child should be reaped/cancelled with SIGINT and bounded escalation only ownedgroup; always gate autonomy off before nav stop. Root will independently inspect and approve source after required reviews; no actual trial by worker. Tests source only until root locks. Root notes include earlyplayerexitsmustfail, finitebuilddeadline, preserveallfailedruns. Hand back <=300words with newcommit and limitations. Do not request provider review yourself or retry timed-out review.

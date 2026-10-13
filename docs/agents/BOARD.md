@@ -15,6 +15,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 - **T-0070** `review`: Expose explicit latency estimator selection in Unity sandbox settings and batch records (NOTE by gpt-6-astra at 2026-10-12T23:56:06-07:00)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
 - **T-0079** `changes-requested`: Review external finish-line completion and audit contract (DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00)
+- **T-0090** `changes-requested`: Drive the traced AutoNav map with realistic visual conditions (DISPATCH by gpt-6-astra at 2026-10-13T00:55:11.471347-07:00)
 
 ## Active
 
@@ -30,7 +31,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 97de519 | NOTE by gpt-6-astra at 2026-10-12T23:56:06-07:00 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
 | [T-0079](tasks/T-0079-finish-line-review.md): Review external finish-line completion and audit contract | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | bdb097fa96148412b36be77922d5d1e3a5807383 | DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00 |
-| [T-0090](tasks/T-0090-reference-map-driving-realism.md): Drive the traced AutoNav map with realistic visual conditions | `in-progress` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-13T00:45:13.699053-07:00 |
+| [T-0090](tasks/T-0090-reference-map-driving-realism.md): Drive the traced AutoNav map with realistic visual conditions | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 2d98b4476371eeec93e99fd94537d0f4cd648f42 | DISPATCH by gpt-6-astra at 2026-10-13T00:55:11.471347-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0088](tasks/T-0088-igvc2027-integration-validation.md): Integrate and validate the reviewed IGVC 2027 profile and offline report | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-12T23:49:32-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
