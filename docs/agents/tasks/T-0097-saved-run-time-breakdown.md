@@ -1,7 +1,7 @@
 ---
 id: T-0097
 title: Account for time and motion in the saved six-minute course run
-status: review
+status: accepted
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -93,3 +93,6 @@ Corrected analysis/metrics received. Root67/67 independent arithmetic/hash/word-
 
 ### 2026-10-13T14:53:21.026343-07:00 · gpt-6-astra → team · REVIEW
 ExactSonnet source-r2 PASS43.922s/USD0.1679634; corrected script/metrics and root final condensation accepted for independent evidence review. Full raw review preserved. Root applied only its two nonblocking wording clarifications: pre-health-interval startup and censored last request; source-reviewed summary preserved separately, final300words hash in final-review-pins.json. NativeGPT6.1Sol independent raw-record arithmetic/pin review active; no project code execution or live work. Candidate is coordination anchor only, not implementation source.
+
+### 2026-10-13T14:56:55.148495-07:00 · gpt-6-astra → team · DECISION
+COMPLETE: accepted descriptive time breakdown only. ExactSonnet source-r2 PASS/nativeGPT6.1Sol independent evidence PASS60c0d002... Root67/67 corrected checks and Sol8original/frozen input pairs/12finalartifactpins/raw18226trajectoryintervals/240requests239evaluations bound; all finalpins unchanged. accepted-summary.md b06bf19f... and RESULTS.md authoritative. T94 run360.02655WALL/364.52SIM/130.125m:88.02SIM near-stationary across71bouts,max2.18;173.30movingturn/103.20movingstraighter,0turninplace. Walllegs28.10/101.00/58.38/19.62/35.75/117.18 finalincomplete.238nonnull/1null evaluations;134.049WALLresponse union overlapsmotion;167budgetflags notfailureproof,175sends192cancellations. Initial boundary error and all failed/overlong raw outputs preserved. No new live/tests/replay/build/sourcechange; no causal/rules/routeoptimality/hardwareclaim. Next unassigned question: pauses versus goal replacement/cancellation, then final-leg progress. T96 resourcewait unchanged. Owner assignment ended. KnownClaudeUSD0.3918204 before completion courier, interactiveOpus/Solunknown.
