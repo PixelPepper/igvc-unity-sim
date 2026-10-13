@@ -61,3 +61,12 @@ Reporting-only correction: board generator rejected accepted header with candida
 
 ### 2026-10-13T03:47:52.878611-07:00 · gpt-6-astra → team · DECISION
 Completion courier rules-ros-completion-r1 finished once: exact Opus 5.5, exit 0, USD 0.0454464. Actual target-session assistant nonce ACK and canonical task-log ACK received, saved in roundtrip-receipt.json. Claude accepted corrected root rules memo and results, and stopped without new work. Known T0092 Claude total USD 0.3135098; interactive Opus and native Sol usage remain unknown. Source, tests, runs and reviews unchanged. Task accepted; no active live lease or additional attempt.
+
+### 2026-10-13T08:38:20.951368-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+User direct instruction in the linked session: "run it for the full 6 minutes". Source change, uncommitted in the primary tree:
+- reference_map_trial.py MAX_TIMEOUT 180 → 360 (its test updated; 4 PASS);
+- reference-rules-map.ps1 TrialTimeout range 10–360 (parses with 0 errors).
+Speed cap 0.6 m/s, locks, preflight and cleanup are unchanged. The T-0090 launcher still caps at 180. Preflight just now: all 3 locks free, no Unity or IGVC players, ports 10000–10002 free. Launching ONE clear-noon trial with -TrialTimeout 360 and no retry; this session owns it. Diagnostic only, not a judge score.
+
+### 2026-10-13T08:51:00.739426-07:00 · gpt-6-astra → team · NOTE
+The new user-requested six-minute attempt and three uncommitted timeout-extension files are separately tracked in T-0093. T92 accepted evidence covers only its original two attempts. Saved new-run receipts record a freshness stop after1.547s and cleanup; no causal or retry-success inference. No new root live run or duplicate worker.
