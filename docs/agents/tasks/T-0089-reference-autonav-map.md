@@ -1,7 +1,7 @@
 ---
 id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: accepted
+status: integrated
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -9,7 +9,7 @@ orchestrator: gpt-6-astra
 branch: codex/t0085-reference-map-opus
 base: 76af47bf3acf09307ef570c8cfbe4cc9784b90c7
 candidate: 00ca53677a22718d229dbe0f9731ae4511b8d2b5
-claim: implemented
+claim: tested
 lease: none
 updated: 2026-10-13
 ---
@@ -274,3 +274,9 @@ Root independent image-analysis receipt linked-generation-r1/render-alignment-fa
 
 ### 2026-10-13T00:23:39.0512906-07:00 · gpt-6-astra → team · DECISION
 Accept00ca536 for isolated root regeneration: exactSonnet PASS83.203s/USD.2296978; nativeSol bounded delta evidence PASS, scope/hashes/cleanparentverified and prior failedrender independently inspected. Source coordinates/provenance unchanged. GPU-cache cause remains hypothesis despite definitive source-comment wording; actualsavedCPU/render discrepancy proven, fixeffectiveness pendingnewrender. Require both actualrenderinspection and independent67-controlalignment plus103savedpositions/rampcorners;90percentinternalpixelguard alone isn't fullfidelityproof.
+
+### 2026-10-13T00:25:21.4101982-07:00 · gpt-6-astra → team · NOTE
+Root integrated00ca536 as440adfeb26db5caeedc55dc842341d05f5de1c5b and completed fresh linked-generation-r2 Unity generation/reopen/render exit0at00:23:50.717; all3locks released00:23:50.986. Report true/no failures/internal106of117whitecontrolhits. Independently checked103savedpositions max.0000287px and rampcornerextents/height/bothgrades PASS. Independent67unobscuredrendercontrolchecks67PASS, versus retainedearlier7/67 failure. Root visually inspectedbothactualPNGs: shallowtop/bottom, straight right,ramp,openleft/allmarkerclusters nowfollowimage; oblique croppedforeground,fullportrait overviewcomplete. All11externalpreimagesunchanged. No live/route/rulecertificationclaim. FinalSol evidence review active. Frozen newscene/assets/report/previews under linked-generation-r2/generated-evidence.
+
+### 2026-10-13T00:28:01.7571048-07:00 · gpt-6-astra → team · DECISION
+T0089 COMPLETE for requested image-first schematic Unity authoring map. FinalnativeSol PASS fordelivery, relayed-from artifacts/agents/T-0089/linked-generation-r2/sol-final-review.md. Candidate00ca536/integration440adfeb; all3sources/11externalpreimages/36generatedfiles/scene/report/PNGs bound. Unityexit0 and locksreleased;103savedpositions/rampgeometryPASS,106/117internalwhitecontrols and67/67independentunobscuredcontrolsPASS. Root andSol visually comparedactualPNGs tooriginal; nowcloselymatcheslayout. Preserve rejectedoldcosine/firstGPUrender andalltimeoutfailures. Sourceowner assignmentended; no repeatgeneration/reviews absentnewcause. Limitsschematicapproximation/croppedbottominferred/blackdruminterpretation/chosenscale; minlanewidth1.9299m and negativegap meanno rule/passabilityclaim. No robot/navigation/live/sensor evidence. T0084 independentlyblocked; T0070/T85-T88 owners unchanged. This turn knowncouriersUSD.0805138 plusSonnetUSD.4961476 = USD.5766614; interactiveOpus/Sol usageunavailable, priorunknowncostsnotincluded.
