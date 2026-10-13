@@ -7,7 +7,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 - **T-0084** `blocked`: Complete sensor-led missions on finish-line crossing (BLOCKED by gpt-6-astra at 2026-10-10T23:05:48.1618438-07:00)
 - **T-0086** `blocked`: Represent variable-width lanes and dashed IGVC 2027 boundaries in Unity (DECISION by gpt-6-astra at 2026-10-12T23:15:50.0748456-07:00)
-- **T-0096** `blocked`: Compare two fixed recovery search budgets on one frozen observed state (NOTE by gpt-6-astra at 2026-10-13T14:32:39.998156-07:00)
+- **T-0096** `blocked`: Compare two fixed recovery search budgets on one frozen observed state (NOTE by gpt-6-astra at 2026-10-13T14:40:15.9066459-07:00)
 - **T-0072** `blocked`: Diagnose recorded end-of-run behavior in the stopped seed2370 demo (BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00)
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
@@ -23,7 +23,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0084](tasks/T-0084-finish-crossing-runtime.md): Complete sensor-led missions on finish-line crossing | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-10T23:05:48.1618438-07:00 |
 | [T-0086](tasks/T-0086-igvc2027-lanes-rendering.md): Represent variable-width lanes and dashed IGVC 2027 boundaries in Unity | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-12T23:15:50.0748456-07:00 |
-| [T-0096](tasks/T-0096-frozen-recovery-budget-comparison.md): Compare two fixed recovery search budgets on one frozen observed state | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 2dbaad8f58b2b479b2713a2510a41d9fe77e1ce7 | NOTE by gpt-6-astra at 2026-10-13T14:32:39.998156-07:00 |
+| [T-0096](tasks/T-0096-frozen-recovery-budget-comparison.md): Compare two fixed recovery search budgets on one frozen observed state | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 2dbaad8f58b2b479b2713a2510a41d9fe77e1ce7 | NOTE by gpt-6-astra at 2026-10-13T14:40:15.9066459-07:00 |
 | [T-0072](tasks/T-0072-stopped-demo-diagnosis.md): Diagnose recorded end-of-run behavior in the stopped seed2370 demo | `blocked` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00 |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |
