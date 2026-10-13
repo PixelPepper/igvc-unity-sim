@@ -1,14 +1,14 @@
 ---
 id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: in-progress
+status: review
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0085-reference-map-opus
 base: 76af47bf3acf09307ef570c8cfbe4cc9784b90c7
-candidate: none
+candidate: e6d0b353a0166ff2a85111ca4ccf884dd1f888c5
 claim: none
 lease: none
 updated: 2026-10-12
@@ -141,3 +141,7 @@ Direct human message: "keep going". This authorizes the pending smaller same-mod
 
 ### 2026-10-12T22:53:42.8967436-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
 Launched one exact-requested Opus5.5 source-only continuation in the preserved map worktree. Model/usage remain pending the actual result. Corrected namespace/rule passage/drum provenance in the packet. Root continuation availability preflight acquired all3 locks, found no Unity/player/ROS/live ports, and released all3; T0070 source reservation remains active and T0084 remains blocked. No Unity generation yet.
+
+### 2026-10-12T22:56:56.3502778-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+relayed-from: artifacts/agents/T-0089/continuation-r1/handback.md
+Exact Opus5.5 returned exit0/is_errorfalse in258.5s, USD1.007729, candidate e6d0b353a0166ff2a85111ca4ccf884dd1f888c5. Root verified clean worker and exact3 owned paths, source pins and11 protected external preimages unchanged. Raw overlong handback retained; compact relay follows. Generator draft completed, duplicate C# local names corrected, T0089 output namespace, reported .597x1.008m drums, persistent built-in asset check, course-feature footprint, conservative radius/overlap checks. No compilation/tests/Unity/scene/render run. Author estimates136m (~446ft), below480-520ft target, reports limitation rather than claiming500ft. Separate map only, no runtime changes. Source review now required.
