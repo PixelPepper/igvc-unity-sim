@@ -622,6 +622,41 @@ def geometry_doc(variant, geo, drums, ramp, starts):
                                  'two NML centre singles omitted; NML interior obstacles evenly spaced in diagram order'])
 
 
+def unity_input(variant, geo, drums, ramp, starts):
+    """JsonUtility-friendly AUTHORING input for the Unity adapter (point objects, flat records). Render/build
+    only: it is never player data or policy input. Field frame metres (x east, y north)."""
+    taped = geo['sec'] != 'nml'
+    runs, cur = [], []
+    for i in range(len(taped)):
+        if taped[i]: cur.append(i)
+        elif cur: runs.append(cur); cur = []
+    if cur: runs.append(cur)
+    if len(runs) > 1 and runs[0][0] == 0 and runs[-1][-1] == len(taped)-1:
+        runs = [runs[-1]+runs[0]]+runs[1:-1]           # the closed loop wraps inside the taped run: one continuous tape
+    tapes = []
+    for r in runs:
+        idx = np.array(r)[::5]
+        for sign, name in ((1, 'inner'), (-1, 'outer')):
+            pts = offset(geo, sign*(geo['w'][idx]/2+TAPE/2), idx)
+            tapes.append(dict(side=name, width=TAPE, points=[dict(x=round(float(a), 4), y=round(float(b), 4)) for a, b in pts]))
+
+    def line(name):
+        q, tan, _, w, _ = frame(geo, starts[name])
+        return dict(name=name, x=round(float(q[0]), 4), y=round(float(q[1]), 4), hx=round(float(tan[0]), 6),
+                    hy=round(float(tan[1]), 6), width=round(float(w), 4))
+    north = line('north')
+    return dict(task='T-0091', variant=variant, status='PROPOSED authoring input, not certified',
+                frame='field metres, x east, y north, origin field SW corner',
+                fieldW=round(float(geo['field'][0]), 4), fieldH=round(float(geo['field'][1]), 4),
+                spawn=dict(x=north['x'], y=north['y']),
+                spawnHeadingOffNorthDeg=round(math.degrees(math.atan2(north['hx'], north['hy'])), 4),
+                tapeWidth=TAPE, drumDiameter=DRUM_D, drumHeight=DRUM_H,
+                tapes=tapes, drums=[dict(id=d['id'], colour=d['colour'], x=d['x'], y=d['y']) for d in drums],
+                ramp=dict(x0=ramp['x0'], x1=ramp['x1'], y0=ramp['y0'], y1=ramp['y1'], rise=ramp['rise'],
+                          run=ramp['run'], deck=ramp['deck']),
+                startLines=[north, line('south')])
+
+
 def render(variant, geo, drums, ramp, starts, rep, out, reference=None):
     import matplotlib
     matplotlib.use('Agg')
@@ -670,7 +705,8 @@ def run(variant, out, reference=None, grid=GRID):
     rep = measure(geo, drums, ramp, starts, grid)
     out.mkdir(parents=True, exist_ok=True)
     enc = dict(indent=1, default=lambda o: o.item())
-    docs = dict(geometry=geometry_doc(variant, geo, drums, ramp, starts), metadata=metadata(geo, starts))
+    docs = dict(geometry=geometry_doc(variant, geo, drums, ramp, starts), metadata=metadata(geo, starts),
+                **{'unity-input': unity_input(variant, geo, drums, ramp, starts)})
     for name, data in docs.items():
         (out/f'{name}.json').write_text(json.dumps(data, **enc)+'\n')
     rep['variant'] = variant
