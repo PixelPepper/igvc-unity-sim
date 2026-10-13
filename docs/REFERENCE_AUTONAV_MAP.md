@@ -5,6 +5,7 @@
 - Menu: **IGVC > Reference Map > Create 2027 AutoNav Map**.
 - Batch: `-executeMethod ReferenceMapBuild.GenerateAndValidate`. This saves the scene and assets, reopens them, validates, and writes `artifacts/agents/T-0089/unity-validation.json`, `overview.png` (portrait 1049 x 1160) and `oblique.png` (1600 x 1334).
 - Both entry points offer to save modified open scenes first.
+- Validation also checks the **rendered** overview, which is pixel-aligned with the source image: at least 90% of the traced tape controls must appear white in what the GPU drew. Generated meshes are rewritten in place with explicit Mesh APIs and re-uploaded. This keeps the asset GUIDs, and the earlier `CopySerialized` update left stale tape on screen even though the saved data was correct.
 
 ## What it reproduces
 Following the user's correction ("look at the image and make it the same"), the geometry is **image-first**:

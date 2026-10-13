@@ -125,12 +125,25 @@ public static class ReferenceMapBuild
         return material;
     }
 
+    // Persist a generated mesh, keeping an existing asset's GUID. The existing asset is rewritten through
+    // explicit Mesh APIs and re-uploaded: copying serialized data into it (EditorUtility.CopySerialized)
+    // updated the saved/CPU data but left the old GPU buffers in place, so renders showed stale geometry.
     private static Mesh SaveMesh(Mesh mesh)
     {
         string path = Generated + "/" + mesh.name + ".asset";
         var existing = AssetDatabase.LoadAssetAtPath<Mesh>(path);
-        if (existing == null) { AssetDatabase.CreateAsset(mesh, path); return mesh; }
-        EditorUtility.CopySerialized(mesh, existing); UnityEngine.Object.DestroyImmediate(mesh); return existing;
+        if (existing == null) { mesh.UploadMeshData(false); AssetDatabase.CreateAsset(mesh, path); return mesh; }
+        existing.Clear();
+        existing.indexFormat = mesh.indexFormat;
+        existing.SetVertices(mesh.vertices);
+        existing.SetNormals(mesh.normals);
+        existing.subMeshCount = mesh.subMeshCount;
+        for (int i = 0; i < mesh.subMeshCount; i++) existing.SetTriangles(mesh.GetTriangles(i), i);
+        existing.RecalculateBounds();
+        existing.UploadMeshData(false);
+        EditorUtility.SetDirty(existing);
+        UnityEngine.Object.DestroyImmediate(mesh);
+        return existing;
     }
 
     private static Transform Group(string name, Transform parent = null)
@@ -414,7 +427,30 @@ public static class ReferenceMapBuild
         json.Append("  \"unverified\": [\"course route length\", \"rule compliance (area, lane width, turn radius, passages, 44 ft)\", \"cropped lower outer boundary\", \"tracing accuracy vs source pixels\", \"sensor appearance\", \"navigation\", \"drum dimensions\"],\n");
 
         string output = Path.Combine(Repository, "artifacts/agents/T-0089"); Directory.CreateDirectory(output);
-        Render(Find("Overview camera").GetComponent<Camera>(), Path.Combine(output, "overview.png"), ImageWidth, ImageHeight);
+        var overview = Render(Find("Overview camera").GetComponent<Camera>(), Path.Combine(output, "overview.png"), ImageWidth, ImageHeight);
+        // Render check: the portrait overview is pixel-aligned with the source image, so every traced tape
+        // control must actually appear as white tape in what the GPU drew (catches stale or wrong mesh
+        // uploads that CPU/saved-asset checks cannot see). A drum or label may cover a few controls.
+        int tapeControls = 0, tapeRendered = 0;
+        foreach (var controls in new[] { OuterTape, InnerTape })
+            for (int i = 0; i < controls.GetLength(0); i++)
+            {
+                tapeControls++;
+                int cx = controls[i, 0], cy = ImageHeight - 1 - controls[i, 1];
+                bool white = false;
+                for (int dy = -2; dy <= 2 && !white; dy++)
+                    for (int dx = -2; dx <= 2 && !white; dx++)
+                    {
+                        int x = cx + dx, y = cy + dy;
+                        if (x < 0 || y < 0 || x >= ImageWidth || y >= ImageHeight) continue;
+                        Color32 c = overview[y * ImageWidth + x];
+                        white = Math.Min(c.r, Math.Min(c.g, c.b)) >= 200;
+                    }
+                if (white) tapeRendered++;
+            }
+        float renderedFraction = tapeRendered / (float)Math.Max(1, tapeControls);
+        Check(renderedFraction >= .9f, "Rendered overview shows tape at only " + tapeRendered + "/" + tapeControls + " traced controls (stale or wrong render)");
+        json.Append("  \"render_tape_controls_white\": [" + tapeRendered + ", " + tapeControls + "],\n");
         var oblique = new GameObject("Oblique preview camera (temporary)").AddComponent<Camera>();
         Vector3 centre = new Vector3((GroundX0 + GroundX1) / 2, 0, (GroundZ0 + GroundZ1) / 2);
         oblique.transform.position = centre + new Vector3(18, 16, -30); oblique.transform.LookAt(centre);
@@ -430,7 +466,8 @@ public static class ReferenceMapBuild
         Debug.Log("IGVC_REFERENCE_MAP_OK drums=" + drums.Count + " control_error_px=" + F(controlError));
     }
 
-    private static void Render(Camera camera, string file, int width, int height)
+    // Renders to file and returns the rendered pixels (row 0 = bottom, as ReadPixels stores them).
+    private static Color32[] Render(Camera camera, string file, int width, int height)
     {
         var previous = RenderTexture.active; var texture = new RenderTexture(width, height, 24);
         var image = new Texture2D(width, height, TextureFormat.RGB24, false);
@@ -439,6 +476,7 @@ public static class ReferenceMapBuild
             camera.aspect = width / (float)height; camera.targetTexture = texture; camera.Render();
             RenderTexture.active = texture; image.ReadPixels(new Rect(0, 0, width, height), 0, 0); image.Apply();
             File.WriteAllBytes(file, image.EncodeToPNG());
+            return image.GetPixels32();
         }
         finally
         {
