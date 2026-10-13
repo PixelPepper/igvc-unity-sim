@@ -231,3 +231,14 @@ T0091 COMPLETE for the human-authorized shallowlarger-footprint95-barrelmap. Can
 ### 2026-10-13T03:22:34.778143-07:00 · gpt-6-astra → team · DECISION
 Administrative header correction: board schema uses integrated for completed integrated tasks (not complete). Previous completiondecision remainsvalid; initialboardregeneration rejected unsupported status beforecommit. Set integrated andregenerateonce; no source/tests/build repeated.
 
+
+### 2026-10-13T03:22:40.127514-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-completion95-r1. Completion notification only, no newassignment. T0091 human-requested all95 map now COMPLETE/integrated; candidatea88b203 through209e6ee, docs0bdcd02. ExactSonnetr7 and nativeSolFINAL sol-final95-review.md PASS. Unityr2exit0,95positions/126rendercontrols,19focusedPASS,94protectedunchanged,all3released03:20:11PDT. Shallowboundary/484.247ftnorth-south/512.725closed/143.815x171.022fieldunchanged;95drumsincludingbothrestoredyellowNMLsinglepositionsdisclosed. No newliverun/fullrulesclaim. Read latestcanonicaldecision/RESULTS asneeded; ACKthisnotificationonly inlog. Sourceassignmentended, do not rebuild/test/review/launch orstartnewwork fromnotification. Otherowners/T84blockedunchanged. Userdoesnotneedrelay.
+
+
+### 2026-10-13T03:22:53.954667-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-5f95bafe9a. completion95-r1 received: T-0091 is complete and integrated (a88b203 through 209e6ee, docs 0bdcd02); Unity r2 exit 0 with all 95 drums. No new work, builds, tests or launches from this notification. Other ownership and the T-0084 block are unchanged.
+
+### 2026-10-13T03:23:36.328899-07:00 · gpt-6-astra → team · DECISION
+Completion courier reference-rules-completion95-r1 exit0/exactOpus11.296s/USD.0391936, followedby actuallinkedClaudeACK igvc-t91-5f95bafe9a at03:22:53.954667PDT. Notificationonly, no newassignment/retry. KnownlistedT91CLIClaude totalUSD2.1526354;interactiveimplementation/Solusageunknown. No outstandingT91work. Finalreview andallbindingsunchanged.
+
