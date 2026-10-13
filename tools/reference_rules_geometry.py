@@ -9,7 +9,9 @@ reference-like:
 - smoothed with a fixed periodic Gaussian.
 The midline is then fitted into a field box. Two clearly labelled variants are built and MEASURED:
   field-120x100 : the shape fitted into 120 ft east-west x 100 ft north-south (anisotropic fit, reported);
-  length-500ft  : the same silhouette scaled uniformly until the nominal lap is 500 ft; the required footprint
+  rules-485     : the same silhouette scaled uniformly so the north->south mission run is ~485 ft and the closed
+                  loop stays <= 520 ft; the larger footprint is a user-authorized, disclosed deviation.
+  length-500ft  : (r2) the same silhouette scaled uniformly until the nominal lap is 500 ft; the required footprint
                   is reported. This is a deviation from the 120 x 100 ft field, never a silent exception.
 Frame: metres, x east, y north, origin at the field's south-west corner. The loop is counter-clockwise from the
 north start, heading north. Lane widths, drum sizes, tape and ramp are physical and are never scaled.
@@ -38,7 +40,12 @@ DRUM_D, DRUM_H = .597, 1.008
 R_DRUM = DRUM_D/2
 PASS = 5*FT
 LANE_MIN, LANE_MAX = 10*FT, 20*FT
-W_RIGHT, W_CORRIDOR, W_NML = LANE_MIN, 4.4, 6.0   # r1-measured passage widths (r1 found chokes at 3.8/5.6)
+W_RIGHT, W_CORRIDOR, W_NML = LANE_MIN+.01, 4.4, 6.0   # right +1 cm so measured width clears 10 ft with no waiver
+NS_TARGET, CLOSED_MAX = 485*FT, 520*FT
+OSC_HALF = .5
+# Shallow-shape limits relative to the fitted source trace (r2 measured +2 deg / 0.94x / 0.95 m on this family;
+# r1-style hairpins measured ~83 deg swings and would fail every limit).
+SHAPE_LIMITS = dict(max_tangent_extra_deg=5., excursion_ratio=1.25, silhouette_max_deviation_m=1.25)
 RAMP_RISE, RAMP_RUN, RAMP_DECK, RAMP_SIDE = .30, 2.145, .4, .3
 TARGET_LAP = 500*FT
 LAP_RANGE = (480*FT, 520*FT)
@@ -168,10 +175,61 @@ def build(variant='field-120x100'):
         for _ in range(3):                              # bounded: lap length is ~linear in the uniform scale
             k *= TARGET_LAP/fit(k)['length']
         geo = fit(k)
+    elif variant == 'rules-485':
+        # The exported mission runs north start -> south start. Scale uniformly (bounded, 3 steps) so that run is
+        # ~485 ft, then shrink only if the closed loop would exceed CLOSED_MAX.
+        k = 1.
+        for _ in range(3):
+            g = fit(k); k *= NS_TARGET/north_to_south(g)
+        g = fit(k)
+        if g['length'] > CLOSED_MAX:
+            k *= CLOSED_MAX/g['length']
+        geo = fit(k)
     else:
         raise ValueError(variant)
     ramp, starts = ramp_and_starts(geo)
     return geo, build_drums(geo, ramp), ramp, starts
+
+
+def north_to_south(geo):
+    _, starts = ramp_and_starts(geo)
+    return float((geo['s'][starts['south']]-geo['s'][starts['north']]) % geo['length'])
+
+
+def osculating_radius(p, half=OSC_HALF):
+    """Local osculating-circle radius of the closed nominal centreline: circumradius of the samples +-half m apart."""
+    m = max(1, int(round(half/DS)))
+    a, b, c = np.roll(p, m, 0), p, np.roll(p, -m, 0)
+    ab, bc, ca = (np.hypot(*(u-v).T) for u, v in ((a, b), (b, c), (c, a)))
+    area2 = np.abs((b-a)[:, 0]*(c-a)[:, 1]-(b-a)[:, 1]*(c-a)[:, 0])
+    return ab*bc*ca/np.maximum(2*area2, 1e-12)
+
+
+def shape_check(geo):
+    """Shallow-shape regression vs the fitted source trace (same scale). Limits are stated in SHAPE_LIMITS."""
+    from scipy.spatial import cKDTree
+    p, sec = geo['p'], geo['sec']
+    raw_sec = sec[cKDTree(p).query(geo['raw'])[1]]
+
+    def shape(points):
+        d = np.diff(points, axis=0); ang = np.degrees(np.arctan2(np.abs(d[:, 1]), np.abs(d[:, 0])))
+        dy = np.sign(np.round(d[:, 1], 4)); dy = dy[dy != 0]
+        return dict(excursion_m=float(np.ptp(points[:, 1])), max_tangent_deg=float(ang.max()),
+                    direction_reversals=int(np.sum(dy[1:] != dy[:-1])))
+    out, issues = {}, []
+    deviation = float(cKDTree(geo['raw']).query(p)[0].max())
+    if deviation > SHAPE_LIMITS['silhouette_max_deviation_m']:
+        issues.append(f'silhouette deviates {deviation:.2f} m from the source trace')
+    for s in ('top', 'bottom'):
+        src, prop = shape(geo['raw'][raw_sec == s][::10]), shape(p[sec == s][::25])
+        out[s] = dict(source_trace=src, proposed=prop)
+        if prop['direction_reversals'] != src['direction_reversals']:
+            issues.append(f"{s} connector reversals {prop['direction_reversals']} != source {src['direction_reversals']}")
+        if prop['max_tangent_deg'] > src['max_tangent_deg']+SHAPE_LIMITS['max_tangent_extra_deg']:
+            issues.append(f"{s} connector tangent {prop['max_tangent_deg']:.1f} deg exceeds source+{SHAPE_LIMITS['max_tangent_extra_deg']}")
+        if prop['excursion_m'] > src['excursion_m']*SHAPE_LIMITS['excursion_ratio']:
+            issues.append(f"{s} connector excursion {prop['excursion_m']:.2f} m exceeds {SHAPE_LIMITS['excursion_ratio']}x source")
+    return dict(silhouette_max_deviation_m=deviation, connector_shape=out, limits=SHAPE_LIMITS, issues=issues)
 
 
 def nearest_in(geo, section, key):
@@ -318,18 +376,13 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     # Start-to-finish (north start, counter-clockwise, to the south start) vs the closed loop.
     rep['north_to_south_start_m'] = float((geo['s'][starts['south']]-geo['s'][starts['north']]) % geo['length'])
     rep['north_to_south_start_ft'] = rep['north_to_south_start_m']/FT
-    # Silhouette: smoothed centreline vs fitted raw trace midline, plus connector excursion/tangent/reversals.
-    rep['silhouette_max_deviation_m'] = float(cKDTree(geo['raw']).query(p)[0].max())
-    raw_tree = cKDTree(p)
-    raw_sec = sec[raw_tree.query(geo['raw'])[1]]
-
-    def shape(points):
-        d = np.diff(points, axis=0); ang = np.degrees(np.arctan2(np.abs(d[:, 1]), np.abs(d[:, 0])))
-        dy = np.sign(np.round(d[:, 1], 4)); dy = dy[dy != 0]
-        return dict(excursion_m=float(np.ptp(points[:, 1])), max_tangent_deg=float(ang.max()),
-                    direction_reversals=int(np.sum(dy[1:] != dy[:-1])))
-    rep['connector_shape'] = {s: dict(source_trace=shape(geo['raw'][raw_sec == s][::10]), proposed=shape(p[sec == s][::25]))
-                              for s in ('top', 'bottom')}
+    rep['lap_definitions'] = dict(closed_loop='closed nominal centreline, includes the ramp stretch between the starts',
+                                  north_to_south='nominal centreline from the north start counter-clockwise to the south start '
+                                                 '(the exported mission run)')
+    # Silhouette and shallow-shape regression vs the source trace.
+    shp = shape_check(geo)
+    rep['silhouette_max_deviation_m'] = shp['silhouette_max_deviation_m']
+    rep['connector_shape'] = shp['connector_shape']; rep['shape_limits'] = shp['limits']
     # Width: nearest distance from each centreline sample to its OWN left and right inner-edge polylines.
     left, right = offset(geo, w/2), offset(geo, -w/2)
     lt, rt = cKDTree(left[taped]), cKDTree(right[taped])
@@ -338,9 +391,12 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
                                        method='centreline-to-own-edge nearest distances, summed (not the construction offset)')
     rep['usable_width_nml_m'] = dict(value=W_NML, note='authoring assumption: between coloured drum-column inner edges')
     # Curvature.
-    radius = 1/np.maximum(np.abs(k), 1e-9)
+    radius = osculating_radius(p)
     inner = radius-w/2
-    rep['radius'] = dict(interpretation='II.2 radius >= 5 ft applied to the nominal centreline path',
+    rep['radius'] = dict(interpretation='II.2 turning radius >= 5 ft applied to the local osculating-circle radius of the '
+                                        f'nominal centreline (three-point circumradius, samples +-{OSC_HALF} m apart); '
+                                        'inner tape-edge radius = nominal - half width, reported separately; driven-route '
+                                        'curvature is unverified',
                          nominal_min_m=float(radius.min()), inner_edge_min_m=float(inner.min()),
                          inner_edge_below_5ft_fraction=float(np.mean(inner < PASS)), fold=bool(inner.min() <= 0))
     # Field bounds.
@@ -353,7 +409,8 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     # Lane-to-lane clearance between non-local parts of the loop.
     edge = w/2+np.where(taped, TAPE, 2*R_DRUM)
     tree = cKDTree(p)
-    pairs = np.array(sorted(tree.query_pairs(edge.max()*2+1.)))
+    sub = np.arange(0, n, 10)                           # 0.2 m subsample bounds the pair set
+    pairs = sub[np.array(sorted(cKDTree(p[sub]).query_pairs(edge.max()*2+1.)))]
     ds = np.abs(geo['s'][pairs[:, 0]]-geo['s'][pairs[:, 1]]); ds = np.minimum(ds, geo['length']-ds)
     need = edge[pairs[:, 0]]+edge[pairs[:, 1]]
     far = ds > math.pi/2*need
@@ -397,13 +454,13 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
         elif d['passage'] == 'inner': ok = inner_gap >= PASS
         elif d['passage'] == 'outer': ok = outer_gap >= PASS
         else: ok = (inner_gap if d['side'] == 'outer' else outer_gap) >= PASS
-        checks.append(dict(id=d['id'], intended=d['intended'], passage=d['passage'], inner_gap=round(float(inner_gap), 4),
+        checks.append(dict(id=d['id'], intended=d['intended'], passage=d['passage'], side=d['side'], inner_gap=round(float(inner_gap), 4),
                            outer_gap=round(float(outer_gap), 4), ok=ok))
         if not ok: failures.append(f"{d['id']}: intended {d['intended']}/{d['passage']} gaps inner {inner_gap:.3f} outer {outer_gap:.3f}")
     rep['drum_checks'] = checks
     rep['drum_intended_passage_min_m'] = float(min(
         min(c['inner_gap'], c['outer_gap']) if c['intended'] == 'centre' else
-        (c['inner_gap'] if c['passage'] == 'inner' else c['outer_gap'] if c['passage'] == 'outer' else max(c['inner_gap'], c['outer_gap']))
+        (c['inner_gap'] if c['passage'] == 'inner' else c['outer_gap'] if c['passage'] == 'outer' else (c['inner_gap'] if c['side'] == 'outer' else c['outer_gap']))
         for c in checks if 'inner_gap' in c))
     # Raster 5 ft corridor and ordered route witness (grid estimate).
     nx, ny = int(math.ceil(fw/grid)), int(math.ceil(fh/grid))
@@ -434,7 +491,7 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     rep['ramp_between_starts_with_clearance'] = bool(p[starts['south'], 1]+.3 < ramp['y0'] and ramp['y1'] < p[starts['north'], 1]-.3)
     issues = list(failures)
     lo, hi = rep['usable_width_taped_m']['min'], rep['usable_width_taped_m']['max']
-    if lo < LANE_MIN-.005 or hi > LANE_MAX+.005: issues.append(f'taped lane width {lo:.3f}-{hi:.3f} m outside 10-20 ft')
+    if lo < LANE_MIN or hi > LANE_MAX: issues.append(f'taped lane width {lo:.4f}-{hi:.4f} m outside 10-20 ft (no tolerance)')
     if not LANE_MIN <= W_NML <= LANE_MAX: issues.append('NML width outside 10-20 ft')
     if rep['radius']['nominal_min_m'] < PASS: issues.append(f"nominal radius {rep['radius']['nominal_min_m']:.3f} m < 5 ft")
     if rep['radius']['fold']: issues.append('tape inner edge folds (radius <= half width)')
@@ -445,8 +502,14 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
     wit = rep['witness']
     if not wit['found']: issues.append('no ordered collision-free 5 ft route witness on the raster')
     elif not wit['goals_in_order']: issues.append('route witness misses a goal region or its order')
-    if not LAP_RANGE[0] <= geo['length'] <= LAP_RANGE[1]: issues.append(f"nominal lap {rep['lap_length_ft']:.1f} ft outside 480-520 ft")
-    if abs(fw-FIELD_W) > 1e-6 or abs(fh-FIELD_H) > 1e-6: issues.append(f'footprint {fw/FT:.1f} x {fh/FT:.1f} ft differs from 120 x 100 ft')
+    issues += shp['issues']
+    ns_ft = rep['north_to_south_start_ft']
+    if not LAP_RANGE[0] <= rep['north_to_south_start_m'] <= LAP_RANGE[1]: issues.append(f'north-to-south nominal run {ns_ft:.1f} ft outside 480-520 ft')
+    if not LAP_RANGE[0] <= geo['length'] <= CLOSED_MAX+1e-9: issues.append(f"closed nominal loop {rep['lap_length_ft']:.1f} ft outside 480-520 ft")
+    deviations = []
+    if abs(fw-FIELD_W) > 1e-6 or abs(fh-FIELD_H) > 1e-6:
+        deviations.append(f'footprint {fw/FT:.1f} x {fh/FT:.1f} ft differs from the II.2 120 x 100 ft area (user-authorized larger footprint)')
+    rep['authorized_deviations'] = deviations
     if ramp['grade'] > .15: issues.append('ramp grade > 15%')
     if not rep['ramp_between_starts_with_clearance']: issues.append('ramp does not fit between the start lines')
     rep['drum_count'] = len(drums)
@@ -457,7 +520,9 @@ def measure(geo, drums, ramp, starts, grid=GRID, meta=None):
                                  'witness is not curvature-limited', 'inner tape-edge radius below 5 ft is reported only',
                                  '44 ft marker may lie on a curve']
     rep['unverified'] = ['Unity integration/rendering', 'sensors', 'navigation', 'judged timing', 'ramp physics']
-    rep['measured_constraints_met'] = not issues
+    rep['authorized_geometry_met'] = not issues
+    rep['full_rule_compliance'] = False if (issues or deviations) else 'not claimed: judged timing and Unity unverified'
+    rep['measured_constraints_met'] = rep['authorized_geometry_met']
     return rep
 
 
@@ -536,7 +601,7 @@ def render(variant, geo, drums, ramp, starts, rep, out, reference=None):
     fig, axes = plt.subplots(1, cols, figsize=(9*cols, 8.2))
     ax = axes[0] if cols == 2 else axes
     ax.add_patch(Rectangle((0, 0), FIELD_W, FIELD_H, fill=False, ls='--', lw=1.2, ec='#c0392b'))
-    if variant != 'field-120x100':
+    if variant != 'field-120x100':  # larger footprint shown in grey
         ax.add_patch(Rectangle((0, 0), fw, fh, fill=False, ls='--', lw=1, ec='0.4'))
     taped = geo['sec'] != 'nml'
     for sign in (1, -1):
@@ -558,14 +623,14 @@ def render(variant, geo, drums, ramp, starts, rep, out, reference=None):
     m = rep['marker_44ft']['field_xy']; ax.plot(m[0], m[1], marker='D', color='#8e44ad', ms=6)
     ax.text(m[0], m[1]+.6, '44 ft', color='#8e44ad', fontsize=8, ha='center')
     ax.text(fw/2, fh/2, 'PROPOSED', fontsize=30, color='#c0392b', alpha=.3, ha='center', va='center', rotation=20)
-    status = 'measured constraints met' if rep['measured_constraints_met'] else f"{len(rep['issues'])} open issue(s)"
-    ax.set_title(f"PROPOSED {variant} (not Unity): nominal lap {rep['lap_length_ft']:.1f} ft, field {fw/FT:.1f} x {fh/FT:.1f} ft, "
+    status = 'authorized geometry met (not full II.2 compliance)' if rep['authorized_geometry_met'] else f"{len(rep['issues'])} open issue(s)"
+    ax.set_title(f"PROPOSED {variant} (not Unity): N->S {rep['north_to_south_start_ft']:.1f} ft, closed loop {rep['lap_length_ft']:.1f} ft, field {fw/FT:.1f} x {fh/FT:.1f} ft, "
                  f"lane {rep['usable_width_taped_m']['min']:.2f}-{rep['usable_width_taped_m']['max']:.2f} m, "
                  f"R_nom {rep['radius']['nominal_min_m']:.2f} m - {status}\nred dashed = 120 x 100 ft field", fontsize=8)
     ax.set_xlim(-1, max(fw, FIELD_W)+1); ax.set_ylim(-1, max(fh, FIELD_H)+1); ax.set_aspect('equal')
     ax.set_xlabel('x east (m)'); ax.set_ylabel('y north (m)')
     if cols == 2:
-        axes[1].imshow(plt.imread(reference)); axes[1].set_title('Reference image trace (T-0089)', fontsize=9); axes[1].axis('off')
+        axes[1].imshow(plt.imread(reference)); axes[1].set_title('Original source image', fontsize=9); axes[1].axis('off')
     fig.tight_layout(); fig.savefig(out/'plan.png', dpi=110); fig.savefig(out/'plan.svg'); plt.close(fig)
 
 
@@ -588,19 +653,19 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--reference', type=Path)
-    parser.add_argument('--variant', choices=('field-120x100', 'length-500ft', 'both'), default='both')
+    parser.add_argument('--variant', choices=('field-120x100', 'length-500ft', 'rules-485', 'both'), default='both')
     args = parser.parse_args(argv)
-    variants = ('field-120x100', 'length-500ft') if args.variant == 'both' else (args.variant,)
+    variants = ('field-120x100', 'rules-485') if args.variant == 'both' else (args.variant,)
     summary = {}
     for v in variants:
         rep = run(v, args.out/v, args.reference)
         summary[v] = {k: rep[k] for k in ('lap_length_ft', 'north_to_south_start_ft', 'connector_shape', 'field_ft', 'fit_scale_m_per_px', 'usable_width_taped_m', 'radius',
                                           'silhouette_max_deviation_m', 'inside_field', 'min_lane_to_lane_clearance_m',
                                           'min_drum_edge_gap_m', 'drum_intended_passage_min_m', 'corridor_loop_connected',
-                                          'marker_44ft', 'drum_count', 'issues', 'measured_constraints_met')}
+                                          'marker_44ft', 'drum_count', 'issues', 'authorized_deviations', 'authorized_geometry_met', 'full_rule_compliance')}
         summary[v]['witness'] = {k: rep['witness'].get(k) for k in ('found', 'length_ft', 'goals_in_order', 'indicative_min_radius_m')}
     print(json.dumps(summary, indent=1, default=lambda o: o.item()))
-    return 0 if all(s['measured_constraints_met'] for s in summary.values()) else 1
+    return 0 if all(s['authorized_geometry_met'] for s in summary.values()) else 1
 
 
 if __name__ == '__main__':

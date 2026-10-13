@@ -40,3 +40,33 @@ python3 tools/reference_rules_geometry.py --out artifacts/agents/T-0091/prototyp
 - Optional potholes are omitted.
 - Black circles are drums.
 - Timing behaviours are not enforced.
+
+## r3: mission-length variant `rules-485` (larger footprint authorized by the user)
+- **Purpose.** The exported mission runs from the north start to the south start. `rules-485` uniformly scales the same shallow silhouette so that run is about 485 ft, while keeping the closed loop at or under 520 ft. The calibration takes 3 bounded steps.
+- **Footprint.** The required footprint is reported in `authorized_deviations`.
+- **Verdicts are kept separate:**
+  - `authorized_geometry_met`: true only when there are no issues.
+  - `full_rule_compliance`: always false or "not claimed", because the field differs from II.2's 120 × 100 ft area, and judged timing and Unity are unverified.
+- **Radius.** The local osculating-circle radius of the nominal centreline: the three-point circumradius of samples ±0.5 m apart. It must be at least 5 ft. The inner tape-edge radius equals the nominal radius minus half the lane width, and is reported only. Driven-route curvature is unverified.
+- **Shallow-shape gate** (`SHAPE_LIMITS`, compared with the fitted source trace at the same scale):
+  - direction reversals equal to the source's;
+  - maximum tangent no more than the source's + 5°;
+  - excursion no more than 1.25× the source's;
+  - silhouette deviation no more than 1.25 m.
+  - A hairpin control in the tests must fail this gate.
+- **Width.** Measured lane width must be at least 3.048 m, with no tolerance. The right lane is 3.058 m.
+
+## Proposed Unity adapter (not implemented; root assigns it separately)
+**New owned paths only:**
+- **`Editor/ReferenceRulesMapBuild.cs`.** Reads `geometry.json` and builds a new `Scenes/ReferenceAutoNav2027Rules.unity`.
+  - Tape ribbons from the exported tape centrelines.
+  - Ground sized to the footprint.
+  - A ramp with three colliders.
+  - Drums: existing `RealisticObstacles.DrumMesh` visuals over the original cylinder colliders.
+  - `RealismAssets` materials.
+  - Annotations are `EditorOnly`.
+- **`Editor/ReferenceRulesDriveBuild.cs`.** Builds a separate drive scene and player. It merges the map with `R3aDriveBuild.CreateScene` and spawns at the north start, heading north. It adds `LaneBoundaryGuard` from the tape edges and terrain supports, reusing the existing `ReferenceDriveConditions`.
+- **`Editor/ReferenceRulesDriveChecks.cs`.** Adds independent saved-scene checks.
+- **`tools/reference_rules_mission.py`.** A mission exporter that reads `metadata.json` only.
+
+The T-0089/T-0090 sources, scenes and players, the runtime guards and the launchers stay unchanged. Any reuse of `ReferenceDriveBuild` internals needs a reviewed, minimal, additive parametrization.

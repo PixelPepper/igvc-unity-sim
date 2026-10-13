@@ -1,8 +1,10 @@
-"""T-0091 r2 rule-dimensioned geometry: constants, variants, measured report and negative controls."""
+"""T-0091 r3 rule-dimensioned geometry: variants, issue-specific checks and negative controls."""
 import copy
 from pathlib import Path
 import sys
 import unittest
+
+import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import reference_rules_geometry as G
@@ -13,7 +15,7 @@ COARSE = .1                                     # coarse raster keeps the contro
 class ReferenceRulesGeometryTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
-        cls.geo, cls.drums, cls.ramp, cls.starts = G.build('length-500ft')
+        cls.geo, cls.drums, cls.ramp, cls.starts = G.build('rules-485')
         cls.rep = G.measure(cls.geo, cls.drums, cls.ramp, cls.starts, grid=COARSE)
 
     def test_rule_constants(self):
@@ -23,26 +25,52 @@ class ReferenceRulesGeometryTests(unittest.TestCase):
             self.assertTrue(G.LANE_MIN <= w <= G.LANE_MAX)
         self.assertLessEqual(G.RAMP_RISE/G.RAMP_RUN, .15)
 
-    def test_length_variant_measures_its_target_and_states_its_footprint(self):
-        self.assertTrue(G.LAP_RANGE[0] <= self.rep['lap_length_m'] <= G.LAP_RANGE[1])
-        self.assertGreater(self.rep['field_ft'][0], 120)
-        self.assertTrue(any('footprint' in issue for issue in self.rep['issues']))
-        self.assertFalse(self.rep['measured_constraints_met'])
+    def test_mission_run_and_closed_loop_lengths(self):
+        self.assertAlmostEqual(self.rep['north_to_south_start_ft'], 485, delta=1)
+        self.assertTrue(480*G.FT <= self.rep['lap_length_m'] <= G.CLOSED_MAX+1e-9)
 
-    def test_width_is_measured_not_the_construction_offset(self):
+    def test_authorized_geometry_has_no_issues_and_discloses_the_footprint(self):
+        self.assertEqual(self.rep['issues'], [])
+        self.assertTrue(self.rep['authorized_geometry_met'])
+        self.assertEqual(len(self.rep['authorized_deviations']), 1)
+        self.assertIn('120 x 100', self.rep['authorized_deviations'][0])
+        self.assertIs(self.rep['full_rule_compliance'], False)
+
+    def test_width_meets_ten_feet_without_tolerance(self):
         width = self.rep['usable_width_taped_m']
-        self.assertGreaterEqual(width['min'], G.LANE_MIN-.005)
-        self.assertNotEqual(width['method'], '')
-        self.assertLess(width['max'], G.W_CORRIDOR+.8)
+        self.assertGreaterEqual(width['min'], G.LANE_MIN)
+        self.assertLessEqual(width['max'], G.LANE_MAX)
 
-    def test_witness_is_reported_as_an_estimate_not_a_gate(self):
+    def test_radius_is_the_osculating_radius_and_fails_on_a_kink(self):
+        self.assertIn('osculating', self.rep['radius']['interpretation'])
+        self.assertGreaterEqual(self.rep['radius']['nominal_min_m'], G.PASS)
+        self.assertFalse(self.rep['radius']['fold'])
+        p = self.geo['p'].copy(); i = len(p)//3
+        p[i-5:i+5] += np.array([0., .8])            # sharp 0.8 m bump over 0.2 m
+        self.assertLess(G.osculating_radius(p).min(), G.PASS)
+
+    def test_shape_regression_accepts_proposal_and_rejects_a_hairpin(self):
+        self.assertEqual(G.shape_check(self.geo)['issues'], [])
+        geo = copy.copy(self.geo); p = self.geo['p'].copy()
+        top = np.flatnonzero(self.geo['sec'] == 'top')
+        x = p[top, 0]
+        p[top, 1] -= 6*np.abs(np.sin((x-x.min())/(x.max()-x.min())*3*np.pi))   # deep repeated dips
+        geo['p'] = p
+        issues = G.shape_check(geo)['issues']
+        self.assertTrue(any('top connector' in i for i in issues), issues)
+
+    def test_witness_length_is_never_gated(self):
         self.assertIn('grid estimate', self.rep['witness']['note'])
-        self.assertFalse(any('witness' in i and 'ft' in i for i in self.rep['issues']))
+        self.assertTrue(self.rep['witness']['goals_in_order'])
+        self.assertFalse(any('witness' in i and 'outside' in i for i in self.rep['issues']))
 
-    def test_field_variant_is_reported_short(self):
+    def test_field_variant_failures_are_reported(self):
         geo, drums, ramp, starts = G.build('field-120x100')
-        self.assertLess(geo['length'], G.LAP_RANGE[0])
-        self.assertEqual(geo['field'], (G.FIELD_W, G.FIELD_H))
+        rep = G.measure(geo, drums, ramp, starts, grid=COARSE)
+        self.assertEqual(rep['authorized_deviations'], [])
+        self.assertTrue(any(i.startswith('north-to-south nominal run') for i in rep['issues']))
+        self.assertTrue(any(i.startswith('closed nominal loop') for i in rep['issues']))
+        self.assertIn('drums overlap', rep['issues'])
 
     def test_negative_control_blocked_lane(self):
         drums = copy.deepcopy(self.drums)
@@ -64,7 +92,7 @@ class ReferenceRulesGeometryTests(unittest.TestCase):
     def test_metadata_carries_no_course_geometry(self):
         meta = G.metadata(self.geo, self.starts)
         self.assertEqual(set(meta), {'frame', 'spawn', 'odom_from_field', 'goals'})
-        self.assertEqual(len(meta['goals']), 6)
+        self.assertEqual(meta['goals'][-1]['name'], 'south start/finish')
         for goal in meta['goals']:
             self.assertEqual(set(goal), {'name', 'field_xy', 'radius_m'})
 
