@@ -1,14 +1,14 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: review
+status: accepted
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0091-rule-map-opus
 base: cf3fc673bb127cac61283cb4e1e4b5986cfebdb3
-candidate: a154667f
+candidate: 040342ddc6c66445c38d61d55e1f2a929c0b88b0
 claim: none
 lease: none
 updated: 2026-10-13
@@ -169,4 +169,23 @@ reference-rules-unity-r4 [igvc-t91-7c2515b4e8]. Candidate a154667f (geometry cc7
 
 ### 2026-10-13T02:56:53.460407-07:00 · gpt-6-astra → team · DECISION
 R4 complete sourcehandback a154667fcdf5c251edf834afa9a6e5baa85e948b,11owned sourcepaths; implementationassignmentended. Selected isotropic geometry now preserves source aspect, nominal north-to-south484.247ft and closed512.725ft, larger143.815x171.022ft footprint explicitly authorized.93drums,2yellow singles omitted,8sidecluster shifts andstartlines2mfromramp disclosed. Root all3locked18focusedPASS/no skips, generatedselectedgeometry byte-exact toworker, independentpolyline512.7225ft,15protectedunchanged/all3released02:54:25.968PDT. Purechecks only, noUnitybuildyet. Rootlauncherstaticparse0errors, derived20linediff retainsT90ownership/cleanup. ExactSonnet source-review-r4 active (first completedadapterreview8min/USD3 bound, nottimeoutretry); nativeSol evidencepending. Beforeintegration/build requirebothreviews; no live runs. R4geometry artifactsselected pinned inadapter-candidate.json. Priorfailedvariants maintained. T84 andotherownersunchanged.
+
+
+### 2026-10-13T02:57:32.234921-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-source-fix-r5. T0091 two small source corrections based on exactSonnet source-review-r4/review.md (completed123.094s/USD.5009416), sameowner/worktree,3active minutes. No Unity/tests/providers/delegation. Own ONLY ReferenceRulesDriveChecks.cs andReferenceRulesDriveBuild.cs plusdocs/REFERENCE_RULES_DRIVING.md clarificationifneeded. BLOCKER: substringContains("star") accidentallyrejects Start-finish group/lines on everybuild. Check specifically waypointstar markers, preserveannotationprohibition andnormalstartlines. Nonblockingfix: SaveMesh.RecalculateTangents calledonribbonswithoutUVsonrewrite; onlyrecalculatewhenvalidUV/normals exist (samebehaviorfirst/rebuild). Do not changegeometryoutputs/guards/materials/launchers. Clarifyprimitivecylinder usesCapsuleColliderifdocstatesexactcylinderphysics. Committhosepaths only, <=150wordhandback precisechanges/UNRUN. ThenrootdoesfocusedSonnetdelta+Solbeforebuild. This is bugfix on newreviewevidence,notproviderretry. Nootherwork/retests.
+
+
+### 2026-10-13T02:57:47.879386-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-799a33fd3d. source-fix-r5: star check, SaveMesh tangents, collider doc. 3 minutes; no Unity or tests.
+
+### 2026-10-13T02:58:15.138874-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-source-fix-r5 [igvc-t91-799a33fd3d]. Commit 040342dd (3 owned paths).
+- **ReferenceRulesDriveChecks.cs:** the annotation check now rejects only names starting with "Waypoint star" or "Waypoint marker" (case-insensitive). The start-finish group and its lines no longer trip it, and the EditorOnly and TextMesh prohibitions are unchanged.
+- **ReferenceRulesDriveBuild.cs SaveMesh rewrite:** UVs are set only when they cover every vertex. RecalculateTangents runs only when UVs and normals both cover every vertex, so ribbons skip it on both the first build and a rebuild, and drums keep it.
+- **REFERENCE_RULES_DRIVING.md:** says the drums are Cylinder primitives with Unity's default CapsuleCollider (rounded ends, as in T-0089/T-0090), not exact cylinder physics.
+- **Unchanged:** geometry, guards, materials and launchers.
+- **Unrun:** the C# compile, Unity, and tests.
+
+### 2026-10-13T03:05:43.634207-07:00 · gpt-6-astra → team · DECISION
+R5 candidate040342ddc6c66445c38d61d55e1f2a929c0b88b0 received, actual ACK/handback ended assignment. ExactSonnet focused delta PASS22.297s/USD.1227984 resolves r4 star-substring blocker and guards tangent recalculation; r4 historical BLOCKING preserved. NativeSol sol-prebuild-review.md PASS for isolated integration/Unity build only:11sourcepins/15protected match,18root tests unchanged Python, selected geometry/input reproduced. Accept candidate for root controlled integration/generation, not final rendered map or navigation. Human largerfootprint authorization applies,484.247ft north-south/512.725ftclosed,143.815x171.022ft. Root will acquire all3locks for one build with saved-scene/capture evidence; no live navigation. No other ownership changes.
 
