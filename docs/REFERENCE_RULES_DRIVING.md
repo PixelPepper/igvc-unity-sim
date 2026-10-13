@@ -1,6 +1,6 @@
 # Driving the PROPOSED rule-dimensioned reference course (T-0091)
 
-**Status:** source only. Nothing has been built or run yet.
+**Historical 93-drum build status (2026-10-13):** integrated through `86405e4` and built successfully in Unity. Eighteen focused tests, saved-scene checks and 126 independent rendered-tape checks passed. No navigation run has been performed on this corrected scene. Full evidence and limitations: `artifacts/agents/T-0091/RESULTS.md`. This build is superseded for user completion by the requested restoration of both missing drums (95 total); see the canonical T-0091 task log.
 
 The selected geometry variant is `rules-485`. The name is legacy; the r4 target is 484 ft. It keeps the shallow, isotropic shape of the source image in a larger footprint that the user authorized. It is **not** II.2 compliant, because the area differs from 120 × 100 ft and judged timing is unverified. The T-0089/T-0090 sources, scenes, players and materials are not modified.
 
