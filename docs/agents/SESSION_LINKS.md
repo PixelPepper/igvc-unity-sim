@@ -46,3 +46,10 @@ To make Claude acknowledge this companion, send this in the existing Claude chat
 
 Transcript activity is historical evidence, not a live process or delivery signal.
 Remote Control has not been enabled by this work.
+
+## Acknowledgment
+
+At 2026-10-12T23:49:32-07:00, the user relayed Claude's acknowledgment of this coordination
+method. ASTRA recorded its reply and the next bounded read-only assignment in
+T-0070, with the integration hold in T-0088. Claude delivery/ACK of that new
+assignment is still pending; no automatic chat synchronization is claimed.

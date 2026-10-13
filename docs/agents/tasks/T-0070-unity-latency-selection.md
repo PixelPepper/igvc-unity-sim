@@ -577,3 +577,21 @@ Tests run: none (read-only). Independently checked receipts, hashes, Git identit
 - Sonnet finished before Unity: approve-with-nits, no blockers, `is_error=false`, only `claude-sonnet-5-5`, USD 0.909232; extracted review matches JSON.
 
 Missing acceptance coverage: Implemented selector/serialization and tested isolated validation are supported. UI interaction, live navigation, latency benefit and DisplayAwake’s Windows-player behavior remain UNVERIFIED. Primary reconciliation, pinned successor checks, whole-range integration disposition and ownership transfer remain pending ASTRA decisions.
+
+
+### 2026-10-12T23:49:32-07:00 · gpt-6-astra → claude-opus-5-5 · DECISION
+
+ASTRA acknowledges the user's relay of the linked Claude session's coordination acknowledgment. The session mapping is docs/agents/SESSION_LINKS.md (commit 819917f). This is a user-relayed acknowledgment, not an automatically delivered chat message.
+
+The recorded Sonnet and Sol reviews support the isolated candidate 97de519672af31adda77f94edf54064df0e0d412 and its saved Unity 26-check / Python 19+19 results. No rerun is requested. Whole-range primary integration is not yet accepted: current SandboxDocument/SandboxPanel reconciliation, inherited DisplayAwake disposition, and successor binding remain unresolved. Keep T-0070 in review and its file reservation intact; T-0086 is not released. Preserve the documented UI/Undo/serializer and validation-interval limitations.
+
+
+### 2026-10-12T23:49:32-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+
+To the existing interactive Claude session local_db1e3368-182b-44de-94ee-bdc185cc1084 only: one bounded READ-ONLY reconciliation plan, maximum 10 minutes, no subagents or provider calls. ACK this dispatch in this log before work; no duplicate owner. No source edits, commits of source, cherry-picks, Unity, tests, process/port probes, lease acquisition, live execution, or retry of any blocked task.
+
+Inputs: current primary board; T-0070 final Sonnet/Sol and root-validation-r1 receipts; candidate 97de519 and checkpoint 6fdecdb; current primary SandboxDocument.cs, SandboxPanel.cs, docs/SANDBOX.md, DisplayAwake.cs/.meta and candidate SandboxLatencyValidation.cs/.meta; T-0088 final step-1/step-2 reviews and candidate a089996eda4785cc55f59e1166688d7de798b537; accepted T-0085 task and current tools/sandbox.ps1. Use only focused diffs and existing evidence; do not repeat reviews or executed checks.
+
+Write a NEW plan in artifacts/agents/T-0070/linked-session-reconciliation-r1/plan.md (stop if a completed plan already exists). Record full Git identities and SHA256 of the named input files, then identify exact overlapping hunks and the proposed preservation/port decision for each. Distinguish the T-0070 selector from inherited DisplayAwake and other authors' dirty changes. Explain how primary reconciliation would preserve T-0068/T-0069 prerequisites without copying entire historical branches. For sandbox.ps1, identify overlap with T-0085 and the step-2 port, and propose fail-closed behavior for unsupported rule-style Instance/non-batch paths and pending Unity representation; no implementation is authorized by this request. Recommend the smallest next owned source slice and meaningful checks only for changed behavior.
+
+Return an appended HANDBACK of at most 300 words with plan path, input identities, conflicts, required ownership releases, and explicitly unavailable usage if not measurable. If source changes while inspecting, preserve the observation and stop rather than choosing a moving base. Do not change task headers or regenerate/commit the board; ASTRA owns those actions. Stop after the plan. T-0084 and T-0089 remain blocked; this dispatch does not authorize their retries.
