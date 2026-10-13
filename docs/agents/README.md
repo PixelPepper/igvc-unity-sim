@@ -9,6 +9,7 @@ instead of copying them.
 | Read | When |
 | --- | --- |
 | [BOARD.md](BOARD.md) | First, every session: what is ready, in progress, in review, blocked |
+| [SESSION_LINKS.md](SESSION_LINKS.md) | Identify the user's linked Claude Desktop and Codex conversations and open the shared work logs |
 | [Open Knowledge index](../knowledge/index.md) | Find compact context for the assigned task; load only relevant concepts and canonical sources |
 | [Knowledge workflow](../OPEN_KNOWLEDGE.md) | Maintain source links, detect drift, search and export shared context |
 | [PROTOCOL.md](PROTOCOL.md) | Before taking or dispatching any task: roles, authority, message format, limits |
