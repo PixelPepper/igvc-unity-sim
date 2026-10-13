@@ -224,13 +224,20 @@ def main(argv=None):
             report['nav_stop'] = dict(code=code, output=output)
             if code != 0:
                 cleanup_ok = False
-        ros.close()
-        report['cleanup_confirmed'] = cleanup_ok
-        report['run_report'] = str(folder/'run.json') if (folder/'run.json').exists() else None
-        report['finished_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
-        write(folder/'trial-report.json', report)
-        if not cleanup_ok:
-            print('CLEANUP NOT CONFIRMED: ownership retained; inspect trial-report.json', file=sys.stderr)
+        tail_failed = False
+        try:
+            ros.close()
+        except Exception as exc:   # conservative: an unclean shutdown must not look like an ordinary failure
+            tail_failed = True; report['log'].append('ros close failed: '+str(exc))
+        try:
+            report['cleanup_confirmed'] = cleanup_ok and not tail_failed
+            report['run_report'] = str(folder/'run.json') if (folder/'run.json').exists() else None
+            report['finished_utc'] = time.strftime('%Y-%m-%dT%H:%M:%SZ', time.gmtime())
+            write(folder/'trial-report.json', report)
+        except Exception:
+            tail_failed = True
+        if not cleanup_ok or tail_failed:
+            print('CLEANUP NOT CONFIRMED: launcher must keep its locks for root; inspect trial-report.json', file=sys.stderr)
             os._exit(3)
 
 

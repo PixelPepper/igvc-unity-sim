@@ -33,7 +33,8 @@ function Wsl([string[]]$CommandArgs){
     $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'; $errFile=$null
     try {
         $errFile=[IO.Path]::GetTempFileName()
-        $out=& wsl -d Ubuntu-24.04 -- @CommandArgs 2> $errFile; $code=$LASTEXITCODE
+        # wsl.exe explicitly: a bare `wsl` would resolve to this Wsl function (case-insensitive, functions first).
+        $out=& wsl.exe -d Ubuntu-24.04 -- @CommandArgs 2> $errFile; $code=$LASTEXITCODE
         $err=Get-Content -Raw -LiteralPath $errFile -ErrorAction SilentlyContinue
     } catch { $out=@(); $code=-1; $err="capture failed: $($_.Exception.Message)" }
     finally { $ErrorActionPreference=$previous; if($errFile){ Remove-Item -LiteralPath $errFile -ErrorAction SilentlyContinue } }
@@ -45,6 +46,9 @@ $locks=@(); $ownedPlayer=$null; $ownedBuild=$null; $ownsRos=$false; $failure=$nu
 # Set when ownership cannot be verified from here (trial cleanup unknown, unreceipted ROS group, cleanup exception):
 # the locks are then released ONLY by root's <run>/root-recovery-release, never by automatic checks.
 $rootReleaseRequired=$false
+# True from just before the trial driver call until its exit code (0, 1 or 2) is evaluated; still true in finally means
+# the call was interrupted or threw, so navigation and the mission may be alive: root release is required.
+$trialInFlight=$false
 try {
     foreach($name in 'live.lock','live-instance-1.lock','live-instance-2.lock'){
         try { $locks+=[IO.File]::Open((Join-Path $repoRoot "artifacts/iterations/$name"),'OpenOrCreate','ReadWrite','None'); Log "acquired $name" }
@@ -105,8 +109,10 @@ try {
             'trial' {
                 Start-Sleep -Seconds 10   # bridge/endpoint startup; the trial itself gates on received streams and clock
                 if($ownedPlayer.HasExited){ throw "Player exited before the trial (code $($ownedPlayer.ExitCode))" }
+                $trialInFlight=$true
                 $trial=Wsl @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_trial.py",'--run-dir',$linuxRun,'--mission',"$linuxRun/autonomy.json",'--speed',$MaxSpeed.ToString($invariant),'--timeout',"$TrialTimeout")
-                Set-Content -Encoding utf8 (Join-Path $run 'trial-driver.log') $trial.out
+                if($trial.code -in 0,1,2){ $trialInFlight=$false }   # evaluated before any logging/file write
+                Set-Content -Encoding utf8 (Join-Path $run 'trial-driver.log') ($trial.out+"`n"+$trial.err)
                 Log "trial driver exit=$($trial.code)"
                 if($trial.code -eq 3){ $rootReleaseRequired=$true; $cleanupFailed+='trial driver could not confirm mission/navigation cleanup (see trial-report.json)' }
                 elseif($trial.code -lt 0){ $rootReleaseRequired=$true; $cleanupFailed+="trial driver call failed to capture ($($trial.err)); its children may be alive" }
@@ -119,6 +125,7 @@ try {
 }
 catch { $failure=$_.Exception.Message; Log "STOPPED: $failure" }
 finally {
+    if($trialInFlight){ $rootReleaseRequired=$true; $cleanupFailed+='trial driver call interrupted or ended without a 0/1/2 exit; navigation and mission may be alive' }
     foreach($p in @($ownedPlayer,$ownedBuild)){
         try {
             if($p -and -not $p.HasExited){
