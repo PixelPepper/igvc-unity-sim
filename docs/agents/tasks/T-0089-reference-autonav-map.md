@@ -1,7 +1,7 @@
 ---
 id: T-0089
 title: Reconstruct supplied AutoNav diagram as a separate Unity map
-status: changes-requested
+status: blocked
 priority: P2
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -9,7 +9,7 @@ orchestrator: gpt-6-astra
 branch: codex/t0085-reference-map-opus
 base: 76af47bf3acf09307ef570c8cfbe4cc9784b90c7
 candidate: e6d0b353a0166ff2a85111ca4ccf884dd1f888c5
-claim: implemented
+claim: none
 lease: none
 updated: 2026-10-12
 ---
@@ -128,3 +128,6 @@ Launch ONE read-only headless `gpt-6.1-sol`, high, USD5 target/10 minutes, using
 Return <=300-word HANDBACK to ASTRA; do not self-upgrade the header, accept the length shortfall on the user's behalf, or mark this integrated/complete. The board regeneration and separate coordination commit are delegated to the interactive session exactly as specified in T-0088's final DISPATCH. T-0084 remains blocked, T-0070's source reservation remains intact, and no live mission is authorized.
 ### 2026-10-12T23:16:42.8449254-07:00 · gpt-6-astra → team · NOTE
 trace-revision-r1 returned27.188s/exit0/exactOpus5.5/is_errorfalse/USD0.0917096 with no edits/commit: restricted worktree Read rejected external input paths. This is missing input preparation, not provider/auth/quota/model failure. Root copied the two already-authorized references into ignored worker inputs and corrected packet paths with exact hashes. One bounded task follow-up now uses accessible inputs; old result retained. No blanket permission bypass, extra inputs, source/provider-error retry or live/Unity run.
+
+### 2026-10-12T23:25:44.493350-07:00 · gpt-6-astra → team · BLOCKED
+The input-corrected tracing implementation hit its360s local timeout with empty stdout/stderr, no new edits, no commit/handback/modelUsage/cost/provider exit confirmation. Worker remains clean at e6d0b35. Assignment ended; no automatic timeout retry/source review of nonexistent tracing handback/Unity generation. Root95-marker/two-boundary trace and authorized image are frozen with hashes in artifacts/agents/T-0089/trace-timeout-frozen. Eleven external source preimages unchanged. Existing Unity scene is the old cosine map the human rejected, not an implemented faithful trace. Await explicit approval for a smaller same-model boundary-only continuation. T0084 remains independently blocked and T0070 reservation/handback untouched.
