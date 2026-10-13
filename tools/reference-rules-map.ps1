@@ -2,12 +2,13 @@
 # tools/reference-map.ps1 (T-0090) with ONLY these changes: build method/output, player path/name, run folder, and the
 # mission export from root-pinned spawn/goal metadata (tools/reference_rules_mission.py). Locks, preflight, cleanup,
 # ownership latches, WSL stderr handling and the trial driver/policy are unchanged. Separate from tools/sandbox.ps1.
-# The 180 s diagnostic trial is NOT six-minute rule enforcement.
+# Trials default to 180 s; -TrialTimeout up to 360 s (six minutes) is an explicit opt-in. Either way the diagnostic is
+# NOT rule enforcement or a judge score.
 #   build : Unity batch ReferenceRulesDriveBuild.Build, bounded (45 min) -> artifacts/build-reference-rules/IGVCReferenceRules.exe
 #   start : mission export, overlay check, OWN managed r3a session, visible player; runs until the player is closed
 #   smoke : as start for -Seconds (<= 180); the player exiting early is a FAILURE. Process survival is not a sensor check.
 #   trial : as start, then tools/reference_map_trial.py: sensor smoke, clock admission, one bounded sensor-led mission
-#           (speed <= 0.6 m/s, timeout <= 180 s), no retry. Diagnostic only (no full-lap audit for this map).
+#           (speed <= 0.6 m/s, timeout <= 360 s, the six-minute run limit), no retry. Diagnostic only (no full-lap audit for this map).
 # Ownership: holds all three exclusive simulator locks for the whole invocation; refuses if any Unity editor/player,
 # IGVC/R3a player, port 10000-10002 (Windows or WSL) or ANY managed ROS group (r3a/probe, nav, perception) is active.
 # Cleanup touches only what this invocation started and confirmed as newly owned. If cleanup cannot be confirmed the
@@ -19,7 +20,7 @@ param(
     [ValidateSet('clear-noon','overcast','low-sun')][string]$Conditions='clear-noon',
     [ValidateRange(10,180)][int]$Seconds=60,
     [ValidateRange(0.1,0.6)][double]$MaxSpeed=0.6,
-    [ValidateRange(10,180)][int]$TrialTimeout=180,
+    [ValidateRange(10,360)][int]$TrialTimeout=180,   # up to the six-minute II.3 run limit
     [switch]$Hidden
 )
 $ErrorActionPreference='Stop'

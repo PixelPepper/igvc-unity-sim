@@ -7,7 +7,8 @@ managed navigation session and the UNCHANGED tools/sensor_course.py mission chil
 
 Order: refuse an existing nav session -> autonomy gate off + pose reset -> sensor smoke (clock, RGB, depth,
 lidar, odom actually received; first RGB saved) -> profile + nav start -> clock admission (use_sim_time on every
-perception node) -> mission child with speed <= 0.6 m/s and timeout <= 180 s -> gate off -> nav stop.
+perception node) -> mission child with speed <= 0.6 m/s and timeout <= 360 s (default 180 s; 360 s only when
+requested explicitly) -> gate off -> nav stop.
 Motion is refused without a positive clock and all four sensor streams. No retry. Every outcome is written to
 <run>/trial-report.json; the exit code is 0 only when the mission child exited 0 and cleanup was confirmed.
 This is diagnostic progress/health evidence only: there is no full-lap audit for this map.
@@ -27,7 +28,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT/'tools'))
 
 MAX_SPEED = .6
-MAX_TIMEOUT = 180.
+MAX_TIMEOUT = 360.   # the II.3 six-minute run limit (user-requested full-length diagnostic; explicit opt-in)
+DEFAULT_TIMEOUT = 180.   # unchanged CLI default; a six-minute run requires an explicit --timeout 360
 SMOKE_TOPICS = ('/clock', '/camera/color/image_raw', '/camera/depth/image_raw', '/scan', '/odom')
 
 
@@ -136,13 +138,17 @@ def stop_child(child, log):
     return child.poll() is not None
 
 
-def main(argv=None):
+def build_parser():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument('--run-dir', type=Path, required=True)
     parser.add_argument('--mission', type=Path, required=True)
     parser.add_argument('--speed', type=float, default=MAX_SPEED)
-    parser.add_argument('--timeout', type=float, default=MAX_TIMEOUT)
-    args = parser.parse_args(argv)
+    parser.add_argument('--timeout', type=float, default=DEFAULT_TIMEOUT)
+    return parser
+
+
+def main(argv=None):
+    args = build_parser().parse_args(argv)
     settings, timeout = bounded_settings(args.speed, args.timeout)
     folder = args.run_dir.resolve(); folder.mkdir(parents=True, exist_ok=True)
     report = dict(task='T-0090', kind='diagnostic sensor-led trial (no full-lap audit)', settings=settings, timeout_s=timeout,

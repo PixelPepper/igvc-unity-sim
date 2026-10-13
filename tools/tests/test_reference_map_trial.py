@@ -5,7 +5,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from reference_map_trial import (MAX_SPEED, MAX_TIMEOUT, SMOKE_TOPICS, bounded_settings, evaluate_admission,
+from reference_map_trial import (DEFAULT_TIMEOUT, MAX_SPEED, MAX_TIMEOUT, build_parser, SMOKE_TOPICS, bounded_settings, evaluate_admission,
                                  evaluate_smoke, mission_command)
 
 NODES = ('/igvc_lane_detector', '/igvc_depth_processor')
@@ -13,11 +13,18 @@ NODES = ('/igvc_lane_detector', '/igvc_depth_processor')
 
 class ReferenceMapTrialTests(unittest.TestCase):
     def test_bounds_are_refused_not_clamped(self):
-        self.assertEqual(bounded_settings(.6, 180), ({'speed_mps': .6}, 180.))
-        for speed, timeout in ((.61, 60), (0, 60), (-.1, 60), (.5, 181), (.5, 0), (math.nan, 60), (.5, math.inf), (True, 60)):
+        self.assertEqual(bounded_settings(.6, 360), ({'speed_mps': .6}, 360.))
+        for speed, timeout in ((.61, 60), (0, 60), (-.1, 60), (.5, 361), (.5, 0), (math.nan, 60), (.5, math.inf), (True, 60)):
             with self.subTest(speed=speed, timeout=timeout), self.assertRaises(ValueError):
                 bounded_settings(speed, timeout)
-        self.assertEqual((MAX_SPEED, MAX_TIMEOUT), (.6, 180.))
+        self.assertEqual((MAX_SPEED, MAX_TIMEOUT), (.6, 360.))
+
+    def test_cli_default_is_180_and_360_needs_explicit_opt_in(self):
+        base = ['--run-dir', '/tmp/run', '--mission', '/tmp/autonomy.json']
+        self.assertEqual(build_parser().parse_args(base).timeout, 180.)
+        self.assertEqual(DEFAULT_TIMEOUT, 180.)
+        self.assertEqual(build_parser().parse_args(base+['--timeout', '360']).timeout, 360.)
+        self.assertEqual(bounded_settings(.6, build_parser().parse_args(base).timeout)[1], 180.)
 
     def test_smoke_requires_every_stream_and_positive_clock(self):
         full = {topic: 3 for topic in SMOKE_TOPICS}
