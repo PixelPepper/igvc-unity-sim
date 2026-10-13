@@ -32,7 +32,7 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | [T-0079](tasks/T-0079-finish-line-review.md): Review external finish-line completion and audit contract | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | bdb097fa96148412b36be77922d5d1e3a5807383 | DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
 | [T-0088](tasks/T-0088-igvc2027-integration-validation.md): Integrate and validate the reviewed IGVC 2027 profile and offline report | `ready` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-12T23:49:32-07:00 |
-| [T-0090](tasks/T-0090-reference-map-driving-realism.md): Drive the traced AutoNav map with realistic visual conditions | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-13T00:36:49.879326-07:00 |
+| [T-0090](tasks/T-0090-reference-map-driving-realism.md): Drive the traced AutoNav map with realistic visual conditions | `ready` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DISPATCH by gpt-6-astra at 2026-10-13T00:40:43.564144-07:00 |
 | [T-0003](tasks/T-0003-parameterize-launchers.md): Parameterize Claude launchers by task file and align handback limits | `backlog` | P3 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-05T02:29:37.3216652-07:00 |
 
 ## Closed
