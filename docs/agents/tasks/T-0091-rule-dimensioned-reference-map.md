@@ -1,14 +1,14 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: in-progress
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0091-rule-map-opus
 base: cf3fc673bb127cac61283cb4e1e4b5986cfebdb3
-candidate: 6761c726
+candidate: 1bda7c6a
 claim: none
 lease: none
 updated: 2026-10-13
@@ -75,4 +75,41 @@ Prototype handback6761c726 received; implementation assignment ended. R1 measure
 
 ### 2026-10-13T02:25:03.058161-07:00 · gpt-6-astra → team · DECISION
 Human rejects deep bends: "those bends are waay too deep. it should resemble the reference image". Subsequent correction explicitly keeps 480-520 ft: "it says it should be between 480-520 feet so work with that". Therefore reject prototype6761c726 appearance; do NOT shorten target or silently relax field/lane/clearance. Earlier root suggestion to report short layout is superseded by direct length requirement. R1 retained, no Unity/integration/live. Exact Sonnet source r1 exit0 157.766s USD0.3617124 requires honest raster estimate (not lower bound/gate), explicit nominal radius interpretation plus inneredge/route limitations, non-tautological width measurement and conservative sampled gaps, meaningful report negative controls. Root locked r1 six tests PASS, generator exit1, independent nominal499.9855ft, protected15/source3 unchanged, all3locks released02:19:29.832PDT; this is not layout acceptance. New bounded revision assigned to same linked owner below, no duplicate worker. Source and current constraints must be considered together; if demonstrable conflict remains return a concrete comparison, not a universal impossibility claim or unannounced exception.
+
+
+### 2026-10-13T02:25:08.028686-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-shallow-r2. Human has rejected prototype deep bends and explicitly reaffirmed480-520ft. Read latest root decision and source-review-r1/review.md. Same owner/worktree and only3 owned source paths; new bounded15 active minutes, no providers/delegation/Unity/live/heavytests. ACK then implement revised geometry proposal with SHALLOW reference-like top/bottom curves, right straight/ramp and openleft/fourstars; use original source image/trace as spatial reference, not r1 hairpins. Preserve r1 artifacts immutable; new outputs prototype-r2 only, freeze any failures before further correction. Hard acceptance desired: 480-520ft honest nominal lap, field120x100ft, lanes10-20ft/5ft usable passages/nominalturnradius>=5ft and faithful shallow silhouette. Do not treat nominal obstacle-crossing length as proof of drivable path; raster witness length is grid estimate, NOT lower bound or480ft gate. Do not insert extra folds, counting both boundaries/repeats or arbitrary route weave to inflate length. Reconsider broad layout footprint allocation and dimensional construction, rather than merely scaling old arc theta. Try one bounded explicit shallow construction, no unbounded optimization. Fix Sonnet measurement/report/test findings in same3files as relevant. No unsupported fullcompliance claim; inneredge curvature and witnesscurvature separately reported.44ft may followcurve; straight-only is not a rule. If constraints are still incompatible for your explicit family, return measured closest reference-faithful120x100 variant and a separate clearly labeled480-520ft shallow variant with exact required footprint/other deviation, NEVER silently select an exception or claim impossibility globally. Root will decide concrete tradeoff with user if necessary. Include annotated plan PNG plus source image side-by-side if feasible, length/field/lane/curvature/gaps/drum counts, honest unresolved constraints,3source commit and <=250word canonical handback. Stop at bound with actual evidence. No Unity generation/integration yet, other owners unchanged.
+
+
+### 2026-10-13T02:25:28.382986-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-3f1bc7f6d9. Starting shallow-r2 in the same worktree and the same 3 owned paths. New outputs go to prototype-r2 only; r1 stays immutable. No Unity, live sessions, providers or delegation.
+
+### 2026-10-13T02:29:27.315061-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-shallow-steer-r2. Necessary bounded steering for active shallow-r2, NOT new assignment/time reset: nativeSol independent geometry advice saved primary artifacts/agents/T-0091/sol-shallow-requirements.md. Read this shortfile before finalizing variant. Approximate original paired-polyline family affine-fit120x100 has upperbound463.66ft even beforemargins; this is NOT arbitrarylayout infeasibility. SourcePNG has broad shallow connector excursions, not extra small repeatedwiggles. Compare numberofdirectionreversals and tangentangle/excursion, not just theta. Keep480-520 target; report exactfootprint deviation of explicitshallowtarget alternative if strictfield fails. No need repeat Solcomputation; no scope/boundreset. Rootcontinues independentchecks afterhandback.
+
+
+### 2026-10-13T02:30:33.648967-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-b14c6fcbe5. Steering read and applied in shallow-r2; no time reset. r2 attempt-1 output is frozen under prototype-r2/attempt-1.
+
+### 2026-10-13T02:32:57.144802-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-shallow-r2 [igvc-t91-3f1bc7f6d9, steer igvc-t91-b14c6fcbe5]. Commit 1bda7c6a (3 owned files; source sha256 aea1748fe6338050…). Nine tests PASS, including blocked-lane and goal-order negative controls.
+**Evidence:** prototype-r2/attempt-1 is frozen (it failed: inner-edge folds, two gatepost/column overlaps). The correction (σ 0.6→1.5 m, inner gateposts moved) is in attempt-2.
+**Construction:** the smoothed traced-tape midline, plus a straight NML segment.
+
+**length-500ft:**
+- Nominal lap 500.0 ft; north→south starts 466.3 ft.
+- Paired-edge lane width 3.048–5.11 m; nominal radius ≥ 2.74 m; inner edge ≥ 0.29 m (no fold; 4.4 % of it below 5 ft).
+- Drum passages ≥ 1.82 m; the corridor is connected. The witness, a grid estimate, is 500.7 ft and reaches the 6 goals in order.
+- Silhouette deviation ≤ 0.95 m. Connectors: 2 reversals each, like the source; maximum tangent 19–21° (source 19–20°); excursion 3.0/3.5 m (source 3.2/3.6 m).
+- **Only issue: the footprint is 167.8 × 140.4 ft.**
+
+**field-120x100:**
+- Nominal lap 333.2 ft. Inner edge folds (−0.11 m), a gatepost intrudes, the corridor is not connected, and drums overlap.
+- Anisotropy is 1.49 for both variants.
+
+**Unresolved:** strict 120 × 100 ft and 480–520 ft are not met together by this reference-faithful family. Sol's affine upper bound for it is 463.66 ft. This is not a global claim. The root decides with the user.
+**Not run:** Unity, Sol/Sonnet review of r2, and the isotropic variant (Sol estimate about 129.4 × 161.8 ft).
+
+### 2026-10-13T02:35:40.850329-07:00 · gpt-6-astra → team · DECISION
+Direct human decision: "Keep 480–520 ft and image resemblance; allow a larger footprint". Larger footprint is explicitly authorized for T0091;120x100ft remains reference deviation to disclose, not blocking against this user-selected variant. Do not label full2027compliance. R2candidate1bda7c6a received, assignment ended; root independent lockedchecks ninePASS, bothgenerated variants reproduced byte-exact geometry, lengthvariant499.9994ft, field167.811x140.432ft,93drums,15protectedrawunchanged. Fieldvariant333.172ft and geometric failures preserved; notselected. Source Sonnetr2 currentlyactive; waitresult beforeUnity source successor. User priority shallowshape+480-520; no live runs. Root plans reviewed separate generatedscene/player, keeping originalT89/T90source/scenes unchanged. Preserve two omittedyellow singles and nominal-vs-drivenpath/radius limitations explicitly.
 
