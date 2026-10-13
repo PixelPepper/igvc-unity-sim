@@ -1,14 +1,14 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: in-progress
+status: review
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0091-rule-map-opus
 base: cf3fc673bb127cac61283cb4e1e4b5986cfebdb3
-candidate: 25941d12
+candidate: a154667f
 claim: none
 lease: none
 updated: 2026-10-13
@@ -140,4 +140,33 @@ reference-rules-geometry-r3 [igvc-t91-b9b8f77f94]. Commit 25941d12 (3 owned file
 
 ### 2026-10-13T02:43:36.867923-07:00 · gpt-6-astra → team · DECISION
 T0091 r3 candidate25941d12 received, source-only worker report12PASS, no root repeat yet. It reports north-to-south484.9604ft andclosed519.9989ft, authorized largerfield173.558x145.300ft,93drums, no reportedgeometryissues. R2Sonnet blockers retained; r3 adds shape/radius/length controls. Root will not claim accepted before finalreviews. Human prioritized resemblance with largerfootprint, so the unnecessary1.49 horizontalstretch inherited from120x100 fit should be removed before Unity; root requests isotropic source shape and approximately484ft north-to-south withmargin below520closed. Keep start markers either side ofphysicalramp; their separation may be local design adjustment rather than scaledimagegap. Next source successor may implement separate Unityadapter afterthismeasuredbasis, no Unitygeneration/live byauthor. Otherownership/protectedpaths unchanged.
+
+
+### 2026-10-13T02:43:41.806729-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-rules-unity-r4. T0091 final geometry + Unity source adapter successor, same owner/worktree. New15active-minute bound, sourceonly; no Unity/live/providers/delegation. r3sourceassignment ended. Before adapter, remove1.49stretch for SELECTED rules-485: use ISOTROPIC image shape now footprintfree; targetactualnorth-to-south~484ft andclosed<=519ft (provide numericalmargin). Keepstartmarkers above/belowphysicalramp withreasonable2mendgap ifscaledpixelspacingwouldmakeclosed>520; disclose repositioning. Physicalbarrel/lane/tape/ramp sizesnever scaled. Keep shallowshape gates and allclearancechecks; preserveeveryfailedattempt beforecorrection; prototype-r4 outputs. Once coherent measuredgeometry (notcertification) exists implement adapter ownedpaths/instructions in primary artifacts/agents/T-0091/unity-adapter-draft.txt. That draft is now assignment scope withtheseclarifications: selectedvariant remainsrules-485 (name legacy,target484fine documented); may add newReferenceRulesMapBuild.cs/.meta as splithelper ifuseful; noexistingT89/T90source/assetsmodified. Rootwill pin input/metadata afterreviews. No need authorrunheavytests; rootruns. Keep DTOauthoringexport in artifacts only outsideplayerdata. Sourcegeometry measurements through smallnumericaltools allowed; noUnity. Namespace classes global like existingbuilders. ReuseREADONLYmaterials by cloning intoGeneratedReferenceRules, nevermutateReferenceAsphalt orotherT90material. Preserveexactscene/projectsettingbytes evenfailure. Launcherderivedcopy fromT90managedwrapper withonly newbuild/player/export/metadata paths andnewplayerbusyname; nochangescleanup/trialpolicy. Ifboundinsufficient, commitcoherentsourceandhandbackpendingpieces, noautonomousscopeextension. Rootdoes exactreviews/integration/Unitybuilds. Return <=250words exactcandidate, measuredgeometry/renders,ownedpaths,unrunchecks. Handbacksourceonly doesnot authorizebuildbyworker.
+
+
+### 2026-10-13T02:43:57.459145-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t91-7c2515b4e8. r4: isotropic rules-485 geometry, then the Unity adapter source per unity-adapter-draft.txt, 15 active minutes. Source only; no Unity, live sessions, providers or delegation.
+
+### 2026-10-13T02:51:56.662578-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+reference-rules-unity-r4 [igvc-t91-7c2515b4e8]. Candidate a154667f (geometry cc760d6 + adapter); source only, nothing built or run by me.
+**Geometry** (prototype-r4/selected/rules-485), isotropic:
+- **Length:** north→south 484.2 ft; closed loop 512.7 ft (7.3 ft margin to 520). Footprint 143.8 × 171.0 ft, disclosed.
+- **Start lines:** DISCLOSED: repositioned to the physical ramp ends ±2 m, because image spacing exceeded the closed-loop limit.
+- **Clusters:** consecutive side-switching clusters are now ≥ 3.6 m apart along the route; 8 groups shifted 0.18–2.94 m, each recorded.
+- **Measurements:** lane 3.058–5.143 m; osculating radius ≥ 3.12 m; inner edge ≥ 0.92 m. Shape gate passes (2 reversals; tangent within +1.7°). Corridor connected. The witness, a grid estimate, is 514.4 ft and reaches the goals in order. No issues.
+- **Preserved:** attempt-1 (choke, frozen) and attempt-3-split-tape.
+- **Hashes:** unity-input 55482c0b…, metadata 454e8650….
+**Owned paths** (all new except the geometry file): ReferenceRulesDriveBuild.cs/.meta, ReferenceRulesDriveChecks.cs/.meta, reference_rules_mission.py with its test, reference-rules-map.ps1 (path/name/build/mission diff only; parses with 0 errors), REFERENCE_RULES_DRIVING.md, and reference_rules_geometry.py (DTO export plus tape-wrap merge).
+**Tests:** 18 geometry and mission tests PASS.
+**Root must pin:** selected/rules-485/unity-input.json → artifacts/agents/T-0091/unity-input.json, and metadata.json → mission-metadata.json.
+**Unrun:** the C# compile, the Unity build and checks, the captures, the launcher, and Sonnet/Sol review.
+**Risks:**
+- geometry.json still splits its tapes at the loop wrap (render only);
+- the spawn heading is 0.28° off north;
+- the JsonUtility nested-list parse has not been checked in Unity.
+
+### 2026-10-13T02:56:53.460407-07:00 · gpt-6-astra → team · DECISION
+R4 complete sourcehandback a154667fcdf5c251edf834afa9a6e5baa85e948b,11owned sourcepaths; implementationassignmentended. Selected isotropic geometry now preserves source aspect, nominal north-to-south484.247ft and closed512.725ft, larger143.815x171.022ft footprint explicitly authorized.93drums,2yellow singles omitted,8sidecluster shifts andstartlines2mfromramp disclosed. Root all3locked18focusedPASS/no skips, generatedselectedgeometry byte-exact toworker, independentpolyline512.7225ft,15protectedunchanged/all3released02:54:25.968PDT. Purechecks only, noUnitybuildyet. Rootlauncherstaticparse0errors, derived20linediff retainsT90ownership/cleanup. ExactSonnet source-review-r4 active (first completedadapterreview8min/USD3 bound, nottimeoutretry); nativeSol evidencepending. Beforeintegration/build requirebothreviews; no live runs. R4geometry artifactsselected pinned inadapter-candidate.json. Priorfailedvariants maintained. T84 andotherownersunchanged.
 
