@@ -27,10 +27,24 @@ New-Item -ItemType Directory -Force -Path $run | Out-Null
 $log=Join-Path $run 'launcher.log'
 $invariant=[Globalization.CultureInfo]::InvariantCulture
 function Log($m){ $line="$(Get-Date -Format o) $m"; Add-Content -Encoding utf8 $log $line; Write-Output $line }
-function Wsl([string[]]$CommandArgs){ $out=& wsl -d Ubuntu-24.04 -- @CommandArgs 2>&1; $code=$LASTEXITCODE; return @{code=$code; out=(($out|ForEach-Object{"$_"}) -join "`n")} }
-function Wsl-Checked([string[]]$CommandArgs){ $r=Wsl $CommandArgs; if($r.code -ne 0){throw "WSL command failed ($($r.code)): $($CommandArgs -join ' '): $($r.out)"}; return $r.out }
+# Native WSL call with deterministic capture: stderr goes to a temp file (never 2>&1 under Stop, which throws
+# NativeCommandError in Windows PowerShell 5.1); returns code/out/err. Any capture exception yields code -1.
+function Wsl([string[]]$CommandArgs){
+    $previous=$ErrorActionPreference; $ErrorActionPreference='Continue'; $errFile=$null
+    try {
+        $errFile=[IO.Path]::GetTempFileName()
+        $out=& wsl -d Ubuntu-24.04 -- @CommandArgs 2> $errFile; $code=$LASTEXITCODE
+        $err=Get-Content -Raw -LiteralPath $errFile -ErrorAction SilentlyContinue
+    } catch { $out=@(); $code=-1; $err="capture failed: $($_.Exception.Message)" }
+    finally { $ErrorActionPreference=$previous; if($errFile){ Remove-Item -LiteralPath $errFile -ErrorAction SilentlyContinue } }
+    return @{code=$code; out=((@($out)|ForEach-Object{"$_"}) -join "`n"); err="$err".Trim()}
+}
+function Wsl-Checked([string[]]$CommandArgs){ $r=Wsl $CommandArgs; if($r.code -ne 0){throw "WSL command failed ($($r.code)): $($CommandArgs -join ' '): $($r.out) $($r.err)"}; return $r.out }
 
 $locks=@(); $ownedPlayer=$null; $ownedBuild=$null; $ownsRos=$false; $failure=$null; $cleanupFailed=@(); $linuxRoot=$null
+# Set when ownership cannot be verified from here (trial cleanup unknown, unreceipted ROS group, cleanup exception):
+# the locks are then released ONLY by root's <run>/root-recovery-release, never by automatic checks.
+$rootReleaseRequired=$false
 try {
     foreach($name in 'live.lock','live-instance-1.lock','live-instance-2.lock'){
         try { $locks+=[IO.File]::Open((Join-Path $repoRoot "artifacts/iterations/$name"),'OpenOrCreate','ReadWrite','None'); Log "acquired $name" }
@@ -69,12 +83,15 @@ try {
         Wsl-Checked @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_mission.py",'--out',"$linuxRun/autonomy.json",'--max-speed',$MaxSpeed.ToString($invariant)) | Out-Null
         Wsl-Checked @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/agents/verify_iteration_overlay.py",$linuxRoot,$env:IGVC_ROS_WORKSPACE) | Out-Null
         $start=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'start','r3a')
-        if($start.code -eq 0 -and $start.out -match 'ROS started: PID (\d+)'){ $ownsRos=$true; Log "owned managed r3a session pid=$($Matches[1])" }
+        if($start.code -eq 0 -and $start.out -match 'ROS started: PID (\d+)'){ $ownsRos=$true; Log "owned managed r3a session pid=$($Matches[1]) (fresh-start receipt)" }
         else {
-            # The preflight proved r3a stopped, so any r3a group running now was started by this invocation.
+            # No fresh-start receipt (including 'already running'): never claim or stop it. If a group is running now,
+            # its owner is uncertain, so the locks stay held for root.
             $after=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'status','r3a')
-            if($after.out -notmatch 'stopped'){ $ownsRos=$true; Log "r3a start failed but a group is running; treated as owned: $($after.out)" }
-            throw "r3a session start failed ($($start.code)): $($start.out)"
+            if($after.code -ne 0 -or $after.out -notmatch 'stopped'){
+                $rootReleaseRequired=$true; $cleanupFailed+="unreceipted r3a group present after failed start ($($start.out) $($start.err)); not stopped"
+            }
+            throw "r3a session start gave no fresh-start receipt ($($start.code)): $($start.out) $($start.err)"
         }
         $style=if($Hidden){'Hidden'}else{'Normal'}
         $playerArgs="-screen-fullscreen 0 -screen-width 1600 -screen-height 1000 --line-guard scoring --reference-conditions $Conditions --reference-run-dir `"$run`" -logFile `"$(Join-Path $run 'unity.log')`""
@@ -91,7 +108,8 @@ try {
                 $trial=Wsl @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_trial.py",'--run-dir',$linuxRun,'--mission',"$linuxRun/autonomy.json",'--speed',$MaxSpeed.ToString($invariant),'--timeout',"$TrialTimeout")
                 Set-Content -Encoding utf8 (Join-Path $run 'trial-driver.log') $trial.out
                 Log "trial driver exit=$($trial.code)"
-                if($trial.code -eq 3){ $cleanupFailed+='trial driver could not confirm mission/navigation cleanup' }
+                if($trial.code -eq 3){ $rootReleaseRequired=$true; $cleanupFailed+='trial driver could not confirm mission/navigation cleanup (see trial-report.json)' }
+                elseif($trial.code -lt 0){ $rootReleaseRequired=$true; $cleanupFailed+="trial driver call failed to capture ($($trial.err)); its children may be alive" }
                 if($ownedPlayer.HasExited){ throw "Player exited during the trial (code $($ownedPlayer.ExitCode))" }
                 if($trial.code -ne 0){ throw "Trial did not complete (driver exit $($trial.code)); see trial-report.json" }
             }
@@ -102,28 +120,37 @@ try {
 catch { $failure=$_.Exception.Message; Log "STOPPED: $failure" }
 finally {
     foreach($p in @($ownedPlayer,$ownedBuild)){
-        if($p -and -not $p.HasExited){
-            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
-            if($p.WaitForExit(15000)){ Log "stopped owned process $($p.Id)" } else { $cleanupFailed+="owned process $($p.Id) did not exit" }
-        }
+        try {
+            if($p -and -not $p.HasExited){
+                Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+                if($p.WaitForExit(15000)){ Log "stopped owned process $($p.Id)" } else { $cleanupFailed+="owned process $($p.Id) did not exit" }
+            }
+        } catch { $rootReleaseRequired=$true; $cleanupFailed+="cleanup of owned process raised: $($_.Exception.Message)" }
     }
     if($ownsRos){
-        $stop=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'stop','r3a')
-        Log "ros_session stop r3a exit=$($stop.code): $($stop.out)"
-        if($stop.code -ne 0){ $cleanupFailed+='owned r3a ROS group did not stop' }
+        try {
+            $stop=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'stop','r3a')
+            Log "ros_session stop r3a exit=$($stop.code): $($stop.out) $($stop.err)"
+            if($stop.code -ne 0){ $cleanupFailed+='owned r3a ROS group did not stop' }
+        } catch { $rootReleaseRequired=$true; $cleanupFailed+="r3a stop raised: $($_.Exception.Message)" }
     }
     if($cleanupFailed.Count){
         # A file is not a lease: keep holding the real lock handles until everything owned is verifiably gone.
         $statusFile=Join-Path $run 'ownership-retained.json'; $release=Join-Path $run 'root-recovery-release'
         Log "CLEANUP NOT CONFIRMED: $($cleanupFailed -join '; '). Holding all locks (launcher pid $PID); see $statusFile"
         while($true){
-            $alive=@(@($ownedPlayer,$ownedBuild) | Where-Object { $_ -and -not $_.HasExited } | ForEach-Object { $_.Id })
-            $rosAlive=$false
-            if($ownsRos){ $s=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'status','r3a'); $rosAlive=($s.code -ne 0 -or $s.out -notmatch 'stopped') }
+            $alive=@(); $groups=@{}; $verified=$false
+            try {
+                $alive=@(@($ownedPlayer,$ownedBuild) | Where-Object { $_ -and -not $_.HasExited } | ForEach-Object { $_.Id })
+                # Read-only supporting evidence for EVERY managed group; nothing is stopped here.
+                foreach($mode in 'r3a','nav','perception'){ $s=Wsl @('python3',"$linuxRoot/tools/ros_session.py",'status',$mode); $groups[$mode]=($s.code -ne 0 -or $s.out -notmatch 'stopped') }
+                $verified=$true
+            } catch { $rootReleaseRequired=$true }
+            $rosAlive=($groups.Values -contains $true)
             $problems=(($cleanupFailed|ForEach-Object{"`"$_`""}) -join ', ')
             $recovery="Root: stop the listed owned processes and/or the r3a group (python3 tools/ros_session.py stop r3a), or after manual verification create $($release -replace '\\','/') so this launcher releases its locks."
-            Set-Content -Encoding utf8 $statusFile ("{`"launcher_pid`": $PID, `"locks_held`": true, `"run`": `"$($run -replace '\\','/')`", `"owned_pids_alive`": [$($alive -join ', ')], `"owned_r3a_group_alive`": $($rosAlive.ToString().ToLower()), `"checked`": `"$(Get-Date -Format o)`", `"problems`": [$problems], `"recovery`": `"$recovery`"}")
-            if(-not $alive.Count -and -not $rosAlive){ Log 'owned processes and r3a group verified gone; releasing locks'; $cleanupFailed=@(); break }
+            Set-Content -Encoding utf8 $statusFile ("{`"launcher_pid`": $PID, `"locks_held`": true, `"run`": `"$($run -replace '\\','/')`", `"owned_pids_alive`": [$($alive -join ', ')], `"managed_groups_alive`": `"$(($groups.GetEnumerator()|ForEach-Object{"$($_.Key)=$($_.Value)"}) -join ' ')`", `"root_release_required`": $($rootReleaseRequired.ToString().ToLower()), `"checked`": `"$(Get-Date -Format o)`", `"problems`": [$problems], `"recovery`": `"$recovery`"}")
+            if(-not $rootReleaseRequired -and $verified -and -not $alive.Count -and -not $rosAlive){ Log 'owned processes gone and r3a/nav/perception all stopped; releasing locks'; $cleanupFailed=@(); break }
             if(Test-Path -LiteralPath $release){ Log 'root recovery release file present; releasing locks on root instruction'; break }
             Start-Sleep -Seconds 30
         }

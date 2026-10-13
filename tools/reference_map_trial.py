@@ -173,15 +173,18 @@ def main(argv=None):
             code, output = -1, type(exc).__name__+': '+str(exc)
         report['nav_start'] = dict(code=code, output=output)
         state = session_dir(ROOT)/'nav.json'
-        if state.exists():
-            # nav.json was absent before this run (checked above), so any session now recorded is ours.
-            nav_owned = True
-            report['nav_owned_state'] = json.loads(state.read_text())
-        if code != 0:
-            if nav_owned:
-                cleanup_ok = False   # a group may be running from a failed/timed-out start; stop ours, flag uncertainty
-                report['log'].append('navigation start failed after creating state; treated as owned, cleanup uncertain')
-            report['refused'] = 'navigation did not start cleanly'
+        receipt = code == 0 and 'ROS started: PID' in output
+        if receipt:
+            nav_owned = True   # only a fresh-start receipt from this call establishes ownership
+            report['nav_owned_state'] = json.loads(state.read_text()) if state.exists() else None
+        else:
+            if state.exists():
+                # Unreceipted group (failed/timed-out start or 'already running'): never claimed or stopped here;
+                # exit 3 makes the launcher hold its locks for root.
+                cleanup_ok = False
+                report['nav_unreceipted_state'] = json.loads(state.read_text())
+                report['log'].append('navigation state present without a fresh-start receipt; not stopped; root must inspect')
+            report['refused'] = 'navigation did not start with a fresh-start receipt'
             return 2
         try:
             evidence = ros.verify_sim_time()

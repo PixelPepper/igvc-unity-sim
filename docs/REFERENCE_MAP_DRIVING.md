@@ -27,7 +27,10 @@ powershell -ExecutionPolicy Bypass -File tools/reference-map.ps1 -Action trial -
   - It refuses to run if any Unity, IGVC or R3a player, port 10000-10002 (Windows or WSL), or **any managed ROS group** (r3a, nav, perception) is active. Port or process query errors stop it.
   - A ROS session counts as owned only when `ros_session.py start` reports that it newly started it.
   - Cleanup stops only owned processes and sessions and confirms their exit. If it cannot confirm, the launcher keeps holding the real lock handles. It re-checks only what it owned every 30 s, read-only, and keeps `<run>/ownership-retained.json` current with recovery instructions. It releases the locks only when everything owned is verifiably gone, or when root creates `<run>/root-recovery-release`. The status file is not a lease.
-  - The managed ROS idle check also runs before `build`. A failed or timed-out r3a or nav start that leaves a group running is treated as owned, because none existed before, and cleanup is then flagged as uncertain.
+  - The managed ROS idle check also runs before `build`.
+  - An r3a or nav session is owned only with a fresh-start receipt (`ROS started: PID n`) from this invocation's own start. An "already running" response, or any group without such a receipt, is never claimed or stopped. Instead, the locks stay held and only root's release file can free them.
+  - Trial cleanup exit 3, a failed call capture, or any cleanup exception also require root's release file.
+  - Automatic release needs the owned processes to be gone **and** r3a, nav and perception all to report stopped (read-only checks).
 - **Run directory:** each run writes a new `artifacts/reference-drive/runs/<utc>-<id>/`, containing `launcher.log`, `autonomy.json`, `reference-conditions.json` and `unity.log`. Failed runs are kept.
 
 ## Scene
