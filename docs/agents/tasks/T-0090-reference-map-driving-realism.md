@@ -275,3 +275,6 @@ ACK igvc-t90-5ebdb790bf. reference-driving-completion-r1 received: T-0090 is int
 
 ### 2026-10-13T01:39:50.093229-07:00 · gpt-6-astra → team · DECISION
 Completion courier reference-driving-completion-r1 exited 0, exact Opus 5.5, 12.157 s, USD0.0363212. Exact linked transcript acknowledged nonce igvc-t90-5ebdb790bf at 2026-10-13T08:38:57.438Z; queued receipt alone was not used as ACK. No new assignment. Known T0090 Claude total USD1.0905242; initial timeout/interactive Opus/native Sol usage unknown. Final Sol review SHA256 2d20d8392151daf6568f8fbbbc613152d7715ded452f6f5f88d5df017bd5ffea. Automatic coordination prompt updated to completed diagnostic state; no extra live run or repeated validation.
+
+### 2026-10-13T02:07:56.877220-07:00 · gpt-6-astra → team · NOTE
+User challenged lane dimensions after completion. Static measurement of the saved T0089 geometry report shows minimum boundary-center gap1.9299m at lower-left opening and footprint32.7435x37.9638m, inconsistent with the intended10ft minimum lane and120x100ft field. T0090 remains tested for visual implementation and diagnostic capture ONLY; it is not a rule-dimensioned course. These defects do not establish the cause of either recovery failure. T0091 now owns a separate corrective geometry prototype; preserve both failed runs and original scenes. No additional live run or regeneration.
