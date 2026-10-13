@@ -7,13 +7,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 
 - **T-0084** `blocked`: Complete sensor-led missions on finish-line crossing (BLOCKED by gpt-6-astra at 2026-10-10T23:05:48.1618438-07:00)
 - **T-0086** `blocked`: Represent variable-width lanes and dashed IGVC 2027 boundaries in Unity (DECISION by gpt-6-astra at 2026-10-12T23:15:50.0748456-07:00)
+- **T-0096** `blocked`: Compare two fixed recovery search budgets on one frozen observed state (NOTE by gpt-6-astra at 2026-10-13T14:32:39.998156-07:00)
 - **T-0072** `blocked`: Diagnose recorded end-of-run behavior in the stopped seed2370 demo (BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00)
 - **T-0043** `review`: Reconcile the already-running learned-route comparison and preserve its evidence (HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00)
 - **T-0048** `review`: Preserve the externally launched timing reproduction and record load overlap (ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00)
 - **T-0050** `review`: Preserve and review the externally launched third route comparison (REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00)
 - **T-0053** `review`: Review the external latency-compensation change before acceptance (DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00)
 - **T-0070** `review`: Expose explicit latency estimator selection in Unity sandbox settings and batch records (NOTE by gpt-6-astra at 2026-10-12T23:56:06-07:00)
-- **T-0096** `review`: Compare two fixed recovery search budgets on one frozen observed state (NOTE by gpt-6-astra at 2026-10-13T14:28:26.339351-07:00)
 - **T-0054** `changes-requested`: Resolve latency candidate integration and recorded-pose compatibility (NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00)
 - **T-0079** `changes-requested`: Review external finish-line completion and audit contract (DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00)
 
@@ -23,13 +23,13 @@ Only the orchestrator (gpt-6-astra) changes task headers; see [PROTOCOL.md](PROT
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | [T-0084](tasks/T-0084-finish-crossing-runtime.md): Complete sensor-led missions on finish-line crossing | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-10T23:05:48.1618438-07:00 |
 | [T-0086](tasks/T-0086-igvc2027-lanes-rendering.md): Represent variable-width lanes and dashed IGVC 2027 boundaries in Unity | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | DECISION by gpt-6-astra at 2026-10-12T23:15:50.0748456-07:00 |
+| [T-0096](tasks/T-0096-frozen-recovery-budget-comparison.md): Compare two fixed recovery search budgets on one frozen observed state | `blocked` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 2dbaad8f58b2b479b2713a2510a41d9fe77e1ce7 | NOTE by gpt-6-astra at 2026-10-13T14:32:39.998156-07:00 |
 | [T-0072](tasks/T-0072-stopped-demo-diagnosis.md): Diagnose recorded end-of-run behavior in the stopped seed2370 demo | `blocked` | P2 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | BLOCKED by gpt-6-astra at 2026-10-07T17:39:26.5632795-07:00 |
 | [T-0043](tasks/T-0043-active-scorer-comparison.md): Reconcile the already-running learned-route comparison and preserve its evidence | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | 1097d2d | HANDBACK by gpt-6-astra at 2026-10-06T03:07:04.6853386-07:00 |
 | [T-0048](tasks/T-0048-active-timing-reproduction.md): Preserve the externally launched timing reproduction and record load overlap | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | ffebd127223497c7e0168141544fdc5e9ece0176 | ACK by gpt-6-astra at 2026-10-06T17:38:05.2937812-07:00 |
 | [T-0050](tasks/T-0050-active-route-comparison-3.md): Preserve and review the externally launched third route comparison | `review` | P1 | gpt-6-astra | claude-sonnet-5-5, gpt-6.1-sol | none | d3f9f4a0ddfd55f19b82ba3bbb62e339df1e7e14 | REVIEW by gpt-6-astra at 2026-10-06T07:02:28.8994934-07:00 |
 | [T-0053](tasks/T-0053-latency-change-review.md): Review the external latency-compensation change before acceptance | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | tested | 646845e25af6c0b58cd20131addfdbfacdcc6562 | DECISION by gpt-6-astra at 2026-10-06T17:29:32-07:00 |
 | [T-0070](tasks/T-0070-unity-latency-selection.md): Expose explicit latency estimator selection in Unity sandbox settings and batch records | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | implemented | 97de519 | NOTE by gpt-6-astra at 2026-10-12T23:56:06-07:00 |
-| [T-0096](tasks/T-0096-frozen-recovery-budget-comparison.md): Compare two fixed recovery search budgets on one frozen observed state | `review` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | 2dbaad8f58b2b479b2713a2510a41d9fe77e1ce7 | NOTE by gpt-6-astra at 2026-10-13T14:28:26.339351-07:00 |
 | [T-0054](tasks/T-0054-latency-integration-readiness.md): Resolve latency candidate integration and recorded-pose compatibility | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | none | NOTE by gpt-6-astra at 2026-10-06T20:36:08.3107782-07:00 |
 | [T-0079](tasks/T-0079-finish-line-review.md): Review external finish-line completion and audit contract | `changes-requested` | P1 | claude-opus-5-5 | claude-sonnet-5-5, gpt-6.1-sol | none | bdb097fa96148412b36be77922d5d1e3a5807383 | DECISION by gpt-6-astra at 2026-10-08T12:43:36.1214434-07:00 |
 | [T-0004](tasks/T-0004-observatory-integration.md): Connect IGVC coordination to the Project Observatory visualizer | `in-progress` | P2 | gpt-6-astra | claude-opus-5-5, gpt-6.1-sol | tested | none | NOTE by gpt-6-astra at 2026-10-05T00:07:27-07:00 |
