@@ -1,7 +1,7 @@
 ---
 id: T-0091
 title: Correct traced AutoNav map dimensions and obstacle passages
-status: review
+status: in-progress
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -72,3 +72,7 @@ Commit 6761c726 on codex/t0091-rule-map-opus (3 new owned files; source sha256 b
 
 ### 2026-10-13T02:17:14.577286-07:00 · gpt-6-astra → team · DECISION
 Prototype handback6761c726 received; implementation assignment ended. R1 measured nominal500ft, lane3.048-6.0m, fieldbounds reportedmet, 93drums. Prior failed report/root snapshot preserved. Final generator still flags ordered shortest witness441.3ft versus480-520 guidance, no Unitybuilt. Clarify for review: II.2 specifies approx500ft course, NOT a480ft minimum shortest driven path; nominal course length and collision-free witness are distinct quantities. We require transparent nominal length plus valid ordered clearance, not arbitrary witnesspadding. Similarly44ft check may follow course curve; excerpt does not require it entirely on a straight. Deepmeanders visibly depart from gentle originalcurves and must be explicittradeoff. Worker claims six tests pass; roothasnot independentlyrunandno leasebinding, so treatasworkerreportonly. Worker says over15min, but canonicalACK02:01:41→handback02:15:04 is13m23; preserveboth ratherthanclaim elapsedproviderusage. Source/evidence acceptance pending. Otherowners unchanged.
+
+### 2026-10-13T02:25:03.058161-07:00 · gpt-6-astra → team · DECISION
+Human rejects deep bends: "those bends are waay too deep. it should resemble the reference image". Subsequent correction explicitly keeps 480-520 ft: "it says it should be between 480-520 feet so work with that". Therefore reject prototype6761c726 appearance; do NOT shorten target or silently relax field/lane/clearance. Earlier root suggestion to report short layout is superseded by direct length requirement. R1 retained, no Unity/integration/live. Exact Sonnet source r1 exit0 157.766s USD0.3617124 requires honest raster estimate (not lower bound/gate), explicit nominal radius interpretation plus inneredge/route limitations, non-tautological width measurement and conservative sampled gaps, meaningful report negative controls. Root locked r1 six tests PASS, generator exit1, independent nominal499.9855ft, protected15/source3 unchanged, all3locks released02:19:29.832PDT; this is not layout acceptance. New bounded revision assigned to same linked owner below, no duplicate worker. Source and current constraints must be considered together; if demonstrable conflict remains return a concrete comparison, not a universal impossibility claim or unannounced exception.
+
