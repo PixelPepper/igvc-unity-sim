@@ -1,7 +1,7 @@
 ---
 id: T-0090
 title: Drive the traced AutoNav map with realistic visual conditions
-status: in-progress
+status: integrated
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -258,4 +258,10 @@ Source candidatee6fb64b1fcb5f622c282923a238ec8ac05f3a513 frozen47newpaths/11prot
 
 ### 2026-10-13T01:25:20.619984-07:00 · gpt-6-astra → team · DECISION
 Reviewed source integrated as182157c,8062130,36c9052,ac83f63,25d5c23 fromcandidatee6fb64b1. All47 normalized sources/11protected/31parked remain bound. NativeSol finalprebuildPASS retained. Unity2027Drive built successfully exit0 at01:22:40.703, all3locksreleased; generatedscene/all9PNGs/report/player frozen unity-build-r1. Editorchecks PASS95drums/4822guardsegments. Rootactualnoonoverview/oblique andlow-sunsensor images inspected: faithfultrace, detailedbarrels/ground/shadows. Independent95positionchecks maxerror1.005e-6m PASS, canonicalbodyoffsetandnorthheading preserved. First independentharness assumedvisualbase_linkatodomorigin andfailed; corrected to documented axle/bodyoffset(0,.30385548,-.25591), failurepreserved, notsourcechange. All33protectedpreimages(includingprojectsettings/originalscene) unchanged. First authorized clear-noon diagnostic trial now root-owned live via launcher all3leases held, newr3aPID834/player65968 freshreceipts at01:24:39; do not launchanythingelse. Two preplannedattempts max180s/.6m/s,noautomaticretry, no full-audit/navigationclaimyet.
+
+
+### 2026-10-13T01:38:39.214730-07:00 · gpt-6-astra → team · DECISION
+T-0090 COMPLETE for implemented, built and tested drivable map plus two diagnostic captures; navigation success is NOT accepted. Candidate e6fb64b1fcb5f622c282923a238ec8ac05f3a513 integrated through 25d5c23819e6696c4c32fdcc25dab9151a536433. Exact Sonnet final delta PASS and native Sol final evidence PASS (artifacts/agents/T-0090/sol-final-evidence.md) accepted. Unity exit 0; 95 drums, 4822 guard segments and nine actual renders checked. Ten focused tests and native PS5 capture fixture pass; all prior failures retained.
+Two planned attempts, two actual, no retries: clear-noon 20261013T082430-3a407106 reached 1/6 in 41.4055 s, collision-checked backup incomplete; low-sun 20261013T082612-3890b054 reached 2/6 in 169.4686 s, no observed useful collision-free backup. Both mission exit 1. Same mission/profile, 0.6 m/s, 180 s cap. Sampled processing health 416/416 and 1697/1697 PASS, zero fail/unknown; 27/112 decision records without drops. Both clock admission/sensor smoke passed and 20 runtime hashes each match. Both cleanup confirmed; final locked postflight idle, all three locks released 01:30:32.173 PDT.
+Sol verified 170 run artifacts, 234 player files, 12 generated evidence files and all 33 protected raw preimages. Final source manifest describes WORKER bytes: 41 primary raw matches; launcher plus five C# meta files differ only by newline normalization and match reviewed Git objects. No semantic drift. Original map and other-owner files preserved. No full-lap audit, compliance, calibrated robot, repeatability or causal lighting claim. See RESULTS.md, run-summary.json and frozen evidence under artifacts/agents/T-0090. Implementation assignment ended; no further live runs or repeated checks authorized by this completion. T0084 remains independently blocked; T0070/T0085/T0086/T0088 ownership unchanged. Known Claude cost before completion courier USD1.054203; initial timeout/interactive Opus/native Sol usage unknown.
 
