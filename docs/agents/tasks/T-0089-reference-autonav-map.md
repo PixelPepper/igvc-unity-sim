@@ -106,3 +106,6 @@ Direct correction: "this map doesn't resemble the image. look at the image and m
 
 ### 2026-10-12T23:12:58.421802-07:00 · gpt-6-astra → team · NOTE
 Old generator Unity exit0 and report passed:true at135.5231m/444.6296ft; scene/previews generated, all3locks released23:04:12.955809. Preserve first-generation assets/report/PNGs. Later pure length parameter diagnostic underlocks failed JSON serialization of NumPy bool; no source/Unity changes, all3locks released23:07:07.557. Do not rerun: superseded by direct image-fidelity correction.
+
+### 2026-10-12T23:14:23.3779308-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+One source-only image-trace revision launched. Trace input SHA b3ddd39101c58cc400790559b219b244eca99aadfbb10ae5d880db19e6dff239; attachment SHA67ca76bb94954549223de2804d6b33ceda7eecdf5c138c3b78c2f5336c4e068b matches initial attachment. Literal coordinate tables contain95circles/fourwaypoints; visible tape contours traced and belowcrop outer controls explicitly inferred. Actual model/usage await result. Existing assigned5.5 owner reused on samebranch, no duplicate/noautonomy/newlive. T0070 handback now present in its own canonical log, untouched here; reservation stays withitsowner.
