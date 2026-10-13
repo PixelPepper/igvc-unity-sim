@@ -1,14 +1,14 @@
 ---
 id: T-0090
 title: Drive the traced AutoNav map with realistic visual conditions
-status: review
+status: accepted
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
 orchestrator: gpt-6-astra
 branch: codex/t0090-reference-drive-opus
 base: 12e84df8c967b4b3d8cb217a51ec5d20d9619e5f
-candidate: 7a1db3c77ca6f3e244aa79697391ff1f1192cee6
+candidate: e6fb64b1fcb5f622c282923a238ec8ac05f3a513
 claim: tested
 lease: none
 updated: 2026-10-13
@@ -199,4 +199,59 @@ Usage: unavailable. No further source work from me unless dispatched.
 
 ### 2026-10-13T01:09:26.563366-07:00 · gpt-6-astra → team · DECISION
 Human explicitly approved focused exact Sonnet review continuation <=480s/USD3, then build and two diagnostic runs. Latest source-only handback7a1db3c77ca6f3e244aa79697391ff1f1192cee6 bound47newpaths/11protected/31parked unchanged, worker clean. Cleanup-fix-r2 courier exit0/exactOpus/12.890s/USD.0441116; target nonce ACK08:05:19.877Z and canonicalhandback01:07:07. Interactive assignment ended. Root10focusedPythonPASS/no skips in focused-tests-r1 underall3locks released; tests do not establish live cleanup/Unity behavior. Approved source-review-r2-approved now running; first empty240s timeout preserved, no automatic retry. All Unity/build/live and review acceptance pending. NativeSol follows source review. Other task owners/blocks unchanged.
+
+
+### 2026-10-13T01:10:47.777936-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-driving-source-fix-r4. ExactSonnet review completed exit0/129.984s/USD.462624 at7a1db3c, THREE BLOCKERS; full retained artifacts/agents/T-0090/source-review-r2-approved/review.md. Fix same owned launcher/Python only, 8minute source-only bound, no tests/build/live/providers. (1) Trial cleanup exit3 retention checks ONLY player/build/r3a, clears uncertainty while nav/mission may live. Keep an explicit trialCleanupUnknown latch requiring ROOT release file; never clear based merely on r3a stopped; include readonly nav/perception status as supporting evidence, no blind stop. (2) Native WSL stderr 2>&1 under Stop can throw prematurely in WindowsPowerShell5.1. Locally set Continue and restore in finally around native WSL capture, return code/stdout/stderr deterministically; catch cleanup/query exceptions conservatively and retain leases, no cmd shell workaround. (3) Explicit 'already running' response must NEVER claim/stop foreign r3a. Also same principle nav start: require newly started receipt; do not infer new ownership solely from preflight. If uncertain unreceipted group appears, retain leases for root without stopping it. Prefer identity receipts from new start output/state. Tests10PASS with locks in focused-tests-r1, do not rerun. No scene/source changes needed; Sonnet found no C#/mission/gate issues. Root will rerun only focused delta review on new source evidence; prior timeout remains preserved. Hand back scoped commit <=300words and stop.
+
+
+### 2026-10-13T01:12:30-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+reference-driving-source-fix-r4 (nonce igvc-t90-b5a2ceef49). ACK. About 2 minutes active, source only.
+Candidate: 32ba47ef9f868295c52fc84edab018173f35f47a (parent 7a1db3c). Changed: tools/reference-map.ps1,
+  tools/reference_map_trial.py, docs/REFERENCE_MAP_DRIVING.md.
+Sonnet blockers:
+  1. A rootReleaseRequired latch is set by: trial exit 3; a trial call whose capture failed (code < 0); any
+     exception during cleanup or status checks; an unreceipted r3a group. While latched, only
+     <run>/root-recovery-release frees the locks. Automatic release otherwise needs owned PIDs gone AND r3a,
+     nav and perception all reporting stopped (read-only status, nothing stopped). The status file lists the
+     managed groups that are alive and the latch.
+  2. Wsl: $ErrorActionPreference='Continue' locally, stderr to a temp file (no 2>&1; the only remaining match
+     is a comment), preference restored in finally, deterministic {code,out,err}; a capture exception gives
+     code -1. Each finally cleanup step (player/build stop, r3a stop) is in try/catch: an exception latches
+     root release and keeps the locks. No cmd /c.
+  3. r3a is owned only on this call's "ROS started: PID n" with exit 0. "Already running" or no receipt is
+     never claimed or stopped; if a group is present, its owner is uncertain, so root release is latched.
+     Trial driver: nav is owned only on its fresh-start receipt. An unreceipted nav.json after a
+     failed/timed-out/"already running" start is recorded, not stopped, and gives exit 3 (root latch). The
+     pre-existing nav.json refusal is unchanged.
+Checks: PowerShell parses with 0 errors; py_compile OK. Not rerun: tests (focused-tests-r1 stands per your
+  note), Unity, live runs.
+Limit: the sensor_course child cannot be verified from the launcher; it is covered by the trial's exit 3 and
+  the root latch.
+Usage: unavailable. Stopping here.
+```
+
+### 2026-10-13T01:17:42.089675-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+reference-driving-source-fix-r5. Sonnet delta completed exactexit0/68.969s/USD.2012772: all3priorblockers fixed, one NEW interrupted-trial blocker plus report-finally edge. Read source-review-r3-delta/review.md. Fix exactrecommendation: trialInFlight true BEFORE Wsl call; evaluate exit then clear only0/1/2 BEFORE any logging; finally inflight latchesrootrelease. Pythonfinally anyclose/reportwriteexception mustexit3 conservatively insteadofescapingexit1. ALSO root WindowsPowerShell5 actualnativecheck FAILED (native-stderr-check-r1), function Wsl invokes `& wsl` which resolves to Wsl itself (caseinsensitivefunctionprecedence), so recursive self-call! Explicitly invoke `wsl.exe` (or renamehelper plusqualifiedexecutable) insidehelper; this blocks everylauncheraction. Prior rootcheckdidnotstartUnity/ROS; preserve failure. Scope only existingownedlauncher/trial/docs,5minute sourcebound; no providers/tests/build/live. Root will rerun nativecapture meaningfulcheck on changedsource, then finaldelta review of theseexactfixes, notrepeatC#. No additionalfeatures. Hand backcommit<=200words.
+
+
+### 2026-10-13T01:18:50-07:00 · claude-opus-5-5 → gpt-6-astra · HANDBACK
+```text
+reference-driving-source-fix-r5 (nonce igvc-t90-57f835782d). ACK. Source only.
+Candidate: e6fb64b1fcb5f622c282923a238ec8ac05f3a513 (parent 32ba47e).
+  Changed: tools/reference-map.ps1 and tools/reference_map_trial.py.
+- Native recursion: the Wsl helper now runs "& wsl.exe -d Ubuntu-24.04 -- ..." (the only native call site).
+  Bare 'wsl' resolved to the Wsl function itself.
+- Interrupted trial: $trialInFlight=$true immediately before the driver call. It is cleared only if the code is
+  0, 1 or 2, evaluated before Set-Content and Log. In finally, if it is still set, rootReleaseRequired is latched
+  and a cleanupFailed entry is added, so the locks are held for root. trial-driver.log now includes stderr.
+- Python tail: ros.close() and the report write are each guarded; any exception, or cleanup_ok False, gives
+  os._exit(3).
+Checks: PowerShell parses with 0 errors; py_compile OK. UNRUN: the native check, tests, Unity, live runs.
+Usage: unavailable.
+```
+
+### 2026-10-13T01:21:47.675318-07:00 · gpt-6-astra → team · DECISION
+Source candidatee6fb64b1fcb5f622c282923a238ec8ac05f3a513 frozen47newpaths/11protected/31parked unchanged. ExactSonnet approved continuation r2 exit0/129.984s/USD.462624 found3launcherblockers; r3delta exit0/68.969s/USD.2012772 fixed3 but foundinterruptedtrial; r4delta exit0/51.843s/USD.1371578 PASS after fixes. Raw overlong reviews retained. Root nativePS5.1 fixture r1 failed fromrecursiveWsl function, sourcefixedexplicitwsl.exe. r2 capturedcorrectexit7/stdout/stderr but harness incorrectly required barestderr; PS5 decorates nativeerrors. Corrected assertion r3 PASS exit7 preserved stderr/restoredStop, all3locksheldandreleased. Initial10puretestsPASS unchanged testedfunctions; no repeat. NativeSol source/evidence accepted stable44paths, finalprebuildbinding accepted latestdelta. Accept reviewed new-onlysource for root integration and Unityvalidation/build. No runtime/visual/navigation successclaimyet. Remaining nonblockingSonnetfinallyhardening explicitly retained; root supervisesownedprocesscleanup and willverifyallgroups before nextattempt. Allpriortimeouts/failures preserved; no providerretry. Otherowners/T84blockunchanged.
 
