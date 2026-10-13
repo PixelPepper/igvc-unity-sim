@@ -1,7 +1,7 @@
 ---
 id: T-0093
 title: Reconcile linked-session six-minute diagnostic and timeout extension
-status: review
+status: changes-requested
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -61,4 +61,43 @@ Bounded successor validation authorized: original author test output was not sav
 
 ### 2026-10-13T09:07:04.199074-07:00 · gpt-6-astra → team · DECISION
 Independent validation now bound: WSL 4 PASS/no skips, native PS parser zero errors; all three locks released 09:05:35.0779612 PDT, nine dirty source preimages unchanged. Initial Windows Python 3PASS/1 missing-yaml import error and script-policy refusal preserved; target-environment correction succeeded without source edits. Separate-index candidate 1da2536f21173771bafc9eaa72750eef5c1cc9f9 contains only the three owner changes, primary HEAD/source/index untouched. Exact Sonnet source review active; Sol evidence review follows sequentially to respect worker slots. RESULTS.md and 16 run artifact pins prepared. No new live attempt.
+
+
+### 2026-10-13T09:08:05.4297862-07:00 · claude-sonnet-5-5 → gpt-6-astra · REVIEW
+relayed-from: artifacts/agents/T-0093/sonnet-source-r1/review.md
+**BLOCKING (narrow, one-line fix)**
+
+**Finding 1: the Python CLI default changed from 180 to 360.**
+- `reference_map_trial.py` has `parser.add_argument('--timeout', ..., default=MAX_TIMEOUT)`. Because `MAX_TIMEOUT` went from 180 to 360, any direct invocation without `--timeout` now runs a six-minute mission.
+- That breaks the stated invariant "default 180 unchanged" and the opt-in framing.
+- Both launchers pass `--timeout` explicitly, so they are unaffected. `reference-rules-map.ps1` still defaults `$TrialTimeout` to 180. The older `reference-map.ps1` keeps its `ValidateRange(10,180)`.
+- Fix: use `default=180.` (a separate constant, e.g. `DEFAULT_TIMEOUT`), keep `MAX_TIMEOUT=360.`, and add a test that parses no arguments and checks the default is 180.
+
+**Finding 2 (non-blocking): stale comment.**
+- Line 6 of `reference-rules-map.ps1` still says "The 180 s diagnostic trial is NOT six-minute rule enforcement." That now sits next to the 360 s option.
+
+**Checked, no issue:**
+- `bounded_settings` still refuses values outside (0, 360] and rejects NaN, inf and bool. Speed is still capped at 0.6.
+- `mission_command` rewrites `--timeout` to `ceil(timeout)`, which is 360 at the cap.
+- `child.wait(timeout+30)` gives 390 s. The `stop_child` escalation is unchanged.
+- The `nav()` 35 s timeouts are unrelated to the mission timeout.
+- The diff doesn't touch the smoke, clock-admission or cleanup/lock logic, so those gates are not weakened. No freshness, body or geometry code is in scope.
+- The test edits are consistent: the 361 refusal and the 360 acceptance both match the new cap.
+
+**Not verifiable from the frozen files:**
+- Whether `sensor_course.py`, `mission_argv` or the player enforce their own timeout ceiling below 360 s. They weren't provided.
+- Whether a 390 s `wsl.exe` call has any outer harness timeout.
+
+I make no claim that six-minute navigation succeeds. This is not competition certification.
+
+
+### 2026-10-13T09:08:05.485041-07:00 · gpt-6-astra → claude-opus-5-5 · DISPATCH
+six-minute-default-fix-r1. T0093 revision r1, same existing owner, no new worker. Exact Sonnet source review BLOCKING at artifacts/agents/T-0093/sonnet-source-r1/review.md: Python argparse default=MAX_TIMEOUT silently changes direct CLI default180 to360. Preserve explicit opt-in360 and default180. Fix stale launcher 180-only comment. Add a focused behavior check of actual parser default180 and explicit360; keep parsing factored minimally if needed. Root corrects its earlier default-unchanged claim: only the PowerShell default was unchanged, Python direct default was changed. Work ONLY in new isolated worktree C:/Users/brand/.codex/worktrees/igvc-t0093-six-minute/IGVC SIM branch codex/t0093-six-minute-opus, base1da2536f21173771bafc9eaa72750eef5c1cc9f9. Own only tools/reference_map_trial.py, tools/reference-rules-map.ps1, tools/tests/test_reference_map_trial.py. Do not edit primary source, other tasks or simulator code. Commit the bounded revision and return exact candidate/paths/<=300-word handback in canonical primary T0093 log. No tests/process checks/Unity/ROS/providers/delegation/live/retry; root owns locked validation. Source review and evidence review follow. Default180/max360/speed.6, no relaxed freshness/body/admission/cleanup/geometry gates. Stop after committed handback. This supersedes reporting-only restriction solely for this isolated revision. Do not resume T84 or any other task.
+
+
+### 2026-10-13T09:08:22.109980-07:00 · claude-opus-5-5 → gpt-6-astra · ACK
+ACK igvc-t93-49972ef65c. default-fix-r1 in worktree igvc-t0093-six-minute; 3 owned paths. No tests, Unity, ROS, live sessions or providers.
+
+### 2026-10-13T09:08:35.354723-07:00 · gpt-6-astra → team · DECISION
+Exact Sonnet source-r1 returned BLOCKING: direct Python argparse default references MAX_TIMEOUT and rose to360. Root earlier default-unchanged statement was wrong for direct CLI; only PowerShell default180 was unchanged. Preserve raw review (over requested word limit) and original RESULTS-before-source-review. Same owner revision dispatched to isolated codex/t0093-six-minute-opus worktree, only three owned paths, committed handback requested, root locked tests later; no new live. Source-r1 exact model exit0/17.781s/USD0.1180854. Do not accept original snapshot. Courier queued/ACK pending, never resend.
 
