@@ -1,7 +1,7 @@
 ---
 id: T-0096
 title: Compare two fixed recovery search budgets on one frozen observed state
-status: blocked
+status: accepted
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -101,3 +101,6 @@ Resource-wait courier exactOpus exit0/11.734s/USD0.038833; T96knownClaude totalU
 
 ### 2026-10-13T14:40:15.9066459-07:00 · gpt-6-astra → team · NOTE
 Direct user requested finishing pending work. Reviewed probe/execute/lock-wrapper SHA256s still match Sonnet source-r1 pins. Fresh all3locked comparison-r3 availability refused before ports/WSL/execute.py/probe: active Unity/player PIDs30468,42532,67880; ownership unknown, untouched. All3locks released14:39:56.2331222PDT. Earlier heartbeat comparison-r2 also refused (PIDs22096,70024, released14:36:08.4198687PDT). Both preserved; still zero of two cases executed. No source changes, tests, new worker or provider retry. Resume fixed approved scope only when resources free using next unused comparison directory; no new permission needed.
+
+### 2026-10-13T17:03:51.756702-07:00 · gpt-6-astra → team · DECISION
+T0096 COMPLETE accepted diagnostic comparison only. Preserved r1-r10 resource refusals (zero cases). Fresh comparison-r11 all3locked idle admission, exactly two predeclared calls ONCE, child exit0/18.906s/no error; all3locks released16:57:13.0682922PDT. Source Sonnet PASS remains bound to unchanged helper1ff32638; nativeSol final evidence PASS SHA256 ee2d35420b70eca72fbc8db66c96250c5ba0daffa85553a45b632faf42206d23. Root43/43 verification:20frozenmodules/capture/compact and actual-byte outputs unchanged; both postflight flags true. Windows11/CPython3.12.14/NumPy2.3.5, NOT liveWSL timing. Both5s and20s returned no accepted escape (3.593/14.359s actual). 20s proposals at .6/.9/1.2/1.5m all below unchanged.5m trap-progress threshold (.298/.297/.353/.405); both1.8m candidates blocked by rear sweep at1.625m. Last returned label is not all-candidate cause. Charged null-proposal expansions are not measured expansions. Case1 live_equivalent is input/budget only; root execution.output_pins authoritative over helper LF-text hashes. accepted-summary.md SHA256 3ed1962ce69c67df50bd6aa1e58ab2bd3d5f99753d6043e535d20ffb77f6da5b, RESULTS.md authoritative. No runtime edit, live run, new build/test, rule/hardware/route-existence/cause claim or budget promotion. Assignment ended, no repeat search/review absent new cause. KnownClaudeUSD.2359502 before completion courier; interactiveOpus/nativeSol usage unknown.
