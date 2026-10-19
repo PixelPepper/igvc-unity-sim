@@ -10,7 +10,7 @@ branch: codex/transport-probe
 base: 480ae0e7aeab47539f772e8980a79666c8c61786
 candidate: none
 claim: none
-lease: held
+lease: released
 updated: 2026-10-18
 ---
 
@@ -27,3 +27,6 @@ Required handback: both actual run paths and outcomes including refusals/failure
 
 ### 2026-10-18T22:22:56.6586154-07:00 · gpt-6-astra → team · DECISION
 Verified new direct human authorization, existing Opus ownership, bounded pair declaration and saved A launch receipts. Track separately under T0098; accepted T0097 analysis remains unchanged. No duplicate execution, repeated tests, provider call or new courier. Owner-reported preflight outside launcher is not independently verified; saved managed launcher confirms lock acquisition before its own admission. Await completed handback and cleanup before review or integration; do not infer completion from progress records.
+
+### 2026-10-18T22:38:53.6517247-07:00 · gpt-6-astra → team · NOTE
+Received Opus completed handback in T0097 at 22:27:05 PDT. A 20261019T051732-b195b3af timed out at 360.020060704 wall seconds, 5/6; B 20261019T052352-e3c95e18 stopped at 137.273969647 wall seconds, 2/6, perception freshness latch. Both driver exit 1. Root file-only check confirms saved owned cleanup and all-three-lock release receipts A22:23:37.8829851 and B22:26:31.5515428 PDT; B admission followed A release. Header released refers to receipts, not a new resource probe. Author comparison pins match handback: compare f6a593c9..., comparison8cb6f29d..., findings ec0af361.... Posthoc source/preimage/report pins saved in artifacts/agents/claude-followups/paired-revalidate/root-input/manifest.json SHA b4590f57f0fa4440aa6d93dcf401401cc2daf2be89e9920367906fff6a26809d. Native Sol independent arithmetic underway; source review follows sequentially. Matched-window table is not emitted by author compare.py and needs independent reconstruction. Original reports preserved, no new run/test/provider retry or default promotion.

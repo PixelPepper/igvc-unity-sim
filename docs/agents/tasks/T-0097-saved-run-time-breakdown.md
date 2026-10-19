@@ -147,3 +147,28 @@ Six tests PASS; the PowerShell parse has 0 errors. Locks, preflight, cleanup, sp
 
 ### 2026-10-18T22:22:56.6586154-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
 Root independently verified direct human paired-run authorization at 2026-10-19T05:16:28.278Z. The existing owner's already-started pair is tracked separately in T-0098-fallback-paired-diagnostic.md; append completed pair handback there. This adds no run, retry, source edit or provider authorization. Preserve accepted T0097 evidence and all outcomes; exact source and native evidence review follow completed handback. Saved A launcher receipts show all three locks acquired before admission; no competing root action or inferred cleanup.
+
+### 2026-10-18T22:27:05.595601-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+The user-directed paired runs are done; both ran exactly once, with no retries.
+- **A (off):** artifacts/reference-rules/runs/20261019T051732-b195b3af. 360.02 s timeout, 5/6. Player 46300 and r3a 823 stopped; locks released at 22:23:37.88.
+- **B (on):** artifacts/reference-rules/runs/20261019T052352-e3c95e18. Stopped at 137.27 s by the perception freshness latch (lane_age 12.568 s), 2/6. replacement_fallback on: 19 evaluated, 18 active_path_revalidated sent. Player 45232 and r3a 1359 stopped; locks released at 22:26:31.55.
+- **Matched first 125.7 SIM s, A vs B:**
+  - near-stationary 21.2 vs 8.1 s;
+  - pauses 21 vs 10;
+  - cancellations 18 vs 3;
+  - admission rejections 18 vs 22;
+  - XY 53.8 vs 62.2 m;
+  - arrivals 1 vs 2.
+- **Not claimed:** that B's early freshness stop was caused by the flag; causation from n=1; any default change.
+- **sha256:** artifacts/agents/claude-followups/paired-revalidate/compare.py f6a593c9caba76048ec9fa3d7e398e42ec6e6b64b2e31e349a67f4e28703835b, comparison.json 8cb6f29da16199c9f6d0c981fe74fc7746177d009277c6f016cd053c9f156ceb, findings.md ec0af361f6a05ebaabc443837effff31adfbbb9d0f5f28c1c1f4886240aa9443.
+- **Source:** the flag-passthrough source change remains uncommitted for root review.
+
+### 2026-10-18T22:39:03.825510-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+User direct instruction in the linked session: "ok lets make all the changes and run".
+**Implemented now, as opt-in source changes, UNCOMMITTED:** a passthrough for the existing --latency-compensation flag in reference_map_trial.py, reference-rules-map.ps1 and the test. It uses the existing validated sandbox setting. LatencyCompensator is bounded (max shift 1 m, latency capped at 1.2 s), and admission and collision checks still use the real pose. Combined with the existing --revalidate-active-path passthrough. 26 tests PASS (trial + sandbox_profile); PowerShell parse 0 errors.
+**Deliberately NOT implemented:** planner search-cost changes and any change to the recovery progress-gate metric. Both touch planning or bounded-recovery semantics and need root and reviewer design. The freshness latch is NOT relaxed; the lane-stall cause is being investigated read-only.
+**Predeclared:** three sequential runs, each exactly once with no retries; all three run regardless of earlier outcomes. Clear-noon, -MaxSpeed 0.6 -TrialTimeout 360 -RevalidateActivePath -LatencyCompensation. They are compared with the existing off-run A (20261019T051732-b195b3af) using compare.py metrics.
+**Preflight:** locks free, no players, ports free.
+
+### 2026-10-18T22:39:38.0703763-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
+Root verified direct human 05:38:09.527Z instruction. Your existing three-run latency plus fallback experiment is now tracked in T-0099-latency-fallback-three-runs.md; append all outcomes and saved-log investigation there. T0098 remains the separate completed pair under review against frozen source. No duplicate dispatch, extra attempt, source integration or resource probe by root. Preserve failures and cleanup; no causal, default-promotion or guard-relaxation claim. Planner/recovery proposals remain separate from this running experiment.
