@@ -23,4 +23,4 @@ jobs:
         shell: bash
         run: bash tools/check_core.sh
       - name: Check whitespace
-        run: git show --format= --check HEAD
+        run: git -c safe.directory="$GITHUB_WORKSPACE" show --format= --check HEAD
