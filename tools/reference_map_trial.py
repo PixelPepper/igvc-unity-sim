@@ -45,12 +45,22 @@ def bounded_settings(speed, timeout):
     return dict(speed_mps=float(speed)), float(timeout)
 
 
-def mission_command(python, mission, folder, settings, timeout):
-    """sandbox_profile.mission_argv with the trial's own --timeout (the default 600 s is replaced)."""
+def mission_command(python, mission, folder, settings, timeout, revalidate_active_path=False,
+                    latency_compensation=False):
+    """sandbox_profile.mission_argv with the trial's own --timeout (the default 600 s is replaced).
+
+    revalidate_active_path (explicit opt-in, default off) appends sensor_course's existing
+    --revalidate-active-path flag; latency_compensation (explicit opt-in, default off) sets the existing
+    validated sandbox setting, which adds sensor_course's --latency-compensation. Nothing else changes.
+    """
     from sandbox_profile import mission_argv
+    if latency_compensation is True:
+        settings = dict(settings, latency_compensation=True)
     argv = mission_argv(python, mission, folder, settings)
     index = argv.index('--timeout')
     argv[index+1] = str(int(math.ceil(timeout)))
+    if revalidate_active_path is True:
+        argv.append('--revalidate-active-path')
     return argv
 
 
@@ -144,6 +154,10 @@ def build_parser():
     parser.add_argument('--mission', type=Path, required=True)
     parser.add_argument('--speed', type=float, default=MAX_SPEED)
     parser.add_argument('--timeout', type=float, default=DEFAULT_TIMEOUT)
+    parser.add_argument('--revalidate-active-path', action='store_true',
+                        help="opt-in: pass sensor_course's existing --revalidate-active-path (default off)")
+    parser.add_argument('--latency-compensation', action='store_true',
+                        help="opt-in: pass sensor_course's existing --latency-compensation (default off)")
     return parser
 
 
@@ -201,7 +215,11 @@ def main(argv=None):
         if not evidence['admitted']:
             report['refused'] = 'clock admission failed: no motion'
             return 2
-        argv_mission = mission_command(sys.executable, args.mission.resolve(), folder, settings, timeout)
+        argv_mission = mission_command(sys.executable, args.mission.resolve(), folder, settings, timeout,
+                                       revalidate_active_path=args.revalidate_active_path,
+                                       latency_compensation=args.latency_compensation)
+        report['revalidate_active_path'] = args.revalidate_active_path
+        report['latency_compensation'] = args.latency_compensation
         report['mission_argv'] = argv_mission
         with (folder/'mission.log').open('w') as log:
             child = subprocess.Popen(argv_mission, stdout=log, stderr=subprocess.STDOUT, stdin=subprocess.DEVNULL, start_new_session=True)

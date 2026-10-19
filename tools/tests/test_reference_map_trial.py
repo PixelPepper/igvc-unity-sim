@@ -26,6 +26,29 @@ class ReferenceMapTrialTests(unittest.TestCase):
         self.assertEqual(build_parser().parse_args(base+['--timeout', '360']).timeout, 360.)
         self.assertEqual(bounded_settings(.6, build_parser().parse_args(base).timeout)[1], 180.)
 
+    def test_revalidate_active_path_is_explicit_opt_in(self):
+        settings, timeout = bounded_settings(.6, 180)
+        base = mission_command('python3', Path('/tmp/autonomy.json'), Path('/tmp/run'), settings, timeout)
+        self.assertNotIn('--revalidate-active-path', base)
+        opted = mission_command('python3', Path('/tmp/autonomy.json'), Path('/tmp/run'), settings, timeout,
+                                revalidate_active_path=True)
+        self.assertEqual(opted, base+['--revalidate-active-path'])
+        parse = lambda extra: build_parser().parse_args(['--run-dir', '/tmp/r', '--mission', '/tmp/m']+extra)
+        self.assertFalse(parse([]).revalidate_active_path)
+        self.assertTrue(parse(['--revalidate-active-path']).revalidate_active_path)
+
+    def test_latency_compensation_is_explicit_opt_in(self):
+        settings, timeout = bounded_settings(.6, 180)
+        base = mission_command('python3', Path('/tmp/autonomy.json'), Path('/tmp/run'), settings, timeout)
+        self.assertNotIn('--latency-compensation', base)
+        opted = mission_command('python3', Path('/tmp/autonomy.json'), Path('/tmp/run'), settings, timeout,
+                                latency_compensation=True)
+        self.assertEqual(opted, base+['--latency-compensation'])
+        self.assertEqual(settings, {'speed_mps': .6})          # caller's settings are not mutated
+        parse = lambda extra: build_parser().parse_args(['--run-dir', '/tmp/r', '--mission', '/tmp/m']+extra)
+        self.assertFalse(parse([]).latency_compensation)
+        self.assertTrue(parse(['--latency-compensation']).latency_compensation)
+
     def test_smoke_requires_every_stream_and_positive_clock(self):
         full = {topic: 3 for topic in SMOKE_TOPICS}
         self.assertTrue(evaluate_smoke(full, 1_000)['ok'])

@@ -21,7 +21,9 @@ param(
     [ValidateRange(10,180)][int]$Seconds=60,
     [ValidateRange(0.1,0.6)][double]$MaxSpeed=0.6,
     [ValidateRange(10,360)][int]$TrialTimeout=180,   # up to the six-minute II.3 run limit
-    [switch]$Hidden
+    [switch]$Hidden,
+    [switch]$RevalidateActivePath,   # opt-in: forwards the mission's existing --revalidate-active-path (default off)
+    [switch]$LatencyCompensation     # opt-in: forwards the mission's existing --latency-compensation (default off)
 )
 $ErrorActionPreference='Stop'
 $repoRoot=Split-Path $PSScriptRoot -Parent
@@ -115,7 +117,11 @@ try {
                 Start-Sleep -Seconds 10   # bridge/endpoint startup; the trial itself gates on received streams and clock
                 if($ownedPlayer.HasExited){ throw "Player exited before the trial (code $($ownedPlayer.ExitCode))" }
                 $trialInFlight=$true
-                $trial=Wsl @('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_trial.py",'--run-dir',$linuxRun,'--mission',"$linuxRun/autonomy.json",'--speed',$MaxSpeed.ToString($invariant),'--timeout',"$TrialTimeout")
+                $trialArgs=@('bash',"$linuxRoot/tools/run_ros.sh",'python3',"$linuxRoot/tools/reference_map_trial.py",'--run-dir',$linuxRun,'--mission',"$linuxRun/autonomy.json",'--speed',$MaxSpeed.ToString($invariant),'--timeout',"$TrialTimeout")
+                if($RevalidateActivePath){ $trialArgs+='--revalidate-active-path' }
+                if($LatencyCompensation){ $trialArgs+='--latency-compensation' }
+                Log "trial revalidate_active_path=$([bool]$RevalidateActivePath) latency_compensation=$([bool]$LatencyCompensation)"
+                $trial=Wsl $trialArgs
                 if($trial.code -in 0,1,2){ $trialInFlight=$false }   # evaluated before any logging/file write
                 Set-Content -Encoding utf8 (Join-Path $run 'trial-driver.log') ($trial.out+"`n"+$trial.err)
                 Log "trial driver exit=$($trial.code)"
