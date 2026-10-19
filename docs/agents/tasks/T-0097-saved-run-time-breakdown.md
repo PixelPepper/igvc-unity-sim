@@ -105,3 +105,23 @@ ACK igvc-t97-9576e8868e. T-0097 complete as accepted descriptive evidence; the r
 
 ### 2026-10-13T14:57:50.359420-07:00 · gpt-6-astra → team · NOTE
 Completion courier exactOpus exit0/12.407s/USD0.0422606; actualcanonicalACK14:57:19.432370PDT and targetassistantnonce verified. No resend/newassignment. KnownT97ClaudeUSD0.434081 including all three couriers and two source reviews; interactiveOpus/Solunknown. Automation records T97complete and preserves T96 independent resourcewait. User report saved/open requested; source/project/live unchanged.
+
+### 2026-10-18T21:39:53.500132-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+User direct instruction in the linked session: "keep going". I am starting the suggested-but-unassigned follow-up (pauses vs goal replacement/cancellation) as a READ-ONLY, artifact-only analysis of the same frozen T-0097 input. Outputs go to artifacts/agents/claude-followups/pauses-vs-goal-events/. No source edits, simulation, replay or live sessions.
+**Early correction flagged for review:** the accepted "192 cancellations" counts decision RECORDS. action_cancellation events come in phases cancel_requested / cancel_response / terminal_confirmed, 64 each, so there are 64 cancellation operations. Action results: 104 status 6, 63 status 5, 8 status 4.
+
+### 2026-10-18T21:41:41.710003-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+User-directed follow-up done (read-only; artifacts/agents/claude-followups/pauses-vs-goal-events/).
+- **sha256:** analysis.py 14562cbf579cdd1507191047d0c89050867d92510373db17512afc8a1af00a62, metrics.json 49ef8fab2b56c297d957cbee9e93ff94a036c51c7db085c531b7295d10ff5e34, findings.md 052bcb786c43d64acdb0bbeb6fcda8f8e411b2eef6885ba97a816dfc0210a664.
+- **Preserved:** attempt 1 metrics-attempt1-INVALID-goal-gaps.json (ec506450c02968dc90c796974337976056859ed575eb918f07325c46e8544269). Its result→next-send gap double-counted because replacement sends precede old results; superseded by goal_id-matched active intervals.
+- **Correction:** 64 cancellation operations, not 192 (3 records each).
+- **Associations (SIM):**
+  - 71 no-goal gaps (100.0 s, median 1.48 s) and 71 pauses;
+  - 90.8 % of pause time had no active goal, against 7.3 % of moving time;
+  - within [pause start − 1 s, pause end]: cancellation 63/71 (chance ≈ 26), start_pose_departed_checked_path rejection 57/71 (≈ 23), status-5 result 62/71 (≈ 25); a send occurs in every pause.
+- **Source branch:** sensor_course.py:802-830 cancels the running action when admission fails, unless the opt-in --revalidate-active-path fallback re-admits it. This run had replacement_fallback.mode = off (0 evaluated).
+- **Not claimed:** causation, or that the fallback would help.
+- **Suggested (not run, root decides):** one predeclared paired diagnostic, fallback on vs off.
+
+### 2026-10-18T21:53:24.5513156-07:00 · gpt-6-astra → team · NOTE
+Root received the new linked-session follow-up. Read-only transcript inspection confirms direct user text 'keep going' at 2026-10-19T04:38:55Z. Follow-up author remains Opus; original accepted T0097 breakdown remains closed. Root verified all three submitted artifact SHA256 pins (analysis 14562cbf..., metrics 49ef8fab..., findings 052bcb78...). Independent grouping of frozen input/run.json confirms 64 cancel_requested, 64 cancel_response and 64 terminal_confirmed records: earlier wording '192 cancellations' means 192 cancellation event records, representing 64 requested cancellation operations. Preserve original accepted summaries and append this clarification; no rerun of completed analysis. New pause/no-goal associations and source-branch interpretation remain UNREVIEWED, pending exact Sonnet source and native Sol evidence review; descriptive reference-window baseline is not causal or statistical-significance evidence. No fallback promotion, new live comparison, provider retry, T84 retry or final-leg analysis assigned. Suggested paired diagnostic remains unassigned. No provider call, simulation, process/port probe, build or project source edit performed.
