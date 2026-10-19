@@ -36,8 +36,14 @@ RUN apt-get update && rosdep update --rosdistro jazzy \
     && colcon build --executor sequential --base-paths ros2/src /opt/endpoint \
        --cmake-args -DCMAKE_BUILD_TYPE=Release \
     && rm -rf /var/lib/apt/lists/*
-RUN apt-get update && apt-get install -y --no-install-recommends python3-pil python3-matplotlib && rm -rf /var/lib/apt/lists/*
+# SciPy backs the reference geometry used by the included tools.
+RUN apt-get update && apt-get install -y --no-install-recommends python3-pil python3-matplotlib python3-scipy && rm -rf /var/lib/apt/lists/*
 COPY tools/*.py /opt/igvc/tools/
+# Runtime scorer module only (namespace package); no trained models or training tools.
+COPY tools/learning/learned_scorer.py /opt/igvc/tools/learning/learned_scorer.py
+# Accepted RPP baseline read by tools/sandbox_profile.py and the competition course definition.
+COPY docs/evidence/navigation-2026-10-01-success/profile.yaml /opt/igvc/docs/evidence/navigation-2026-10-01-success/profile.yaml
+COPY config/competition/igvc-2027-autonav.json /opt/igvc/config/competition/igvc-2027-autonav.json
 COPY docker /opt/igvc/docker
 RUN sed -i 's/\r$//' /opt/igvc/docker/*.sh && chmod +x /opt/igvc/docker/*.sh
 ENV ROS_DOMAIN_ID=42 ROS_AUTOMATIC_DISCOVERY_RANGE=LOCALHOST \

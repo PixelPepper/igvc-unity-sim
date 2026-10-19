@@ -6,7 +6,9 @@
 !ros2/src/**
 !ros2/config/
 !ros2/config/**
-!tools/
 !tools/*.py
+!tools/learning/learned_scorer.py
+!docs/evidence/navigation-2026-10-01-success/profile.yaml
+!config/competition/igvc-2027-autonav.json
 **/__pycache__/
 **/*.pyc
