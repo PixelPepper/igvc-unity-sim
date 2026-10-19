@@ -1,7 +1,7 @@
 ---
 id: T-0100
 title: Track authorized fallback-only and lighting six-run diagnostics
-status: in-progress
+status: blocked
 priority: P1
 owner: claude-opus-5-5
 reviewers: claude-sonnet-5-5, gpt-6.1-sol
@@ -10,7 +10,7 @@ branch: codex/transport-probe
 base: 06fdb9d
 candidate: 32865ae76903530a84ffcfbcd24bff248c435ab0
 claim: none
-lease: held
+lease: released
 updated: 2026-10-18
 ---
 
@@ -31,3 +31,10 @@ Verified new direct human instruction and your predeclared sequence. Track separ
 
 ### 2026-10-18T23:39:20.4456297-07:00 · gpt-6-astra → team · NOTE
 Saved-file inspection only: D1 folder20261019T062257-58497fde records clear-noon, revalidation true/latency false, completed6/6, wall351.814s, mission_exit0 and cleanup_confirmed true; all3 locks released23:29:00.5112072PDT. D2 folder20261019T062901-8481cd85 records the same modes, stopped5/6 at305.156wall seconds, reason "No observed collision-free backup with useful forward clearance", mission_exit1 and cleanup_confirmed true; all3 released23:34:15.4651645PDT. These are provisional saved outcomes, not accepted health/finish or root-cause conclusions. E1 folder20261019T063416-c0e1cceb acquired all3 locks23:34:16.5446274 through23:34:16.5606530PDT and logged overcast/both flags true; no completed report observed. Lease held is last saved receipt, not a fresh resource probe. Full batch and reviews pending. No tests, providers, arithmetic reruns, source changes or live actions by root.
+
+### 2026-10-18T23:53:09.7867592-07:00 · gpt-6-astra → team · BLOCKED
+Direct human stop verified in linked transcript at 2026-10-19T06:45:05.224Z: "lets stop for now". Opus acknowledged and posted stop in T0099 at23:45:10PDT. Work is paused by user instruction; blocked is the available board status, not a provider failure or rejection of the evidence. No further reviews, arithmetic, investigations, runs, retries, dispatches or integration. Claim remains none. Recurring coordination monitor is being deleted to honor the stop; resume requires new human direction.
+
+Preserve the complete author handback in T0099 at23:44:21PDT and artifacts/agents/claude-followups/paired-revalidate/batch-DE-metrics.json, author-reported SHA4d604aedc058461f990cbede329c4f08f4b2d5f63a02be58b03f6f1bd5d9ab14; no independent arithmetic or review performed. Author reports D1 6/6, D2 5/6 recovery refusal, E1/E2 6/6 but line_blocks3632/2752. Those overcast counts are an unresolved review flag, not proof of actual crossing, likely rule violation, detection failure or faster navigation caused by shortcuts. No causal, contact, finish, default-promotion or pooled reliability claim is accepted.
+
+F1/F2 attempts064329-2c73040b and064332-493e212d were owner-reported admission refusals with zero cases; no retry. Root read saved launcher release receipts only: E1 at23:39:06.3699723, E2 at23:43:29.0375345, F1 at23:43:31.2686037, F2 at23:43:33.4267508PDT. The final release includes refused attempts, later than the author's last executed-run receipt. E1/E2 saved trial reports record cleanup_confirmed true and mission_exit0. No process/port query or foreign-session action. T0099 acceptance is unchanged. Future review, low-sun reattempts and overcast investigation remain unassigned while stopped.

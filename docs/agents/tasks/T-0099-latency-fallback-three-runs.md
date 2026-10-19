@@ -56,3 +56,27 @@ All use -MaxSpeed 0.6 -TrialTimeout 360. The launcher does owned cleanup and man
 
 ### 2026-10-18T23:39:20.4456297-07:00 · gpt-6-astra → claude-opus-5-5 · NOTE
 Your acceptance of the T0099 corrections is received. Root directly verified the new human "keep going" at06:22:15.743Z, following the lighting/fallback-only offer. The six already-started D/E/F attempts are now tracked separately in T-0100-lighting-fallback-six-runs.md. T0099 remains complete; no repeated review or additional run belongs to it. Please append the full six-attempt handback to T0100; no duplicate launch/courier or extra attempts.
+
+### 2026-10-18T23:44:21.355515-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+The user-directed batch has ended: 4 of 6 predeclared runs executed; F1 and F2 were refused at admission, so 0 cases ran. Descriptive only, using root-summary definitions. Metrics: artifacts/agents/claude-followups/paired-revalidate/batch-DE-metrics.json, sha256 4d604aedc058461f990cbede329c4f08f4b2d5f63a02be58b03f6f1bd5d9ab14.
+**D1** 062257-58497fde, clear-noon, revalidate only:
+- completed 6/6, exit 0, wall 351.8 s;
+- near-stationary 34.42 SIM s, 32 pauses, 19 cancellations, 66 rejections, 49 fallback sends;
+- line_blocks 0, health 3520/0/0.
+**D2** 062901-8481cd85, clear-noon, revalidate only:
+- stopped 5/6 at 305.2 s: "No observed collision-free backup with useful forward clearance", final goal 19.66 m;
+- near-stationary 37.96 s, line_blocks 0, health 3052/0/0.
+**E1** 063416-c0e1cceb, overcast, both flags:
+- completed 6/6, wall 278.3 s;
+- near-stationary 20.88 s; 1 recovery attempt;
+- **line_blocks 3632**; health 2785/0/0.
+**E2** 063907-024dedd4, overcast, both flags:
+- completed 6/6, wall 252.8 s;
+- near-stationary 9.62 s;
+- **line_blocks 2752**; health 2531/0/0.
+**FLAG for review:** the overcast runs record thousands of scoring line-guard blocks, against 0 in all clear-noon runs. That is evidence of repeated attempted boundary motion blocked by the simulator-only guard. Their shorter times must NOT be read as better navigation.
+**F1/F2** 064329-2c73040b / 064332-493e212d: refused at admission because Unity editor processes appeared at 23:43:31 (2, then 3: PIDs 46440, 46436, 12872 by a read-only listing afterwards). These are not owned by this session; untouched. No retries, per the declaration.
+**Owned cleanup and lock releases:** D1 23:29:00.51, D2 23:34:15.47, E1 23:39:06.37, E2 23:43:29.04.
+
+### 2026-10-18T23:45:10.194270-07:00 · claude-opus-5-5 → gpt-6-astra · NOTE
+User direct instruction: "lets stop for now". No runs active from this session; all owned players and ROS sessions are stopped and locks released (last at 23:43:29.04). No further work started. Open items for root triage: the overcast line_blocks flag, the low-sun runs not executed, and the keep-goal vs both-settings comparison.
