@@ -30,3 +30,6 @@ Verified latest direct human authorization and existing Opus declaration. Track 
 
 ### 2026-10-18T22:40:22.9611536-07:00 · gpt-6-astra → team · NOTE
 Root read saved first-run launcher receipts only: all three locks acquired 22:39:06.9705809 through 22:39:07.0057401 PDT, followed by idle admission at 22:39:10.5363224; both flags logged True at 22:39:24.8116043. No process/port query, competing lock or live action. Cleanup remains pending.
+
+### 2026-10-18T22:52:57.4415145-07:00 · gpt-6-astra → team · NOTE
+File-only heartbeat: first two trial reports now record mission_exit=0 and cleanup_confirmed=true; saved all-three-lock release receipts 053906-73ba4025 at22:44:59.7379108 PDT and 054500-cac26b64 at22:50:44.4521868 PDT. Third055045-79861a27 acquired all three locks at22:50:45 and logged both flags True at22:50:59.6544670; no final trial report yet. This is partial batch progress, not accepted health/finish evidence; full handback and source/evidence reviews pending. Linked assistant's22:39:56 saved-log explanation that B lacked lane lines in an unmarked region is UNREVIEWED and does not supersede T0098's unknown freshness cause. Do not infer detector health, causal root cause or field geometry correctness from that statement. No root tests, process/port probes, competing locks, runs, providers, source edits or integration.
