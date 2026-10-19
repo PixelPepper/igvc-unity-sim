@@ -41,7 +41,7 @@ jobs:
           cat > release-notes.md <<'EOF'
           Experimental draft prerelease; not a stable release.
 
-          - Ubuntu 24.04 / ROS 2 Jazzy, linux/amd64, with RViz 2, Nav2 and the patched nav2_mppi_controller 1.3.12.
+          - Ubuntu 24.04 / ROS 2 Jazzy, linux/amd64, with RViz 2, Nav2 and the patched nav2_mppi_controller 1.3.13.
           - Verify with `sha256sum -c SHA256SUMS`, then load with `docker load -i igvc-sim-jazzy-linux-amd64.tar.gz`.
           - RViz runs inside the container and needs a host display (X11 or WSLg) forwarded to it.
           - Unity is not included; it runs separately on the host and connects through ROS-TCP-Endpoint.

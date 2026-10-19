@@ -50,17 +50,18 @@ def mission_command(python, mission, folder, settings, timeout, revalidate_activ
     """sandbox_profile.mission_argv with the trial's own --timeout (the default 600 s is replaced).
 
     revalidate_active_path (explicit opt-in, default off) appends sensor_course's existing
-    --revalidate-active-path flag; latency_compensation (explicit opt-in, default off) sets the existing
-    validated sandbox setting, which adds sensor_course's --latency-compensation. Nothing else changes.
+    --revalidate-active-path flag; latency_compensation (explicit opt-in, default off) appends
+    sensor_course's existing --latency-compensation flag once. Settings are validated unchanged and
+    never mutated. Nothing else changes.
     """
     from sandbox_profile import mission_argv
-    if latency_compensation is True:
-        settings = dict(settings, latency_compensation=True)
     argv = mission_argv(python, mission, folder, settings)
     index = argv.index('--timeout')
     argv[index+1] = str(int(math.ceil(timeout)))
     if revalidate_active_path is True:
         argv.append('--revalidate-active-path')
+    if latency_compensation is True and '--latency-compensation' not in argv:
+        argv.append('--latency-compensation')
     return argv
 
 

@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
-"""Patch pinned Nav2 1.3.12 and add a regression to its real critics_tests target.
+"""Patch pinned Nav2 1.3.12 or 1.3.13 and add a regression to its real critics_tests target.
 
 Usage: python3 patch_nav2_cost_critic.py /path/to/navigation2
 This only prepares source; it does not build, install, or modify running ROS.
-All input files and HEAD must match the pinned upstream revision exactly.
+All input files must match the pinned hashes and HEAD must be one of the pinned
+upstream revisions exactly (the three input files are identical in both).
 Reapplication is rejected rather than silently accepting a partial patch.
 """
 
@@ -13,7 +14,10 @@ from pathlib import Path
 import subprocess
 
 
-UPSTREAM_COMMIT = "6be3614013ec586051b86c97b919b293281490fe"
+UPSTREAM_COMMITS = {
+    "6be3614013ec586051b86c97b919b293281490fe": "1.3.12",
+    "f4108e5b1c2bce804a1aa0c7be6673a8eb4a1501": "1.3.13",
+}
 MARKER = "igvc-footprint-cost-critic-v1"
 HASHES = {
     "src/critics/cost_critic.cpp":
@@ -129,8 +133,8 @@ def patch(root: Path) -> None:
     revision = subprocess.check_output(
         ["git", "-C", str(root), "rev-parse", "HEAD"], text=True
     ).strip()
-    if revision != UPSTREAM_COMMIT:
-        raise ValueError(f"Expected upstream {UPSTREAM_COMMIT}, got {revision}")
+    if revision not in UPSTREAM_COMMITS:
+        raise ValueError(f"Expected upstream one of {sorted(UPSTREAM_COMMITS)}, got {revision}")
     package = root / "nav2_mppi_controller"
     originals = {}
     for relative, expected in HASHES.items():
@@ -149,11 +153,11 @@ def patch(root: Path) -> None:
         "CMakeLists.txt": originals["CMakeLists.txt"] +
             f'\n# IGVC footprint collision fix provenance.\n'
             f'install(FILES "{MARKER}" DESTINATION share/${{PROJECT_NAME}})\n',
-        MARKER: f"{MARKER}\nupstream_commit={UPSTREAM_COMMIT}\n",
+        MARKER: f"{MARKER}\nupstream_commit={revision}\n",
     }
     for relative, content in outputs.items():
         (package / relative).write_bytes(content.encode("utf-8"))
-    print(f"Applied {MARKER} to Nav2 {UPSTREAM_COMMIT}; C++ build/test still required")
+    print(f"Applied {MARKER} to Nav2 {UPSTREAM_COMMITS[revision]} {revision}; C++ build/test still required")
 
 
 if __name__ == "__main__":

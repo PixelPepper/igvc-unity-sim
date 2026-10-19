@@ -18,7 +18,7 @@ jobs:
       - name: Install Ubuntu Python dependencies
         run: |
           apt-get update
-          apt-get install -y git python3-numpy python3-opencv python3-pil python3-yaml ros-jazzy-nav2-msgs
+          apt-get install -y git python3-numpy python3-opencv python3-pil python3-scipy python3-yaml ros-jazzy-nav2-msgs
       - name: Check planners, perception, scoring and launcher behavior
         shell: bash
         run: bash tools/check_core.sh

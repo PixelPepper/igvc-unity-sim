@@ -11,9 +11,9 @@ WORKDIR /opt/igvc
 COPY docker/patch_nav2_cost_critic.py /opt/nav2-patched/patch_nav2_cost_critic.py
 # Jazzy CostCritic otherwise skips footprint collisions at zero-cost centers
 # when the requested 0.30 m inflation radius is below the robot's size.
-RUN test "$(dpkg-query -W -f='${Version}' ros-jazzy-nav2-mppi-controller | cut -d- -f1)" = 1.3.12 \
-    && git clone --depth 1 --branch 1.3.12 https://github.com/ros-navigation/navigation2.git /opt/nav2-patched/upstream \
-    && test "$(git -C /opt/nav2-patched/upstream rev-parse HEAD)" = 6be3614013ec586051b86c97b919b293281490fe \
+RUN test "$(dpkg-query -W -f='${Version}' ros-jazzy-nav2-mppi-controller | cut -d- -f1)" = 1.3.13 \
+    && git clone --depth 1 --branch 1.3.13 https://github.com/ros-navigation/navigation2.git /opt/nav2-patched/upstream \
+    && test "$(git -C /opt/nav2-patched/upstream rev-parse HEAD)" = f4108e5b1c2bce804a1aa0c7be6673a8eb4a1501 \
     && python3 /opt/nav2-patched/patch_nav2_cost_critic.py /opt/nav2-patched/upstream \
     && apt-get update && rosdep update --rosdistro jazzy \
     && rosdep install --from-paths /opt/nav2-patched/upstream/nav2_mppi_controller --ignore-src --rosdistro jazzy -y \

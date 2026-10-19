@@ -17,7 +17,14 @@ packages = ['igvc_description', 'igvc_sim_bridge', 'igvc_navigation', 'igvc_perc
             'igvc_gps', 'igvc_lane_layer', 'ros_tcp_endpoint', 'rviz2', 'nav2_bringup',
             'nav2_smac_planner', 'nav2_mppi_controller']
 origins = {name: get_package_share_directory(name) for name in packages}
-assert (Path(origins['nav2_mppi_controller']) / 'igvc-footprint-cost-critic-v1').is_file()
+mppi_share = Path(origins['nav2_mppi_controller'])
+apt_mppi = subprocess.run(['dpkg-query', '-W', '-f=${Version}', 'ros-jazzy-nav2-mppi-controller'],
+                          capture_output=True, text=True, check=True).stdout.strip().split('-', 1)[0]
+assert apt_mppi == '1.3.13', apt_mppi
+overlay_mppi = ET.parse(mppi_share / 'package.xml').getroot().findtext('version')
+assert overlay_mppi == '1.3.13', overlay_mppi
+marker = (mppi_share / 'igvc-footprint-cost-critic-v1').read_text(encoding='utf-8')
+assert marker == 'igvc-footprint-cost-critic-v1\nupstream_commit=f4108e5b1c2bce804a1aa0c7be6673a8eb4a1501\n', marker
 description = ET.fromstring(xacro.process_file(str(Path(origins['igvc_description']) / 'urdf/r3_a.urdf.xacro')).toxml())
 count = 0
 for mesh in description.findall('.//mesh'):
